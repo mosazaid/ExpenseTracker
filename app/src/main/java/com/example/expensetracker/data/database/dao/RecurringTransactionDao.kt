@@ -1,0 +1,32 @@
+package com.example.expensetracker.data.database.dao
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Update
+import com.example.expensetracker.data.database.entities.RecurringTransaction
+import kotlinx.coroutines.flow.Flow
+import java.util.Date
+
+@Dao
+interface RecurringTransactionDao {
+
+    @Query("SELECT * FROM recurring_transactions WHERE isActive = 1 ORDER BY nextDueDate ASC")
+    fun getActiveRecurringTransactions(): Flow<List<RecurringTransaction>>
+
+    @Query("SELECT * FROM recurring_transactions WHERE nextDueDate <= :date AND isActive = 1")
+    suspend fun getDueRecurringTransactions(date: Date): List<RecurringTransaction>
+
+    @Insert
+    suspend fun insertRecurringTransaction(transaction: RecurringTransaction): Long
+
+    @Update
+    suspend fun updateRecurringTransaction(transaction: RecurringTransaction)
+
+    @Delete
+    suspend fun deleteRecurringTransaction(transaction: RecurringTransaction)
+
+    @Query("UPDATE recurring_transactions SET isActive = 0 WHERE id = :id")
+    suspend fun deactivateRecurringTransaction(id: Long)
+}
