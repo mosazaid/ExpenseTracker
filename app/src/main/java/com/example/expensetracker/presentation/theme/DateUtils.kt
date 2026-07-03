@@ -13,6 +13,34 @@ object DateUtils {
     fun formatTime(date: Date): String = timeFormat.format(date)
     fun formatDateTime(date: Date): String = dateTimeFormat.format(date)
 
+    fun formatWeekRange(weekStart: Date): String {
+        val weekEnd = getEndOfWeek(weekStart)
+        val shortFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
+        return "${shortFormat.format(weekStart)} – ${shortFormat.format(weekEnd)}"
+    }
+
+    fun formatMonthYear(date: Date): String {
+        val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+        return monthFormat.format(date)
+    }
+
+    fun getDayKey(date: Date): Long = getStartOfDay(date).time
+
+    fun getWeekKey(date: Date): Long = getStartOfWeek(date).time
+
+    fun getMonthKey(date: Date): Int {
+        val calendar = Calendar.getInstance()
+        calendar.time = date
+        return calendar.get(Calendar.YEAR) * 100 + calendar.get(Calendar.MONTH)
+    }
+
+    fun dateFromMonthKey(key: Int): Date {
+        val calendar = Calendar.getInstance()
+        calendar.set(key / 100, key % 100, 1, 0, 0, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        return calendar.time
+    }
+
     fun getStartOfDay(date: Date): Date {
         val calendar = Calendar.getInstance()
         calendar.time = date
@@ -35,8 +63,12 @@ object DateUtils {
 
     fun getStartOfWeek(date: Date): Date {
         val calendar = Calendar.getInstance()
+        calendar.firstDayOfWeek = Calendar.SATURDAY
         calendar.time = date
-        calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
+        calendar.set(Calendar.DAY_OF_WEEK, Calendar.SATURDAY)
+        if (calendar.time.after(date)) {
+            calendar.add(Calendar.WEEK_OF_YEAR, -1)
+        }
         return getStartOfDay(calendar.time)
     }
 

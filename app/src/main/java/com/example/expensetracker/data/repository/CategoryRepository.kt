@@ -4,6 +4,7 @@ import com.example.expensetracker.data.database.dao.CategoryDao
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.TransactionType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,12 +18,20 @@ class CategoryRepository @Inject constructor(
         return categoryDao.getAllCategories()
     }
 
+    suspend fun getAllCategoriesSnapshot(): List<Category> {
+        return getAllCategories().first()
+    }
+
     fun getCategoriesByType(type: TransactionType): Flow<List<Category>> {
         return categoryDao.getCategoriesByType(type)
     }
 
     suspend fun getCategoryById(id: Long): Category? {
         return categoryDao.getCategoryById(id)
+    }
+
+    suspend fun getCategoryByName(name: String, type: TransactionType): Category? {
+        return categoryDao.getCategoryByName(name, type)
     }
 
     fun getDefaultCategories(): Flow<List<Category>> {
@@ -42,6 +51,6 @@ class CategoryRepository @Inject constructor(
     }
 
     suspend fun deleteCategory(category: Category) {
-        categoryDao.deleteCategory(category)
+        categoryDao.deleteCategoryById(category.id)
     }
 }

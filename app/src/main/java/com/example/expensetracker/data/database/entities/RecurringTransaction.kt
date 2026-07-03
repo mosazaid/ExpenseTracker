@@ -1,8 +1,9 @@
 package com.example.expensetracker.data.database.entities
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
 import java.util.Date
 
 @Entity(
@@ -14,7 +15,8 @@ import java.util.Date
             childColumns = ["categoryId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index("categoryId")]
 )
 data class RecurringTransaction(
     @PrimaryKey(autoGenerate = true)

@@ -18,6 +18,9 @@ interface RecurringTransactionDao {
     @Query("SELECT * FROM recurring_transactions WHERE nextDueDate <= :date AND isActive = 1")
     suspend fun getDueRecurringTransactions(date: Date): List<RecurringTransaction>
 
+    @Query("SELECT * FROM recurring_transactions WHERE id = :id LIMIT 1")
+    suspend fun getRecurringTransactionById(id: Long): RecurringTransaction?
+
     @Insert
     suspend fun insertRecurringTransaction(transaction: RecurringTransaction): Long
 

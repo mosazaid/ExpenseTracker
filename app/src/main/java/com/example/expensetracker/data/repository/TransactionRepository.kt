@@ -1,9 +1,11 @@
 package com.example.expensetracker.data.repository
 
 import com.example.expensetracker.data.database.dao.TransactionDao
+import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -15,6 +17,10 @@ class TransactionRepository @Inject constructor(
 
     fun getAllTransactions(): Flow<List<Transaction>> {
         return transactionDao.getAllTransactions()
+    }
+
+    suspend fun getAllTransactionsSnapshot(): List<Transaction> {
+        return getAllTransactions().first()
     }
 
     suspend fun getTransactionById(id: Long): Transaction? {
@@ -49,6 +55,14 @@ class TransactionRepository @Inject constructor(
         return transactionDao.getTotalAmountByCategoryAndDateRange(categoryId, startDate, endDate) ?: 0.0
     }
 
+    suspend fun getAvailableBalance(account: AccountType): Double {
+        val income = transactionDao.getTotalIncomeForAccount(account)
+        val expense = transactionDao.getTotalExpenseForAccount(account)
+        val transferOut = transactionDao.getTotalTransferOut(account)
+        val transferIn = transactionDao.getTotalTransferIn(account)
+        return income - expense - transferOut + transferIn
+    }
+
     suspend fun insertTransaction(transaction: Transaction): Long {
         return transactionDao.insertTransaction(transaction)
     }
@@ -63,5 +77,17 @@ class TransactionRepository @Inject constructor(
 
     suspend fun deleteTransactionById(id: Long) {
         transactionDao.deleteTransactionById(id)
+    }
+
+    suspend fun getUnreimbursedExpenses(startDate: Date, endDate: Date): List<Transaction> {
+        return transactionDao.getUnreimbursedExpenses(startDate, endDate)
+    }
+
+    suspend fun hasLinkedDeptIncome(expenseId: Long): Boolean {
+        return transactionDao.hasLinkedDeptIncome(expenseId)
+    }
+
+    suspend fun getDeptIncomesLinkedTo(expenseId: Long): List<Transaction> {
+        return transactionDao.getDeptIncomesLinkedTo(expenseId)
     }
 }

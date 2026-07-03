@@ -1,8 +1,9 @@
 package com.example.expensetracker.data.database.entities
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
 import java.util.Date
 
 @Entity(
@@ -14,7 +15,8 @@ import java.util.Date
             childColumns = ["categoryId"],
             onDelete = ForeignKey.SET_NULL
         )
-    ]
+    ],
+    indices = [Index("categoryId"), Index("linkedExpenseId")]
 )
 data class Transaction(
     @PrimaryKey(autoGenerate = true)
@@ -25,12 +27,18 @@ data class Transaction(
     val type: TransactionType,
     val categoryId: Long?,
     val accountType: AccountType,
+    val toAccountType: AccountType? = null,
+    val startsNewPeriod: Boolean = false,
+    val allowNegativeBalance: Boolean = false,
+    val linkedExpenseId: Long? = null,
+    val debtorNote: String? = null,
+    val awaitingReimbursement: Boolean = false,
     val createdAt: Date = Date(),
     val updatedAt: Date = Date()
 )
 
 enum class TransactionType {
-    INCOME, EXPENSE
+    INCOME, EXPENSE, TRANSFER
 }
 
 enum class AccountType {

@@ -4,8 +4,8 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.dagger.hilt.android)
     id("kotlin-parcelize")
-    id("org.jetbrains.kotlin.kapt") // adding it without version catalog -> ✅ Required explicitly for kapt()
-    id("com.google.devtools.ksp") version  "2.1.21-2.0.1"
+    id("org.jetbrains.kotlin.kapt")
+    id("com.google.devtools.ksp") version "2.0.21-1.0.28"
 }
 
 android {
@@ -24,7 +24,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -60,7 +60,6 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
-    // Hilt - still using KAPT (because Hilt's KSP support is limited or more complex)
     kapt(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
@@ -70,9 +69,7 @@ dependencies {
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    // Room - using KSP
     ksp(libs.androidx.room.compiler)
-
 
     // ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -81,19 +78,13 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
-    // Biometric
-    implementation(libs.androidx.biometric)
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
 
-    // Date/Time Picker
-    implementation(libs.compose.datetime)
-
-    // Charts
-    implementation(libs.mpandroidchart)
-
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    implementation(libs.androidx.activity)
-    implementation(libs.androidx.constraintlayout)
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    kapt(libs.androidx.hilt.compiler)
 
     // Testing
     testImplementation(libs.kotlin.coroutines.test)
@@ -105,5 +96,4 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test.junit4)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
-
 }

@@ -39,6 +39,16 @@ class Converters {
     }
 
     @TypeConverter
+    fun fromNullableAccountType(type: AccountType?): String? {
+        return type?.name
+    }
+
+    @TypeConverter
+    fun toNullableAccountType(type: String?): AccountType? {
+        return type?.let { AccountType.valueOf(it) }
+    }
+
+    @TypeConverter
     fun fromRecurrenceFrequency(frequency: RecurrenceFrequency): String {
         return frequency.name
     }

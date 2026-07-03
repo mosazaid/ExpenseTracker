@@ -21,7 +21,7 @@ import com.example.expensetracker.data.database.entities.Transaction
         Budget::class,
         RecurringTransaction::class
     ],
-    version = 1,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -43,10 +43,10 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "expense_tracker_database"
                 )
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                             super.onCreate(db)
-                            // Pre-populate default categories
                             insertDefaultCategories(db)
                         }
                     })
@@ -57,35 +57,43 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         private fun insertDefaultCategories(db: androidx.sqlite.db.SupportSQLiteDatabase) {
-            // Insert default expense categories
+            val now = System.currentTimeMillis()
+
             val expenseCategories = listOf(
-                "('Food & Dining', '🍽️', '#FF6B6B', 'EXPENSE', 1,  ${System.currentTimeMillis()})",
-                "('Transportation', '\uD83D\uDE97', '#4ECDC4', 'EXPENSE', 1,  ${System.currentTimeMillis()})",
-                "('Shopping', '🛒', '#45B7D1', 'EXPENSE', 1, ${System.currentTimeMillis()})",
-                "('Entertainment', '\uD83C\uDFAC', '#96CEB4', 'EXPENSE', 1,  ${System.currentTimeMillis()})",
-                "('Bills & Utilities', '💡', '#FFEAA7', 'EXPENSE', 1,  ${System.currentTimeMillis()})",
-                "('Healthcare', '🏥', '#DDA0DD', 'EXPENSE', 1,  ${System.currentTimeMillis()})",
-                "('Education', '📚', '#98D8C8', 'EXPENSE', 1,  ${System.currentTimeMillis()})",
-                "('Travel', '✈️', '#F7DC6F', 'EXPENSE', 1,  ${System.currentTimeMillis()})",
-                "('Other', '📋', '#BDC3C7', 'EXPENSE', 1,  ${System.currentTimeMillis()})",
+                "('Restaurants', '🍽️', '#FF6B6B', 'EXPENSE', 1, $now)",
+                "('Cafés', '☕', '#8D6E63', 'EXPENSE', 1, $now)",
+                "('Transportation', '\uD83D\uDE97', '#4ECDC4', 'EXPENSE', 1, $now)",
+                "('Shopping', '🛒', '#45B7D1', 'EXPENSE', 1, $now)",
+                "('Entertainment', '\uD83C\uDFAC', '#96CEB4', 'EXPENSE', 1, $now)",
+                "('Bills & Utilities', '💡', '#FFEAA7', 'EXPENSE', 1, $now)",
+                "('Healthcare', '🏥', '#DDA0DD', 'EXPENSE', 1, $now)",
+                "('Education', '📚', '#98D8C8', 'EXPENSE', 1, $now)",
+                "('Travel', '✈️', '#F7DC6F', 'EXPENSE', 1, $now)",
+                "('Charity', '🤝', '#E91E63', 'EXPENSE', 1, $now)",
+                "('Family', '👨‍👩‍👧', '#FF5722', 'EXPENSE', 1, $now)",
+                "('Other', '📋', '#BDC3C7', 'EXPENSE', 1, $now)",
             )
 
-            // Insert default income categories
             val incomeCategories = listOf(
-                "('Salary', '💰', '#2ECC71', 'INCOME', 1,  ${System.currentTimeMillis()})",
-                "('Business', '🏢', '#3498DB', 'INCOME', 1,  ${System.currentTimeMillis()})",
-                "('Investment', '📈', '#9B59B6', 'INCOME', 1,  ${System.currentTimeMillis()})",
-                "('Freelance', '💻', '#E67E22', 'INCOME', 1,  ${System.currentTimeMillis()})",
-                "('Gift', '🎁', '#E74C3C', 'INCOME', 1,  ${System.currentTimeMillis()})",
-                "('Other', '📋', '#95A5A6', 'INCOME', 1,  ${System.currentTimeMillis()})",
+                "('Salary', '💰', '#2ECC71', 'INCOME', 1, $now)",
+                "('Dept', '🔄', '#607D8B', 'INCOME', 1, $now)",
+                "('Business', '🏢', '#3498DB', 'INCOME', 1, $now)",
+                "('Investment', '📈', '#9B59B6', 'INCOME', 1, $now)",
+                "('Freelance', '💻', '#E67E22', 'INCOME', 1, $now)",
+                "('Gift', '🎁', '#E74C3C', 'INCOME', 1, $now)",
+                "('Other', '📋', '#95A5A6', 'INCOME', 1, $now)",
             )
 
             expenseCategories.forEach { category ->
-                db.execSQL("INSERT INTO categories (name, icon, color, type, isDefault, createdAt) VALUES $category")
+                db.execSQL(
+                    "INSERT INTO categories (name, icon, color, type, isDefault, createdAt) VALUES $category"
+                )
             }
 
             incomeCategories.forEach { category ->
-                db.execSQL("INSERT INTO categories (name, icon, color, type, isDefault, createdAt) VALUES $category")
+                db.execSQL(
+                    "INSERT INTO categories (name, icon, color, type, isDefault, createdAt) VALUES $category"
+                )
             }
         }
     }

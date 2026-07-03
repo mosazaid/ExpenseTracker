@@ -8,15 +8,33 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.expensetracker.data.database.entities.Budget
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 
 @Dao
 interface BudgetDao {
 
-    @Query("SELECT * FROM budgets WHERE month = :month AND year = :year")
-    fun getBudgetsByMonthAndYear(month: Int, year: Int): Flow<List<Budget>>
+    @Query(
+        """
+        SELECT * FROM budgets
+        WHERE periodStart = :periodStart AND periodEnd = :periodEnd
+        """
+    )
+    fun getBudgetsInPeriod(periodStart: Date, periodEnd: Date): Flow<List<Budget>>
 
-    @Query("SELECT * FROM budgets WHERE categoryId = :categoryId AND month = :month AND year = :year")
-    suspend fun getBudgetByCategoryAndDate(categoryId: Long, month: Int, year: Int): Budget?
+    @Query(
+        """
+        SELECT * FROM budgets
+        WHERE categoryId = :categoryId
+          AND periodStart = :periodStart
+          AND periodEnd = :periodEnd
+        LIMIT 1
+        """
+    )
+    suspend fun getBudgetForCategoryInPeriod(
+        categoryId: Long,
+        periodStart: Date,
+        periodEnd: Date
+    ): Budget?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBudget(budget: Budget): Long
@@ -26,7 +44,4 @@ interface BudgetDao {
 
     @Delete
     suspend fun deleteBudget(budget: Budget)
-
-    @Query("UPDATE budgets SET spent = :spent WHERE categoryId = :categoryId AND month = :month AND year = :year")
-    suspend fun updateBudgetSpent(categoryId: Long, month: Int, year: Int, spent: Double)
 }

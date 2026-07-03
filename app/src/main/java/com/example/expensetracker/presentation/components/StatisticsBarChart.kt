@@ -5,42 +5,79 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+private val MAX_BAR_HEIGHT = 180.dp
+private val BAR_WIDTH = 64.dp
+
 @Composable
 fun StatisticsBarChart(
-    income: Float, expense: Float
+    income: Float,
+    expense: Float
 ) {
     val max = maxOf(income, expense, 1f)
-
-    val incomeHeightRatio = income / max
-    val expenseHeightRatio = expense / max
-
-    val barWidth = 60.dp
+    val incomeRatio = income / max
+    val expenseRatio = expense / max
 
     Row(
-        Modifier.fillMaxWidth().height(200.dp), horizontalArrangement = Arrangement.SpaceEvenly
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(MAX_BAR_HEIGHT + 40.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.Bottom
     ) {
-        Bar(label = "Income", value = incomeHeightRatio, color = Color(0xFF4CAF50), barWidth)
-        Bar(label = "Expense", value = expenseHeightRatio, color = Color(0xFFF44336), barWidth)
+        BarColumn(
+            label = "Income",
+            ratio = incomeRatio,
+            color = Color(0xFF4CAF50),
+            barWidth = BAR_WIDTH
+        )
+        BarColumn(
+            label = "Expense",
+            ratio = expenseRatio,
+            color = Color(0xFFF44336),
+            barWidth = BAR_WIDTH
+        )
     }
 }
 
 @Composable
-fun Bar(label: String, value: Float, color: Color, width: Dp) {
+private fun BarColumn(
+    label: String,
+    ratio: Float,
+    color: Color,
+    barWidth: Dp
+) {
+    val barHeight = MAX_BAR_HEIGHT * ratio
+
     Column(
-        verticalArrangement = Arrangement.Bottom, modifier = Modifier.height(200.dp).width(width)
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Bottom,
+        modifier = Modifier.width(barWidth)
     ) {
         Canvas(
-            modifier = Modifier.fillMaxWidth().weight(value)
+            modifier = Modifier
+                .width(barWidth)
+                .height(barHeight.coerceAtLeast(2.dp))
         ) {
-            drawRect(color = color, size = Size(size.width, size.height))
+            drawRect(
+                color = color,
+                topLeft = Offset.Zero,
+                size = Size(size.width, size.height)
+            )
         }
         Spacer(modifier = Modifier.height(4.dp))
-        Text(label, style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center
+        )
     }
 }

@@ -20,7 +20,10 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen()
+                    MainScreen(
+                        initialRecurringId = intent?.getLongExtra("recurringId", -1L)
+                            ?.takeIf { it != -1L }
+                    )
                 }
             }
         }

@@ -17,6 +17,9 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE id = :id")
     suspend fun getCategoryById(id: Long): Category?
 
+    @Query("SELECT * FROM categories WHERE name = :name AND type = :type LIMIT 1")
+    suspend fun getCategoryByName(name: String, type: TransactionType): Category?
+
     @Query("SELECT * FROM categories WHERE isDefault = 1")
     fun getDefaultCategories(): Flow<List<Category>>
 

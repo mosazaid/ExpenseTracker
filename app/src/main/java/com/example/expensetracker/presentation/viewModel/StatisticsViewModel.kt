@@ -3,75 +3,46 @@ package com.example.expensetracker.presentation.viewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.expensetracker.data.database.entities.TransactionType
+import com.example.expensetracker.data.preferences.MonthMode
+import com.example.expensetracker.data.preferences.UserPreferences
 import com.example.expensetracker.data.repository.TransactionRepository
+import com.example.expensetracker.domain.HistoryPeriod
+import com.example.expensetracker.domain.PeriodCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
-import java.util.Calendar
 import javax.inject.Inject
 
 @HiltViewModel
 class StatisticsViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val periodCalculator: PeriodCalculator,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
 
     private val _statisticsState = MutableStateFlow(StatisticsState())
     val statisticsState: StateFlow<StatisticsState> = _statisticsState.asStateFlow()
 
-    init {
-        loadCurrentMonthStatistics()
-    }
+    val monthMode: StateFlow<MonthMode> = userPreferences.monthMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MonthMode.CALENDAR)
 
-    private fun loadCurrentMonthStatistics() {
+    fun loadStatisticsForPeriod(period: HistoryPeriod, referenceDate: Date = Date()) {
         viewModelScope.launch {
-            val calendar = Calendar.getInstance()
-            val startOfMonth = Calendar.getInstance().apply {
-                set(Calendar.DAY_OF_MONTH, 1)
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }.time
-
-            val endOfMonth = Calendar.getInstance().apply {
-                set(Calendar.DAY_OF_MONTH, getActualMaximum(Calendar.DAY_OF_MONTH))
-                set(Calendar.HOUR_OF_DAY, 23)
-                set(Calendar.MINUTE, 59)
-                set(Calendar.SECOND, 59)
-                set(Calendar.MILLISECOND, 999)
-            }.time
-
+            _statisticsState.value = _statisticsState.value.copy(isLoading = true)
+            val bounds = periodCalculator.getBounds(period, referenceDate, monthMode.value)
             val totalIncome = transactionRepository.getTotalAmountByTypeAndDateRange(
-                TransactionType.INCOME, startOfMonth, endOfMonth
+                TransactionType.INCOME, bounds.start, bounds.end
             )
-
             val totalExpense = transactionRepository.getTotalAmountByTypeAndDateRange(
-                TransactionType.EXPENSE, startOfMonth, endOfMonth
+                TransactionType.EXPENSE, bounds.start, bounds.end
             )
-
             _statisticsState.value = _statisticsState.value.copy(
                 totalIncome = totalIncome,
                 totalExpense = totalExpense,
-                balance = totalIncome - totalExpense
-            )
-        }
-    }
-
-    fun loadStatisticsForPeriod(startDate: Date, endDate: Date) {
-        viewModelScope.launch {
-            val totalIncome = transactionRepository.getTotalAmountByTypeAndDateRange(
-                TransactionType.INCOME, startDate, endDate
-            )
-
-            val totalExpense = transactionRepository.getTotalAmountByTypeAndDateRange(
-                TransactionType.EXPENSE, startDate, endDate
-            )
-
-            _statisticsState.value = _statisticsState.value.copy(
-                totalIncome = totalIncome,
-                totalExpense = totalExpense,
-                balance = totalIncome - totalExpense
+                balance = totalIncome - totalExpense,
+                periodLabel = bounds.label,
+                isLoading = false
             )
         }
     }
@@ -81,5 +52,6 @@ data class StatisticsState(
     val totalIncome: Double = 0.0,
     val totalExpense: Double = 0.0,
     val balance: Double = 0.0,
+    val periodLabel: String = "",
     val isLoading: Boolean = false
 )
