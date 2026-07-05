@@ -18,6 +18,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.expensetracker.presentation.theme.CurrencyUtils
 import com.example.expensetracker.presentation.viewModel.SettingsViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,14 +26,23 @@ fun SettingsScreen(
     navController: NavController,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val openingCash by viewModel.openingCashBalance.collectAsState()
-    val openingBank by viewModel.openingBankBalance.collectAsState()
     val salaryReminders by viewModel.activeSalaryReminder.collectAsState()
     val exportUri by viewModel.exportUri.collectAsState()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
-    var cashInput by remember(openingCash) { mutableStateOf(openingCash.toString()) }
-    var bankInput by remember(openingBank) { mutableStateOf(openingBank.toString()) }
+    var currentCash by remember { mutableStateOf(0.0) }
+    var currentBank by remember { mutableStateOf(0.0) }
+    var cashInput by remember { mutableStateOf("") }
+    var bankInput by remember { mutableStateOf("") }
+    var justSaved by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        currentCash = viewModel.getCurrentCashBalance()
+        currentBank = viewModel.getCurrentBankBalance()
+        cashInput = currentCash.toString()
+        bankInput = currentBank.toString()
+    }
 
     LaunchedEffect(exportUri) {
         exportUri?.let { uri ->
@@ -60,29 +70,50 @@ fun SettingsScreen(
             Text("Settings", style = MaterialTheme.typography.titleLarge)
         }
 
-        Text("Opening balances", style = MaterialTheme.typography.titleSmall)
+        Text("Balances", style = MaterialTheme.typography.titleSmall)
+        Text(
+            "Enter the amount of cash/bank money you actually have right now. " +
+                "This recalibrates your balance so it matches reality going forward, " +
+                "regardless of any income/expense history.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline
+        )
         OutlinedTextField(
             value = cashInput,
-            onValueChange = { cashInput = it },
-            label = { Text("Cash opening balance") },
+            onValueChange = { cashInput = it; justSaved = false },
+            label = { Text("Current cash balance") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
         OutlinedTextField(
             value = bankInput,
-            onValueChange = { bankInput = it },
-            label = { Text("Bank opening balance") },
+            onValueChange = { bankInput = it; justSaved = false },
+            label = { Text("Current bank balance") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
         Button(
             onClick = {
-                viewModel.setOpeningCashBalance(cashInput.toDoubleOrNull() ?: 0.0)
-                viewModel.setOpeningBankBalance(bankInput.toDoubleOrNull() ?: 0.0)
+                coroutineScope.launch {
+                    viewModel.setCurrentCashBalance(cashInput.toDoubleOrNull() ?: currentCash)
+                    viewModel.setCurrentBankBalance(bankInput.toDoubleOrNull() ?: currentBank)
+                    currentCash = viewModel.getCurrentCashBalance()
+                    currentBank = viewModel.getCurrentBankBalance()
+                    cashInput = currentCash.toString()
+                    bankInput = currentBank.toString()
+                    justSaved = true
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Save opening balances")
+            Text("Save current balances")
+        }
+        if (justSaved) {
+            Text(
+                "Saved. Balances now reflect what you entered.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
 
         HorizontalDivider()

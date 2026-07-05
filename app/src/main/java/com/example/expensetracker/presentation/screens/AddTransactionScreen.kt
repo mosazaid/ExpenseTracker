@@ -43,7 +43,8 @@ fun AddTransactionScreen(
     val categoryList by viewModel.allCategories.collectAsState(initial = emptyList())
     val filteredCategories = categoryList.filter { it.type == uiState.transactionType }
 
-    var availableBalance by remember { mutableStateOf<Double?>(null) }
+    var cashBalance by remember { mutableStateOf<Double?>(null) }
+    var bankBalance by remember { mutableStateOf<Double?>(null) }
     var showInsufficientDialog by remember { mutableStateOf(false) }
     var showSalaryMonthDialog by remember { mutableStateOf(false) }
     var showSalaryReminderDialog by remember { mutableStateOf(false) }
@@ -78,8 +79,16 @@ fun AddTransactionScreen(
     }
 
     LaunchedEffect(uiState.accountType, uiState.transactionType, uiState.editingTransactionId) {
-        if (uiState.transactionType == TransactionType.EXPENSE) {
-            availableBalance = viewModel.getAvailableBalanceForEdit(uiState.accountType)
+        val editingId = uiState.editingTransactionId
+        cashBalance = if (editingId != null) {
+            viewModel.getAvailableBalanceForAccount(AccountType.CASH, editingId)
+        } else {
+            viewModel.getAvailableBalanceForAccount(AccountType.CASH, null)
+        }
+        bankBalance = if (editingId != null) {
+            viewModel.getAvailableBalanceForAccount(AccountType.BANK, editingId)
+        } else {
+            viewModel.getAvailableBalanceForAccount(AccountType.BANK, null)
         }
     }
 
@@ -88,6 +97,11 @@ fun AddTransactionScreen(
         if (category != null && viewModel.isDeptCategory(category)) {
             unreimbursedExpenses = viewModel.getUnreimbursedExpensesForCurrentMonth()
         }
+    }
+
+    val availableBalance = when (uiState.accountType) {
+        AccountType.CASH -> cashBalance
+        AccountType.BANK -> bankBalance
     }
 
     val datePicker = DatePickerDialog(
@@ -229,15 +243,45 @@ fun AddTransactionScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (uiState.transactionType == TransactionType.EXPENSE) {
-            Text(
-                "Available ${uiState.accountType.name.lowercase()}: " +
-                    CurrencyUtils.formatCurrency(availableBalance ?: 0.0),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+        // Always show both account balances so the user can see the full picture
+        // before choosing which account to debit.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AccountType.entries.forEach { acct ->
+                val bal = if (acct == AccountType.CASH) cashBalance else bankBalance
+                val isSelected = uiState.accountType == acct
+                Card(
+                    modifier = Modifier.weight(1f),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSelected)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.surfaceContainerLow
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                        Text(
+                            acct.name.lowercase().replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            if (bal != null) CurrencyUtils.formatCurrency(bal) else "…",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = when {
+                                bal == null -> MaterialTheme.colorScheme.outline
+                                bal < 0 -> MaterialTheme.colorScheme.error
+                                else -> MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                    }
+                }
+            }
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = uiState.amount,
@@ -455,7 +499,10 @@ fun AddTransactionScreen(
                     )
 
                     if (uiState.transactionType == TransactionType.EXPENSE) {
-                        val balance = viewModel.getAvailableBalanceForEdit(uiState.accountType)
+                        val balance = viewModel.getAvailableBalanceForAccount(
+                            uiState.accountType,
+                            uiState.editingTransactionId
+                        )
                         if (amountDouble > balance) {
                             pendingTransaction = transaction
                             showInsufficientDialog = true

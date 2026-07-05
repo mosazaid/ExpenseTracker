@@ -490,9 +490,14 @@ private fun PeriodSummaryCard(
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    "Period change",
+                    "Period change (per account)",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "Net movement per account during this period",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),

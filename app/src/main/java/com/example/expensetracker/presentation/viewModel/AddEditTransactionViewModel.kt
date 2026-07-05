@@ -97,6 +97,14 @@ class AddEditTransactionViewModel @Inject constructor(
         }
     }
 
+    suspend fun getAvailableBalanceForAccount(account: AccountType, excludeId: Long?): Double {
+        return if (excludeId != null) {
+            balanceCalculator.getAvailableBalanceExcluding(account, excludeId)
+        } else {
+            balanceCalculator.getAvailableBalance(account)
+        }
+    }
+
     suspend fun getUnreimbursedExpensesForCurrentMonth(): List<Transaction> {
         val mode = monthMode.first()
         val bounds = periodCalculator.getBounds(HistoryPeriod.MONTH, Date(), mode)

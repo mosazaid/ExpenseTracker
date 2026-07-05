@@ -38,6 +38,23 @@ class BalanceCalculator @Inject constructor(
         return computeBalance(account)
     }
 
+    /**
+     * Recalibrates the account so its computed available balance becomes exactly [target],
+     * regardless of the net effect of previously recorded transactions. This is what
+     * "set current balance" in Settings should call -- setting the raw opening balance
+     * directly would instead add [target] on top of all historical income/expense, which
+     * rarely matches the real-world balance the user is trying to enter.
+     */
+    suspend fun setCurrentBalance(account: AccountType, target: Double) {
+        val currentComputed = computeBalance(account)
+        val currentOpening = getOpeningBalance(account)
+        val newOpening = currentOpening + (target - currentComputed)
+        when (account) {
+            AccountType.CASH -> userPreferences.setOpeningCashBalance(newOpening)
+            AccountType.BANK -> userPreferences.setOpeningBankBalance(newOpening)
+        }
+    }
+
     suspend fun getAvailableBalanceExcluding(
         account: AccountType,
         excludeTransactionId: Long

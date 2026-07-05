@@ -1,7 +1,6 @@
 package com.example.expensetracker.data.repository
 
 import com.example.expensetracker.data.database.dao.TransactionDao
-import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import kotlinx.coroutines.flow.Flow
@@ -53,14 +52,6 @@ class TransactionRepository @Inject constructor(
         endDate: Date
     ): Double {
         return transactionDao.getTotalAmountByCategoryAndDateRange(categoryId, startDate, endDate) ?: 0.0
-    }
-
-    suspend fun getAvailableBalance(account: AccountType): Double {
-        val income = transactionDao.getTotalIncomeForAccount(account)
-        val expense = transactionDao.getTotalExpenseForAccount(account)
-        val transferOut = transactionDao.getTotalTransferOut(account)
-        val transferIn = transactionDao.getTotalTransferIn(account)
-        return income - expense - transferOut + transferIn
     }
 
     suspend fun insertTransaction(transaction: Transaction): Long {
