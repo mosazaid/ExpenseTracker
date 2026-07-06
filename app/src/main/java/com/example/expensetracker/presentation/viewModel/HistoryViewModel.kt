@@ -43,13 +43,79 @@ class HistoryViewModel @Inject constructor(
 
     val allCategories = categoryRepository.getAllCategories()
 
-    data class HistoryUiState(
-        val periodBalances: AccountBalances = AccountBalances(0.0, 0.0),
-        val allTimeBalances: AccountBalances = AccountBalances(0.0, 0.0),
-        val categoryTotals: Map<Long, Double> = emptyMap(),
-        val budgetProgress: Map<Long, CategoryBudgetProgress> = emptyMap(),
+    /**
+     * Holds summary data that is ALWAYS scoped to the current salary/calendar month,
+     * independent of which period the transaction list is filtered to.
+     */
+    data class MonthSummaryUiState(
+        val monthBounds: PeriodBounds? = null,
+        val monthIncome: Double = 0.0,
+        val monthExpense: Double = 0.0,
+        val monthChangeByAccount: AccountBalances = AccountBalances(0.0, 0.0),
         val dueReminders: List<RecurringTransaction> = emptyList()
+    ) {
+        val monthNet: Double get() = monthIncome - monthExpense
+    }
+
+    /**
+     * Holds data scoped to whatever period the user has selected for the transaction list
+     * (day / week / month / year). Used for category totals and budget progress only.
+     */
+    data class PeriodUiState(
+        val categoryTotals: Map<Long, Double> = emptyMap(),
+        val budgetProgress: Map<Long, CategoryBudgetProgress> = emptyMap()
     )
+
+    /**
+     * Computes the month-scoped summary (income, expense, per-account net change, reminders).
+     * Always uses the salary month (or calendar month) bounds regardless of list period.
+     */
+    suspend fun buildMonthSummary(
+        mode: MonthMode,
+        referenceDate: Date
+    ): MonthSummaryUiState {
+        val bounds = periodCalculator.getBounds(HistoryPeriod.MONTH, referenceDate, mode)
+        val monthIncome = transactionRepository.getTotalAmountByTypeAndDateRange(
+            TransactionType.INCOME, bounds.start, bounds.end
+        )
+        val monthExpense = transactionRepository.getTotalAmountByTypeAndDateRange(
+            TransactionType.EXPENSE, bounds.start, bounds.end
+        )
+        val monthChangeByAccount = balanceCalculator.getPeriodChange(bounds.start, bounds.end)
+        val dueReminders = recurringRepository.getDueReminders()
+        return MonthSummaryUiState(
+            monthBounds = bounds,
+            monthIncome = monthIncome,
+            monthExpense = monthExpense,
+            monthChangeByAccount = monthChangeByAccount,
+            dueReminders = dueReminders
+        )
+    }
+
+    /**
+     * Computes category totals and budget progress for the user's selected list period.
+     */
+    suspend fun buildPeriodUiState(
+        categories: List<Category>,
+        expenseCategoryIds: List<Long>,
+        startDate: Date,
+        endDate: Date
+    ): PeriodUiState {
+        val categoryTotals = categories
+            .filter { it.type == TransactionType.EXPENSE }
+            .associate { category ->
+                category.id to transactionRepository.getTotalAmountByCategoryAndDateRange(
+                    category.id, startDate, endDate
+                )
+            }
+        val budgetProgress = budgetProgressCalculator.getProgressMap(
+            expenseCategoryIds, startDate, endDate
+        )
+        return PeriodUiState(
+            categoryTotals = categoryTotals,
+            budgetProgress = budgetProgress
+        )
+    }
 
     suspend fun getPeriodBounds(
         period: HistoryPeriod,
@@ -61,71 +127,6 @@ class HistoryViewModel @Inject constructor(
 
     fun getTransactionsBetweenDates(startDate: Date, endDate: Date): Flow<List<Transaction>> {
         return transactionRepository.getTransactionsBetweenDates(startDate, endDate)
-    }
-
-    suspend fun getPeriodBalances(startDate: Date, endDate: Date): AccountBalances {
-        return balanceCalculator.getPeriodChange(startDate, endDate)
-    }
-
-    suspend fun getAllTimeBalances(): AccountBalances {
-        return balanceCalculator.getAllTimeBalances()
-    }
-
-    suspend fun getCategoryExpenseTotals(
-        categories: List<Category>,
-        startDate: Date,
-        endDate: Date
-    ): Map<Long, Double> {
-        return categories
-            .filter { it.type == TransactionType.EXPENSE }
-            .associate { category ->
-                category.id to transactionRepository.getTotalAmountByCategoryAndDateRange(
-                    category.id,
-                    startDate,
-                    endDate
-                )
-            }
-    }
-
-    suspend fun getBudgetProgressMap(
-        categoryIds: List<Long>,
-        periodStart: Date,
-        periodEnd: Date
-    ): Map<Long, CategoryBudgetProgress> {
-        return budgetProgressCalculator.getProgressMap(categoryIds, periodStart, periodEnd)
-    }
-
-    suspend fun buildUiState(
-        categories: List<Category>,
-        expenseCategoryIds: List<Long>,
-        startDate: Date,
-        endDate: Date
-    ): HistoryUiState {
-        val periodBalances = balanceCalculator.getPeriodChange(startDate, endDate)
-        val allTimeBalances = balanceCalculator.getAllTimeBalances()
-        val categoryTotals = categories
-            .filter { it.type == TransactionType.EXPENSE }
-            .associate { category ->
-                category.id to transactionRepository.getTotalAmountByCategoryAndDateRange(
-                    category.id,
-                    startDate,
-                    endDate
-                )
-            }
-        val budgetProgress = budgetProgressCalculator.getProgressMap(expenseCategoryIds, startDate, endDate)
-        val dueReminders = recurringRepository.getDueReminders()
-
-        return HistoryUiState(
-            periodBalances = periodBalances,
-            allTimeBalances = allTimeBalances,
-            categoryTotals = categoryTotals,
-            budgetProgress = budgetProgress,
-            dueReminders = dueReminders
-        )
-    }
-
-    suspend fun getDueReminders(): List<RecurringTransaction> {
-        return recurringRepository.getDueReminders()
     }
 
     suspend fun isRecurringBannerDismissed(recurring: RecurringTransaction): Boolean {

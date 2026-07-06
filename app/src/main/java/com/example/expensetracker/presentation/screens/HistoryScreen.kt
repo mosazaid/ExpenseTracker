@@ -1,5 +1,6 @@
 package com.example.expensetracker.presentation.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -24,7 +25,6 @@ import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.data.database.entities.RecurringTransaction
 import com.example.expensetracker.domain.AccountBalances
-import com.example.expensetracker.domain.CategoryBudgetProgress
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.PeriodBounds
 import com.example.expensetracker.presentation.components.TransactionItem
@@ -45,6 +45,7 @@ fun HistoryScreen(
     var selectedTypeFilter by remember { mutableStateOf(TransactionTypeFilter.ALL) }
     var selectedCategoryFilter by remember { mutableStateOf<Category?>(null) }
     var categoryMenuExpanded by remember { mutableStateOf(false) }
+    var summaryExpanded by remember { mutableStateOf(true) }
 
     val monthMode by viewModel.monthMode.collectAsState()
     val allCategories by viewModel.allCategories.collectAsState(initial = emptyList())
@@ -53,25 +54,28 @@ fun HistoryScreen(
         allCategories.filter { it.type == TransactionType.EXPENSE }
     }
 
-    var periodBounds by remember { mutableStateOf<PeriodBounds?>(null) }
-    var uiState by remember { mutableStateOf(HistoryViewModel.HistoryUiState()) }
-    var visibleReminder by remember { mutableStateOf<RecurringTransaction?>(null) }
-
     val coroutineScope = rememberCoroutineScope()
-
     val now = remember { Date() }
 
-    LaunchedEffect(Unit) {
-        uiState = viewModel.buildUiState(
-            categories = allCategories,
-            expenseCategoryIds = expenseCategories.map { it.id },
-            startDate = now,
-            endDate = now
-        )
-        visibleReminder = uiState.dueReminders.firstOrNull { reminder ->
+    // Month summary — always the salary/calendar month, independent of list period
+    var monthSummary by remember { mutableStateOf(HistoryViewModel.MonthSummaryUiState()) }
+    var visibleReminder by remember { mutableStateOf<RecurringTransaction?>(null) }
+
+    // List period bounds — driven by the selected period chip
+    var periodBounds by remember { mutableStateOf<PeriodBounds?>(null) }
+
+    // Category totals and budget progress — scoped to the list period
+    var periodUiState by remember { mutableStateOf(HistoryViewModel.PeriodUiState()) }
+
+    // 1. Recompute month summary whenever month mode changes
+    LaunchedEffect(monthMode) {
+        monthSummary = viewModel.buildMonthSummary(monthMode, now)
+        visibleReminder = monthSummary.dueReminders.firstOrNull { reminder ->
             !viewModel.isRecurringBannerDismissed(reminder)
         }
     }
+
+    // 2. Recompute list period bounds whenever period selector or month mode changes
     LaunchedEffect(selectedPeriod, monthMode) {
         periodBounds = viewModel.getPeriodBounds(selectedPeriod, monthMode, now)
     }
@@ -82,13 +86,16 @@ fun HistoryScreen(
     val transactions by viewModel.getTransactionsBetweenDates(startDate, endDate)
         .collectAsState(initial = emptyList())
 
+    // 3. Recompute category/budget data whenever list period or categories change
     LaunchedEffect(startDate, endDate, allCategories) {
-        uiState = viewModel.buildUiState(
-            categories = allCategories,
-            expenseCategoryIds = expenseCategories.map { it.id },
-            startDate,
-            endDate
-        )
+        if (allCategories.isNotEmpty()) {
+            periodUiState = viewModel.buildPeriodUiState(
+                categories = allCategories,
+                expenseCategoryIds = expenseCategories.map { it.id },
+                startDate = startDate,
+                endDate = endDate
+            )
+        }
     }
 
     val reimbursedExpenseIds = remember(transactions) {
@@ -96,7 +103,8 @@ fun HistoryScreen(
     }
 
     val linkedExpenseDescriptions = remember(transactions) {
-        val expenseById = transactions.filter { it.type == TransactionType.EXPENSE }.associateBy { it.id }
+        val expenseById = transactions.filter { it.type == TransactionType.EXPENSE }
+            .associateBy { it.id }
         transactions.filter { it.linkedExpenseId != null }.associate { txn ->
             txn.id to expenseById[txn.linkedExpenseId]?.description.orEmpty()
         }
@@ -120,7 +128,6 @@ fun HistoryScreen(
     }
 
     var expandedSections by remember { mutableStateOf(setOf<String>()) }
-
     LaunchedEffect(sections) {
         expandedSections = sections.map { it.key }.toSet()
     }
@@ -158,6 +165,7 @@ fun HistoryScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp)
     ) {
+        // ── Title row
         item(key = "title") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -171,6 +179,16 @@ fun HistoryScreen(
             }
         }
 
+        // ── Month summary card (always salary/calendar month, collapsible)
+        item(key = "month-summary") {
+            MonthSummaryCard(
+                summary = monthSummary,
+                expanded = summaryExpanded,
+                onToggle = { summaryExpanded = !summaryExpanded }
+            )
+        }
+
+        // ── Salary reminder banner
         visibleReminder?.let { reminder ->
             item(key = "salary-reminder-${reminder.id}") {
                 Card(
@@ -187,17 +205,16 @@ fun HistoryScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "Salary reminder",
-                                style = MaterialTheme.typography.titleSmall
-                            )
+                            Text("Salary reminder", style = MaterialTheme.typography.titleSmall)
                             Text(
                                 "Tap to record ${CurrencyUtils.formatCurrency(reminder.amount)}",
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
                         TextButton(onClick = {
-                            navController.navigate(AppRoutes.addTransactionRoute(recurringId = reminder.id))
+                            navController.navigate(
+                                AppRoutes.addTransactionRoute(recurringId = reminder.id)
+                            )
                         }) { Text("Record") }
                         IconButton(onClick = {
                             coroutineScope.launch {
@@ -212,6 +229,7 @@ fun HistoryScreen(
             }
         }
 
+        // ── Month mode toggle + period selector
         item(key = "month-toggle") {
             Column {
                 Row(
@@ -258,6 +276,7 @@ fun HistoryScreen(
             }
         }
 
+        // ── Period selector chips
         item(key = "period-filter") {
             Column {
                 Text("Period", style = MaterialTheme.typography.labelMedium)
@@ -268,8 +287,11 @@ fun HistoryScreen(
                 ) {
                     HistoryPeriod.entries.forEach { period ->
                         FilterChip(
-                            selected = period == selectedPeriod,
-                            onClick = { selectedPeriod = period },
+                            selected = selectedPeriod == period,
+                            onClick = {
+                                selectedPeriod = period
+                                selectedCategoryFilter = null
+                            },
                             label = { Text(period.label) }
                         )
                     }
@@ -277,9 +299,10 @@ fun HistoryScreen(
             }
         }
 
+        // ── Type filter chips
         item(key = "type-filter") {
             Column {
-                Text("Show", style = MaterialTheme.typography.labelMedium)
+                Text("Filter", style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -287,7 +310,7 @@ fun HistoryScreen(
                 ) {
                     TransactionTypeFilter.entries.forEach { filter ->
                         FilterChip(
-                            selected = filter == selectedTypeFilter,
+                            selected = selectedTypeFilter == filter,
                             onClick = { selectedTypeFilter = filter },
                             label = { Text(filter.label) }
                         )
@@ -296,19 +319,20 @@ fun HistoryScreen(
             }
         }
 
-        item(key = "category-filter") {
-            Column {
-                Text("Category", style = MaterialTheme.typography.labelMedium)
-                Spacer(modifier = Modifier.height(4.dp))
+        // ── Category filter (expense only, when categories available)
+        if (expenseCategories.isNotEmpty()) {
+            item(key = "category-filter") {
                 ExposedDropdownMenuBox(
                     expanded = categoryMenuExpanded,
                     onExpandedChange = { categoryMenuExpanded = !categoryMenuExpanded }
                 ) {
                     OutlinedTextField(
-                        value = selectedCategoryFilter?.let { "${it.icon} ${it.name}" }
-                            ?: "All categories",
+                        value = selectedCategoryFilter?.let {
+                            "${it.icon} ${it.name}"
+                        } ?: "All categories",
                         onValueChange = {},
                         readOnly = true,
+                        label = { Text("Category") },
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryMenuExpanded)
                         },
@@ -328,8 +352,8 @@ fun HistoryScreen(
                             }
                         )
                         expenseCategories.forEach { category ->
-                            val total = uiState.categoryTotals[category.id] ?: 0.0
-                            val progress = uiState.budgetProgress[category.id]
+                            val total = periodUiState.categoryTotals[category.id] ?: 0.0
+                            val progress = periodUiState.budgetProgress[category.id]
                             DropdownMenuItem(
                                 text = {
                                     Column(modifier = Modifier.fillMaxWidth()) {
@@ -369,15 +393,7 @@ fun HistoryScreen(
             }
         }
 
-        item(key = "summary") {
-            PeriodSummaryCard(
-                totalIncome = totalIncome,
-                totalExpense = totalExpense,
-                periodBalances = uiState.periodBalances,
-                allTimeBalances = uiState.allTimeBalances
-            )
-        }
-
+        // ── Transaction list or empty state
         if (sections.isEmpty()) {
             item(key = "empty") {
                 Text("No transactions found.", style = MaterialTheme.typography.bodyMedium)
@@ -408,9 +424,15 @@ fun HistoryScreen(
                             onDelete = { deleteTarget = it },
                             onEdit = { transaction ->
                                 if (transaction.type == TransactionType.TRANSFER) {
-                                    navController.navigate(AppRoutes.editTransferRoute(transaction.id))
+                                    navController.navigate(
+                                        AppRoutes.editTransferRoute(transaction.id)
+                                    )
                                 } else {
-                                    navController.navigate(AppRoutes.addTransactionRoute(transactionId = transaction.id))
+                                    navController.navigate(
+                                        AppRoutes.addTransactionRoute(
+                                            transactionId = transaction.id
+                                        )
+                                    )
                                 }
                             },
                             isReimbursed = txn.id in reimbursedExpenseIds,
@@ -426,132 +448,165 @@ fun HistoryScreen(
     }
 }
 
-private fun formatSigned(amount: Double): String {
-    val prefix = if (amount >= 0) "+" else ""
-    return prefix + CurrencyUtils.formatCurrency(amount)
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Month summary card — always month-scoped, collapsible
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun PeriodSummaryCard(
-    totalIncome: Double,
-    totalExpense: Double,
-    periodBalances: AccountBalances,
-    allTimeBalances: AccountBalances
+private fun MonthSummaryCard(
+    summary: HistoryViewModel.MonthSummaryUiState,
+    expanded: Boolean,
+    onToggle: () -> Unit
 ) {
-    val net = totalIncome - totalExpense
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                "Period summary",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Header row — always visible, tap to collapse
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onToggle)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                SummaryMetric(
-                    label = "Income",
-                    value = "+${CurrencyUtils.formatCurrency(totalIncome)}",
-                    valueColor = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f)
-                )
-                SummaryMetric(
-                    label = "Expense",
-                    value = "-${CurrencyUtils.formatCurrency(totalExpense)}",
-                    valueColor = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.weight(1f)
-                )
-                SummaryMetric(
-                    label = "Net",
-                    value = formatSigned(net),
-                    valueColor = if (net >= 0) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.error
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    "Period change (per account)",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    "Net movement per account during this period",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
+                Column {
+                    Text(
+                        "Month summary",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    summary.monthBounds?.let { bounds ->
+                        Text(
+                            bounds.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    SummaryMetric(
-                        label = "Cash",
-                        value = formatSigned(periodBalances.cash),
-                        modifier = Modifier.weight(1f)
+                    // Net shown in header even when collapsed
+                    val net = summary.monthNet
+                    Text(
+                        formatSigned(net),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (net >= 0) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.error
                     )
-                    SummaryMetric(
-                        label = "Bank",
-                        value = formatSigned(periodBalances.bank),
-                        modifier = Modifier.weight(1f)
-                    )
-                    SummaryMetric(
-                        label = "Total",
-                        value = formatSigned(periodBalances.total),
-                        modifier = Modifier.weight(1f)
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess
+                        else Icons.Default.ExpandMore,
+                        contentDescription = if (expanded) "Collapse" else "Expand",
+                        tint = MaterialTheme.colorScheme.outline
                     )
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    "Current balance",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+            // Expandable body
+            AnimatedVisibility(visible = expanded) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    SummaryMetric(
-                        label = "Cash",
-                        value = CurrencyUtils.formatCurrency(allTimeBalances.cash),
-                        modifier = Modifier.weight(1f)
-                    )
-                    SummaryMetric(
-                        label = "Bank",
-                        value = CurrencyUtils.formatCurrency(allTimeBalances.bank),
-                        modifier = Modifier.weight(1f)
-                    )
-                    SummaryMetric(
-                        label = "Total",
-                        value = CurrencyUtils.formatCurrency(allTimeBalances.total),
-                        modifier = Modifier.weight(1f)
-                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    // Income / Expense / Net
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        SummaryMetric(
+                            label = "Income",
+                            value = "+${CurrencyUtils.formatCurrency(summary.monthIncome)}",
+                            valueColor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        SummaryMetric(
+                            label = "Expense",
+                            value = "-${CurrencyUtils.formatCurrency(summary.monthExpense)}",
+                            valueColor = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.weight(1f)
+                        )
+                        SummaryMetric(
+                            label = "Net",
+                            value = formatSigned(summary.monthNet),
+                            valueColor = if (summary.monthNet >= 0) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.error,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    // Per-account breakdown (period-scoped, not all-time)
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            "By account (this month)",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            val acctBalances = summary.monthChangeByAccount
+                            SummaryMetric(
+                                label = "Cash",
+                                value = formatSigned(acctBalances.cash),
+                                valueColor = if (acctBalances.cash < 0)
+                                    MaterialTheme.colorScheme.error
+                                else
+                                    MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                            SummaryMetric(
+                                label = "Bank",
+                                value = formatSigned(acctBalances.bank),
+                                valueColor = if (acctBalances.bank < 0)
+                                    MaterialTheme.colorScheme.error
+                                else
+                                    MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                            SummaryMetric(
+                                label = "Total",
+                                value = formatSigned(acctBalances.total),
+                                valueColor = if (acctBalances.total < 0)
+                                    MaterialTheme.colorScheme.error
+                                else
+                                    MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Text(
+                            "Net movement per account during this month only",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+private fun formatSigned(amount: Double): String {
+    val prefix = if (amount >= 0) "+" else ""
+    return prefix + CurrencyUtils.formatCurrency(amount)
 }
 
 @Composable
@@ -604,7 +659,8 @@ private fun HistorySectionHeader(
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(
-                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        imageVector = if (isExpanded) Icons.Default.ExpandLess
+                        else Icons.Default.ExpandMore,
                         contentDescription = if (isExpanded) "Collapse" else "Expand",
                         tint = MaterialTheme.colorScheme.primary
                     )
