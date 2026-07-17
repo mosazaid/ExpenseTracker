@@ -146,3 +146,39 @@ val MIGRATION_5_6 = Migration(5, 6) { db ->
         "ALTER TABLE transactions ADD COLUMN awaitingReimbursement INTEGER NOT NULL DEFAULT 0"
     )
 }
+
+// Retroactively reassign all existing transactions (income, expense, transfer) to BANK,
+// because the user's real-world setup uses a bank account as the primary account.
+// Users can edit individual transactions to Cash via the edit screen going forward.
+val MIGRATION_6_7 = Migration(6, 7) { db ->
+    db.execSQL("UPDATE transactions SET accountType = 'BANK'")
+    // For transfers the destination account (toAccountType) stays as-is so the user
+    // can correct transfer direction if needed by editing the transfer.
+}
+
+val MIGRATION_7_8 = Migration(7, 8) { db ->
+    val now = System.currentTimeMillis()
+    val newCategories = listOf(
+        Triple("Groceries", "🛒", "#43A047"),
+        Triple("Cleaning supplies", "🧹", "#5C6BC0"),
+        Triple("Personal care", "🧴", "#AB47BC"),
+        Triple("Home maintenance", "🔧", "#6D4C41"),
+        Triple("Subscriptions", "📱", "#26A69A"),
+        Triple("Fuel", "⛽", "#FFA726")
+    )
+    newCategories.forEach { (name, icon, color) ->
+        db.execSQL(
+            """
+            INSERT INTO categories (name, icon, color, type, isDefault, createdAt)
+            SELECT '$name', '$icon', '$color', 'EXPENSE', 1, $now
+            WHERE NOT EXISTS (
+                SELECT 1 FROM categories WHERE name = '$name' AND type = 'EXPENSE'
+            )
+            """.trimIndent()
+        )
+    }
+}
+
+val MIGRATION_8_9 = Migration(8, 9) { db ->
+    db.execSQL("ALTER TABLE transactions ADD COLUMN carriedForwardBalance REAL")
+}

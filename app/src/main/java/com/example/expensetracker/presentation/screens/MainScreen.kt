@@ -97,6 +97,7 @@ fun MainScreen(initialRecurringId: Long? = null) {
                 )
             }
             composable(AppRoutes.TRANSFER) { TransferScreen(navController) }
+            composable(AppRoutes.WALLET) { WalletScreen(navController) }
             composable(
                 route = AppRoutes.EDIT_TRANSFER,
                 arguments = listOf(navArgument(AppRoutes.EDIT_TRANSFER_ARG) { type = NavType.LongType })
@@ -104,6 +105,14 @@ fun MainScreen(initialRecurringId: Long? = null) {
                 val transactionId = backStackEntry.arguments
                     ?.getLong(AppRoutes.EDIT_TRANSFER_ARG) ?: return@composable
                 TransferScreen(navController, transactionId = transactionId)
+            }
+            composable(
+                route = AppRoutes.EDIT_WALLET,
+                arguments = listOf(navArgument(AppRoutes.EDIT_WALLET_ARG) { type = NavType.LongType })
+            ) { backStackEntry ->
+                val transactionId = backStackEntry.arguments
+                    ?.getLong(AppRoutes.EDIT_WALLET_ARG) ?: return@composable
+                WalletScreen(navController, transactionId = transactionId)
             }
             composable(BottomNavItem.Stats.route) { StatisticsScreen(navController) }
             composable(BottomNavItem.Categories.route) { CategoriesScreen(navController) }

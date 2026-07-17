@@ -21,7 +21,7 @@ import com.example.expensetracker.data.database.entities.Transaction
         Budget::class,
         RecurringTransaction::class
     ],
-    version = 6,
+    version = 9,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -43,7 +43,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "expense_tracker_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                             super.onCreate(db)
@@ -62,6 +62,12 @@ abstract class AppDatabase : RoomDatabase() {
             val expenseCategories = listOf(
                 "('Restaurants', '🍽️', '#FF6B6B', 'EXPENSE', 1, $now)",
                 "('Cafés', '☕', '#8D6E63', 'EXPENSE', 1, $now)",
+                "('Groceries', '🛒', '#43A047', 'EXPENSE', 1, $now)",
+                "('Cleaning supplies', '🧹', '#5C6BC0', 'EXPENSE', 1, $now)",
+                "('Personal care', '🧴', '#AB47BC', 'EXPENSE', 1, $now)",
+                "('Home maintenance', '🔧', '#6D4C41', 'EXPENSE', 1, $now)",
+                "('Subscriptions', '📱', '#26A69A', 'EXPENSE', 1, $now)",
+                "('Fuel', '⛽', '#FFA726', 'EXPENSE', 1, $now)",
                 "('Transportation', '\uD83D\uDE97', '#4ECDC4', 'EXPENSE', 1, $now)",
                 "('Shopping', '🛒', '#45B7D1', 'EXPENSE', 1, $now)",
                 "('Entertainment', '\uD83C\uDFAC', '#96CEB4', 'EXPENSE', 1, $now)",

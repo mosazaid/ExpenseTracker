@@ -6,10 +6,14 @@ object AppRoutes {
     const val STATISTICS = "statistics"
     const val CATEGORIES = "categories"
     const val TRANSFER = "transfer"
+    const val WALLET = "wallet"
     const val SETTINGS = "settings"
 
     const val EDIT_TRANSFER = "editTransfer/{transactionId}"
     const val EDIT_TRANSFER_ARG = "transactionId"
+
+    const val EDIT_WALLET = "editWallet/{transactionId}"
+    const val EDIT_WALLET_ARG = "transactionId"
 
     const val ADD_TRANSACTION_ARG_TRANSACTION_ID = "transactionId"
     const val ADD_TRANSACTION_ARG_RECURRING_ID = "recurringId"
@@ -25,4 +29,6 @@ object AppRoutes {
     }
 
     fun editTransferRoute(transactionId: Long): String = "editTransfer/$transactionId"
+
+    fun editWalletRoute(transactionId: Long): String = "editWallet/$transactionId"
 }

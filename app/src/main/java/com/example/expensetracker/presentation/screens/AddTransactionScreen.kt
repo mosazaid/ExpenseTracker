@@ -10,14 +10,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.presentation.viewModel.AddEditTransactionViewModel
+import com.example.expensetracker.presentation.viewModel.LIQUID_ACCOUNTS
 import kotlinx.coroutines.launch
 import java.util.*
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -45,9 +49,12 @@ fun AddTransactionScreen(
 
     var cashBalance by remember { mutableStateOf<Double?>(null) }
     var bankBalance by remember { mutableStateOf<Double?>(null) }
+    var balanceRefreshKey by remember { mutableIntStateOf(0) }
     var showInsufficientDialog by remember { mutableStateOf(false) }
     var showSalaryMonthDialog by remember { mutableStateOf(false) }
     var showSalaryReminderDialog by remember { mutableStateOf(false) }
+    var carryForwardEnabled by remember { mutableStateOf(false) }
+    var previousPeriodSaved by remember { mutableStateOf<Double?>(null) }
     var pendingTransaction by remember { mutableStateOf<Transaction?>(null) }
     var unreimbursedExpenses by remember { mutableStateOf<List<Transaction>>(emptyList()) }
     var expenseMenuExpanded by remember { mutableStateOf(false) }
@@ -78,7 +85,18 @@ fun AddTransactionScreen(
         }
     }
 
-    LaunchedEffect(uiState.accountType, uiState.transactionType, uiState.editingTransactionId) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                balanceRefreshKey++
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(balanceRefreshKey, uiState.accountType, uiState.transactionType, uiState.editingTransactionId) {
         val editingId = uiState.editingTransactionId
         cashBalance = if (editingId != null) {
             viewModel.getAvailableBalanceForAccount(AccountType.CASH, editingId)
@@ -102,6 +120,7 @@ fun AddTransactionScreen(
     val availableBalance = when (uiState.accountType) {
         AccountType.CASH -> cashBalance
         AccountType.BANK -> bankBalance
+        AccountType.WALLET -> null
     }
 
     val datePicker = DatePickerDialog(
@@ -147,18 +166,66 @@ fun AddTransactionScreen(
     }
 
     if (showSalaryMonthDialog) {
+        LaunchedEffect(showSalaryMonthDialog, uiState.selectedDate) {
+            if (showSalaryMonthDialog) {
+                previousPeriodSaved = viewModel.getPreviousPeriodSavedAmount(uiState.selectedDate)
+                carryForwardEnabled = pendingTransaction?.carriedForwardBalance != null
+            }
+        }
+
+        val canCarryForward = (previousPeriodSaved ?: 0.0) != 0.0
+
         AlertDialog(
             onDismissRequest = { showSalaryMonthDialog = false },
             title = { Text("Start new month?") },
             text = {
-                Text("Start a new salary month from ${DateUtils.formatDate(uiState.selectedDate)}?")
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Start a new salary month from ${DateUtils.formatDate(uiState.selectedDate)}?"
+                    )
+                    if (canCarryForward) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Checkbox(
+                                checked = carryForwardEnabled,
+                                onCheckedChange = { carryForwardEnabled = it }
+                            )
+                            Column {
+                                Text("Bring previous balance into new month")
+                                Text(
+                                    "Adds ${formatSignedAmount(previousPeriodSaved ?: 0.0)} from the previous salary month",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
+                    } else {
+                        Text(
+                            "No saved balance from the previous salary month to carry forward.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
                     showSalaryMonthDialog = false
                     pendingTransaction?.let { txn ->
                         coroutineScope.launch {
-                            viewModel.saveTransaction(txn.copy(startsNewPeriod = true))
+                            val carryAmount = if (carryForwardEnabled && canCarryForward) {
+                                previousPeriodSaved
+                            } else {
+                                null
+                            }
+                            viewModel.saveTransaction(
+                                txn.copy(
+                                    startsNewPeriod = true,
+                                    carriedForwardBalance = carryAmount
+                                )
+                            )
                             val recurringId = viewModel.uiState.value.pendingRecurringId
                             if (recurringId != null) {
                                 viewModel.advanceRecurringAfterSave(recurringId)
@@ -239,9 +306,28 @@ fun AddTransactionScreen(
             ) {
                 Text("Transfer Cash ↔ Bank")
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = { navController.navigate(AppRoutes.WALLET) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Wallet ↔ Cash/Bank")
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            "Your money now",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            "Same balances shown in History month summary",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.outline
+        )
+        Spacer(modifier = Modifier.height(6.dp))
 
         // Always show both account balances so the user can see the full picture
         // before choosing which account to debit.
@@ -249,7 +335,7 @@ fun AddTransactionScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AccountType.entries.forEach { acct ->
+            LIQUID_ACCOUNTS.forEach { acct ->
                 val bal = if (acct == AccountType.CASH) cashBalance else bankBalance
                 val isSelected = uiState.accountType == acct
                 Card(
@@ -453,7 +539,7 @@ fun AddTransactionScreen(
 
         Text("Account", style = MaterialTheme.typography.labelMedium)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AccountType.entries.forEach { type ->
+            LIQUID_ACCOUNTS.forEach { type ->
                 FilterChip(
                     selected = uiState.accountType == type,
                     onClick = { viewModel.updateAccountType(type) },
@@ -494,6 +580,7 @@ fun AddTransactionScreen(
                         awaitingReimbursement = uiState.transactionType == TransactionType.EXPENSE &&
                             uiState.awaitingReimbursement,
                         startsNewPeriod = uiState.startsNewPeriod,
+                        carriedForwardBalance = uiState.carriedForwardBalance,
                         allowNegativeBalance = uiState.allowNegativeBalance,
                         createdAt = uiState.createdAt ?: Date()
                     )
@@ -510,12 +597,11 @@ fun AddTransactionScreen(
                         }
                     }
 
-                    val isSalaryBankIncome = monthMode == MonthMode.SALARY &&
+                    val isSalaryIncomeInSalaryMode = monthMode == MonthMode.SALARY &&
                         uiState.transactionType == TransactionType.INCOME &&
-                        uiState.accountType == AccountType.BANK &&
                         viewModel.isSalaryCategory(category)
 
-                    if (isSalaryBankIncome && viewModel.shouldPromptSalaryMonth(category, isEditMode)) {
+                    if (isSalaryIncomeInSalaryMode && viewModel.shouldPromptSalaryMonth(category, isEditMode)) {
                         pendingTransaction = transaction
                         showSalaryMonthDialog = true
                     } else {
@@ -550,4 +636,9 @@ private suspend fun finishNavigate(
 ) {
     viewModel.resetForm()
     viewModel.emitNavigateHistory()
+}
+
+private fun formatSignedAmount(amount: Double): String {
+    val prefix = if (amount >= 0) "+" else ""
+    return prefix + CurrencyUtils.formatCurrency(amount)
 }

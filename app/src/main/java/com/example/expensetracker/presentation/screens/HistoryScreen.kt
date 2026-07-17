@@ -67,13 +67,7 @@ fun HistoryScreen(
     // Category totals and budget progress — scoped to the list period
     var periodUiState by remember { mutableStateOf(HistoryViewModel.PeriodUiState()) }
 
-    // 1. Recompute month summary whenever month mode changes
-    LaunchedEffect(monthMode) {
-        monthSummary = viewModel.buildMonthSummary(monthMode, now)
-        visibleReminder = monthSummary.dueReminders.firstOrNull { reminder ->
-            !viewModel.isRecurringBannerDismissed(reminder)
-        }
-    }
+    val allTransactions by viewModel.allTransactions.collectAsState(initial = emptyList())
 
     // 2. Recompute list period bounds whenever period selector or month mode changes
     LaunchedEffect(selectedPeriod, monthMode) {
@@ -85,6 +79,14 @@ fun HistoryScreen(
 
     val transactions by viewModel.getTransactionsBetweenDates(startDate, endDate)
         .collectAsState(initial = emptyList())
+
+    // 1. Recompute month summary whenever month mode or any transaction changes
+    LaunchedEffect(monthMode, allTransactions) {
+        monthSummary = viewModel.buildMonthSummary(monthMode, now)
+        visibleReminder = monthSummary.dueReminders.firstOrNull { reminder ->
+            !viewModel.isRecurringBannerDismissed(reminder)
+        }
+    }
 
     // 3. Recompute category/budget data whenever list period or categories change
     LaunchedEffect(startDate, endDate, allCategories) {
@@ -140,6 +142,30 @@ fun HistoryScreen(
     }
 
     var deleteTarget by remember { mutableStateOf<Transaction?>(null) }
+    var blockedActionMessage by remember { mutableStateOf<String?>(null) }
+    var salaryWalletYearSummary by remember {
+        mutableStateOf<List<com.example.expensetracker.domain.SalaryWalletPeriodSummary>>(emptyList())
+    }
+
+    LaunchedEffect(selectedPeriod, monthMode, allTransactions) {
+        if (selectedPeriod == HistoryPeriod.YEAR && monthMode == MonthMode.SALARY) {
+            val year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+            salaryWalletYearSummary = viewModel.buildSalaryWalletYearSummary(year)
+        } else {
+            salaryWalletYearSummary = emptyList()
+        }
+    }
+
+    if (blockedActionMessage != null) {
+        AlertDialog(
+            onDismissRequest = { blockedActionMessage = null },
+            title = { Text("Closed salary month") },
+            text = { Text(blockedActionMessage!!) },
+            confirmButton = {
+                TextButton(onClick = { blockedActionMessage = null }) { Text("OK") }
+            }
+        )
+    }
 
     if (deleteTarget != null) {
         AlertDialog(
@@ -184,7 +210,9 @@ fun HistoryScreen(
             MonthSummaryCard(
                 summary = monthSummary,
                 expanded = summaryExpanded,
-                onToggle = { summaryExpanded = !summaryExpanded }
+                onToggle = { summaryExpanded = !summaryExpanded },
+                isSalaryMode = monthMode == MonthMode.SALARY,
+                onWalletClick = { navController.navigate(AppRoutes.WALLET) }
             )
         }
 
@@ -393,6 +421,16 @@ fun HistoryScreen(
             }
         }
 
+        // ── Salary wallet year timeline (salary mode + year period only)
+        if (salaryWalletYearSummary.isNotEmpty()) {
+            item(key = "salary-wallet-year") {
+                SalaryWalletYearCard(
+                    periods = salaryWalletYearSummary,
+                    onAddWalletMove = { navController.navigate(AppRoutes.WALLET) }
+                )
+            }
+        }
+
         // ── Transaction list or empty state
         if (sections.isEmpty()) {
             item(key = "empty") {
@@ -421,18 +459,42 @@ fun HistoryScreen(
                         TransactionItem(
                             transaction = txn,
                             category = categoryMap[txn.categoryId],
-                            onDelete = { deleteTarget = it },
+                            onDelete = {
+                                coroutineScope.launch {
+                                    if (viewModel.canModifyTransaction(it)) {
+                                        deleteTarget = it
+                                    } else {
+                                        blockedActionMessage =
+                                            "Wallet moves in closed salary months cannot be deleted."
+                                    }
+                                }
+                            },
                             onEdit = { transaction ->
-                                if (transaction.type == TransactionType.TRANSFER) {
-                                    navController.navigate(
-                                        AppRoutes.editTransferRoute(transaction.id)
-                                    )
-                                } else {
-                                    navController.navigate(
-                                        AppRoutes.addTransactionRoute(
-                                            transactionId = transaction.id
-                                        )
-                                    )
+                                coroutineScope.launch {
+                                    when (transaction.type) {
+                                        TransactionType.TRANSFER -> {
+                                            navController.navigate(
+                                                AppRoutes.editTransferRoute(transaction.id)
+                                            )
+                                        }
+                                        TransactionType.WALLET_MOVE -> {
+                                            if (viewModel.canModifyTransaction(transaction)) {
+                                                navController.navigate(
+                                                    AppRoutes.editWalletRoute(transaction.id)
+                                                )
+                                            } else {
+                                                blockedActionMessage =
+                                                    "Wallet moves in closed salary months are read-only."
+                                            }
+                                        }
+                                        else -> {
+                                            navController.navigate(
+                                                AppRoutes.addTransactionRoute(
+                                                    transactionId = transaction.id
+                                                )
+                                            )
+                                        }
+                                    }
                                 }
                             },
                             isReimbursed = txn.id in reimbursedExpenseIds,
@@ -456,7 +518,9 @@ fun HistoryScreen(
 private fun MonthSummaryCard(
     summary: HistoryViewModel.MonthSummaryUiState,
     expanded: Boolean,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    isSalaryMode: Boolean,
+    onWalletClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -487,19 +551,34 @@ private fun MonthSummaryCard(
                             color = MaterialTheme.colorScheme.outline
                         )
                     }
+                    Text(
+                        "You have ${CurrencyUtils.formatCurrency(summary.currentBalances.total)} now",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Net shown in header even when collapsed
-                    val net = summary.monthNet
-                    Text(
-                        formatSigned(net),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = if (net >= 0) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.error
-                    )
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            if (summary.hasBroughtForward) "Remaining" else "Saved this month",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        val displayAmount = if (summary.hasBroughtForward) {
+                            summary.monthRemaining
+                        } else {
+                            summary.monthNet
+                        }
+                        Text(
+                            formatSigned(displayAmount),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = if (displayAmount >= 0) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.error
+                        )
+                    }
                     Icon(
                         imageVector = if (expanded) Icons.Default.ExpandLess
                         else Icons.Default.ExpandMore,
@@ -520,80 +599,323 @@ private fun MonthSummaryCard(
                 ) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-                    // Income / Expense / Net
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        SummaryMetric(
-                            label = "Income",
-                            value = "+${CurrencyUtils.formatCurrency(summary.monthIncome)}",
-                            valueColor = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.weight(1f)
-                        )
-                        SummaryMetric(
-                            label = "Expense",
-                            value = "-${CurrencyUtils.formatCurrency(summary.monthExpense)}",
-                            valueColor = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.weight(1f)
-                        )
-                        SummaryMetric(
-                            label = "Net",
-                            value = formatSigned(summary.monthNet),
-                            valueColor = if (summary.monthNet >= 0) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.error,
-                            modifier = Modifier.weight(1f)
-                        )
+                    if (summary.hasBroughtForward) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                "Brought forward",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "Leftover from the previous salary month, added when you started this month",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            SummaryMetric(
+                                label = "From last month",
+                                value = formatSigned(summary.broughtForward),
+                                valueColor = if (summary.broughtForward >= 0) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.error
+                                }
+                            )
+                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                    // Per-account breakdown (period-scoped, not all-time)
+                    // Income / Expense / Saved — activity in this salary/calendar month only
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            "By account (this month)",
+                            "Activity this month",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "Income and spending between the dates above — not your current wallet balance",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            val acctBalances = summary.monthChangeByAccount
+                            SummaryMetric(
+                                label = "Income",
+                                value = "+${CurrencyUtils.formatCurrency(summary.monthIncome)}",
+                                valueColor = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.weight(1f)
+                            )
+                            SummaryMetric(
+                                label = "Expense",
+                                value = "-${CurrencyUtils.formatCurrency(summary.monthExpense)}",
+                                valueColor = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.weight(1f)
+                            )
+                            SummaryMetric(
+                                label = "Saved",
+                                value = formatSigned(summary.monthNet),
+                                valueColor = if (summary.monthNet >= 0) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (summary.hasBroughtForward) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                SummaryMetric(
+                                    label = "Remaining total",
+                                    value = formatSigned(summary.monthRemaining),
+                                    valueColor = if (summary.monthRemaining >= 0) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.error
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            Text(
+                                "Brought forward + saved this month",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    // Current balances — must match Add expense/income screen
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            "Your money now",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "Cash and bank available right now — same numbers as Add expense/income",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            val now = summary.currentBalances
                             SummaryMetric(
                                 label = "Cash",
-                                value = formatSigned(acctBalances.cash),
-                                valueColor = if (acctBalances.cash < 0)
-                                    MaterialTheme.colorScheme.error
-                                else
-                                    MaterialTheme.colorScheme.onSurface,
+                                value = CurrencyUtils.formatCurrency(now.cash),
+                                valueColor = if (now.cash < 0) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f)
                             )
                             SummaryMetric(
                                 label = "Bank",
-                                value = formatSigned(acctBalances.bank),
-                                valueColor = if (acctBalances.bank < 0)
-                                    MaterialTheme.colorScheme.error
-                                else
-                                    MaterialTheme.colorScheme.onSurface,
+                                value = CurrencyUtils.formatCurrency(now.bank),
+                                valueColor = if (now.bank < 0) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f)
                             )
                             SummaryMetric(
                                 label = "Total",
-                                value = formatSigned(acctBalances.total),
-                                valueColor = if (acctBalances.total < 0)
-                                    MaterialTheme.colorScheme.error
-                                else
-                                    MaterialTheme.colorScheme.onSurface,
+                                value = CurrencyUtils.formatCurrency(now.total),
+                                valueColor = if (now.total < 0) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f)
                             )
                         }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    if (isSalaryMode) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                "Wallet this month",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "Money set aside from cash/bank — resets each salary month",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    CurrencyUtils.formatCurrency(summary.walletBalance),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                                TextButton(onClick = onWalletClick) {
+                                    Text("Move to/from wallet")
+                                }
+                            }
+                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    }
+
+                    // How each cash/bank account changed during this month (includes transfers)
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            "Net movement per account during this month only",
+                            "Cash & bank change this month",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "How much each account went up or down — total always equals Saved above",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.outline
                         )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            val change = summary.periodChangeByAccount
+                            SummaryMetric(
+                                label = "Cash",
+                                value = formatSigned(change.cash),
+                                valueColor = if (change.cash < 0) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                            SummaryMetric(
+                                label = "Bank",
+                                value = formatSigned(change.bank),
+                                valueColor = if (change.bank < 0) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                            SummaryMetric(
+                                label = "Total",
+                                value = formatSigned(change.total),
+                                valueColor = if (change.total < 0) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
+
+                    // Show transfers row only when transfers exist this month
+                    if (summary.hasTransfers) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                "Transfers this month",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "Internal moves between your accounts — no effect on total balance",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                val t = summary.transferImpact
+                                SummaryMetric(
+                                    label = "Cash",
+                                    value = formatSigned(t.cash),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                SummaryMetric(
+                                    label = "Bank",
+                                    value = formatSigned(t.bank),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                SummaryMetric(
+                                    label = "Total",
+                                    value = formatSigned(t.total),
+                                    valueColor = MaterialTheme.colorScheme.outline,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Salary wallet year timeline
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SalaryWalletYearCard(
+    periods: List<com.example.expensetracker.domain.SalaryWalletPeriodSummary>,
+    onAddWalletMove: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                "Salary months — wallet summary",
+                style = MaterialTheme.typography.titleSmall
+            )
+            Text(
+                "Remaining in wallet at each salary month end — not carried forward",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+            periods.forEach { period ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            period.label,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            when {
+                                period.isCurrent -> "Open"
+                                period.isClosed -> "Closed"
+                                else -> ""
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (period.isCurrent) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.outline
+                            }
+                        )
+                    }
+                    Text(
+                        CurrencyUtils.formatCurrency(period.walletRemaining),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+                if (period != periods.last()) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
+            }
+            if (periods.any { it.isCurrent }) {
+                OutlinedButton(
+                    onClick = onAddWalletMove,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Move to/from wallet")
                 }
             }
         }

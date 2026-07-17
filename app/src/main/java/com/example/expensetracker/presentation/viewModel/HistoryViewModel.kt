@@ -18,6 +18,8 @@ import com.example.expensetracker.domain.CategoryBudgetProgress
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.PeriodBounds
 import com.example.expensetracker.domain.PeriodCalculator
+import com.example.expensetracker.domain.SalaryWalletPeriodSummary
+import com.example.expensetracker.domain.WalletCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,26 +37,43 @@ class HistoryViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
     private val periodCalculator: PeriodCalculator,
     private val balanceCalculator: BalanceCalculator,
+    private val walletCalculator: WalletCalculator,
     private val budgetProgressCalculator: BudgetProgressCalculator
 ) : ViewModel() {
 
     val monthMode: StateFlow<MonthMode> = userPreferences.monthMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MonthMode.CALENDAR)
 
+    val allTransactions = transactionRepository.getAllTransactions()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val allCategories = categoryRepository.getAllCategories()
 
     /**
      * Holds summary data that is ALWAYS scoped to the current salary/calendar month,
      * independent of which period the transaction list is filtered to.
+     *
+     * [incomeExpenseByAccount] = income − expense per account, transfers excluded.
+     * [transferImpact] = net transfer movement per account (informational; total always 0).
      */
     data class MonthSummaryUiState(
         val monthBounds: PeriodBounds? = null,
         val monthIncome: Double = 0.0,
         val monthExpense: Double = 0.0,
-        val monthChangeByAccount: AccountBalances = AccountBalances(0.0, 0.0),
+        val monthNet: Double = 0.0,
+        val broughtForward: Double = 0.0,
+        val monthRemaining: Double = 0.0,
+        val periodChangeByAccount: AccountBalances = AccountBalances(0.0, 0.0),
+        val incomeExpenseByAccount: AccountBalances = AccountBalances(0.0, 0.0),
+        val transferImpact: AccountBalances = AccountBalances(0.0, 0.0),
+        val currentBalances: AccountBalances = AccountBalances(0.0, 0.0),
+        val walletBalance: Double = 0.0,
         val dueReminders: List<RecurringTransaction> = emptyList()
     ) {
-        val monthNet: Double get() = monthIncome - monthExpense
+        val hasBroughtForward: Boolean get() = broughtForward != 0.0
+        val hasWallet: Boolean get() = walletBalance != 0.0
+        val hasTransfers: Boolean get() =
+            transferImpact.cash != 0.0 || transferImpact.bank != 0.0
     }
 
     /**
@@ -67,29 +86,53 @@ class HistoryViewModel @Inject constructor(
     )
 
     /**
-     * Computes the month-scoped summary (income, expense, per-account net change, reminders).
+     * Computes the month-scoped summary (income, expense, per-account breakdown, reminders).
      * Always uses the salary month (or calendar month) bounds regardless of list period.
+     *
+     * Per-account breakdown uses income − expense only (transfers excluded) so internal
+     * cash↔bank movements do not distort the "earning/spending" picture.
      */
     suspend fun buildMonthSummary(
         mode: MonthMode,
         referenceDate: Date
     ): MonthSummaryUiState {
         val bounds = periodCalculator.getBounds(HistoryPeriod.MONTH, referenceDate, mode)
-        val monthIncome = transactionRepository.getTotalAmountByTypeAndDateRange(
-            TransactionType.INCOME, bounds.start, bounds.end
-        )
-        val monthExpense = transactionRepository.getTotalAmountByTypeAndDateRange(
-            TransactionType.EXPENSE, bounds.start, bounds.end
-        )
-        val monthChangeByAccount = balanceCalculator.getPeriodChange(bounds.start, bounds.end)
+        val financials = balanceCalculator.buildMonthFinancialSummary(bounds.start, bounds.end)
+        val anchor = if (mode == MonthMode.SALARY) {
+            periodCalculator.getCurrentPeriodAnchor(referenceDate)
+        } else {
+            null
+        }
+        val broughtForward = anchor?.carriedForwardBalance ?: 0.0
+        val walletBalance = if (mode == MonthMode.SALARY) {
+            walletCalculator.getWalletBalance(bounds.start, bounds.end)
+        } else {
+            0.0
+        }
         val dueReminders = recurringRepository.getDueReminders()
         return MonthSummaryUiState(
             monthBounds = bounds,
-            monthIncome = monthIncome,
-            monthExpense = monthExpense,
-            monthChangeByAccount = monthChangeByAccount,
+            monthIncome = financials.periodIncome,
+            monthExpense = financials.periodExpense,
+            monthNet = financials.periodNet,
+            broughtForward = broughtForward,
+            monthRemaining = broughtForward + financials.periodNet,
+            periodChangeByAccount = financials.periodChangeByAccount,
+            incomeExpenseByAccount = financials.incomeExpenseByAccount,
+            transferImpact = financials.transferImpact,
+            currentBalances = financials.currentBalances,
+            walletBalance = walletBalance,
             dueReminders = dueReminders
         )
+    }
+
+    suspend fun buildSalaryWalletYearSummary(year: Int): List<SalaryWalletPeriodSummary> {
+        return walletCalculator.getSalaryPeriodSummariesForYear(year)
+    }
+
+    suspend fun canModifyTransaction(transaction: Transaction): Boolean {
+        if (transaction.type != TransactionType.WALLET_MOVE) return true
+        return walletCalculator.isDateInOpenSalaryPeriod(transaction.date)
     }
 
     /**

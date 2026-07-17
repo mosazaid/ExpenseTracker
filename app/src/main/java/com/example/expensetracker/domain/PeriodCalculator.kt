@@ -78,6 +78,35 @@ class PeriodCalculator @Inject constructor(
         }
     }
 
+    /**
+     * Returns the salary transaction that anchors the current salary month for [referenceDate].
+     */
+    suspend fun getCurrentPeriodAnchor(referenceDate: Date): Transaction? {
+        val salaryCategory = categoryDao.getCategoryByName(
+            CategorySystemKey.SALARY.displayName,
+            CategorySystemKey.SALARY.type
+        ) ?: return null
+
+        val referenceEnd = DateUtils.getEndOfDay(referenceDate)
+        val anchors = transactionDao.getSalaryPeriodAnchors(salaryCategory.id)
+        if (anchors.isEmpty()) return null
+
+        val anchorIndex = anchors.indexOfLast { it.date <= referenceEnd }
+        return anchors.getOrNull(anchorIndex)
+    }
+
+    /**
+     * Bounds for the salary month that ends the day before [newSalaryDate].
+     * Used to calculate how much was saved in the previous month for carry-forward.
+     */
+    suspend fun getPreviousSalaryPeriodBounds(newSalaryDate: Date): PeriodBounds? {
+        val calendar = Calendar.getInstance()
+        calendar.time = DateUtils.getStartOfDay(newSalaryDate)
+        calendar.add(Calendar.DAY_OF_MONTH, -1)
+        val bounds = getBounds(HistoryPeriod.MONTH, calendar.time, MonthMode.SALARY)
+        return bounds.takeUnless { it.isSalaryFallback }
+    }
+
     private suspend fun getSalaryMonthBounds(referenceDate: Date): PeriodBounds {
         val salaryCategory = categoryDao.getCategoryByName(
             CategorySystemKey.SALARY.displayName,

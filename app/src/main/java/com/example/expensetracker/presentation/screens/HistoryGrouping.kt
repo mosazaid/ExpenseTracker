@@ -11,6 +11,7 @@ enum class TransactionTypeFilter(val label: String) {
     ALL("All"),
     INCOME("Income"),
     EXPENSE("Expense"),
+    WALLET("Wallet"),
     OWED("Owed")
 }
 
@@ -34,6 +35,7 @@ object HistoryGrouping {
             TransactionTypeFilter.ALL -> transactions
             TransactionTypeFilter.INCOME -> transactions.filter { it.type == TransactionType.INCOME }
             TransactionTypeFilter.EXPENSE -> transactions.filter { it.type == TransactionType.EXPENSE }
+            TransactionTypeFilter.WALLET -> transactions.filter { it.type == TransactionType.WALLET_MOVE }
             TransactionTypeFilter.OWED -> transactions.filter {
                 it.type == TransactionType.EXPENSE &&
                     it.awaitingReimbursement &&

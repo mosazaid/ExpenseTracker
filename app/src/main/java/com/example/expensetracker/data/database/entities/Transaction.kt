@@ -29,6 +29,7 @@ data class Transaction(
     val accountType: AccountType,
     val toAccountType: AccountType? = null,
     val startsNewPeriod: Boolean = false,
+    val carriedForwardBalance: Double? = null,
     val allowNegativeBalance: Boolean = false,
     val linkedExpenseId: Long? = null,
     val debtorNote: String? = null,
@@ -38,9 +39,9 @@ data class Transaction(
 )
 
 enum class TransactionType {
-    INCOME, EXPENSE, TRANSFER
+    INCOME, EXPENSE, TRANSFER, WALLET_MOVE
 }
 
 enum class AccountType {
-    CASH, BANK
+    CASH, BANK, WALLET
 }

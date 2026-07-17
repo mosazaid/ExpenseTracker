@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
@@ -20,6 +21,15 @@ import com.example.expensetracker.presentation.theme.CurrencyUtils
 import com.example.expensetracker.presentation.theme.DateUtils
 
 private val OwedAccent = Color(0xFFFF9800)
+private val WalletAccent = Color(0xFF7E57C2)
+
+private fun formatAccountLabel(account: AccountType): String {
+    return when (account) {
+        AccountType.CASH -> "Cash"
+        AccountType.BANK -> "Bank"
+        AccountType.WALLET -> "Wallet"
+    }
+}
 
 @Composable
 fun TransactionItem(
@@ -33,6 +43,7 @@ fun TransactionItem(
 ) {
     when (transaction.type) {
         TransactionType.TRANSFER -> TransferItem(transaction, onDelete, onEdit)
+        TransactionType.WALLET_MOVE -> WalletMoveItem(transaction, onDelete, onEdit)
         else -> StandardTransactionItem(
             transaction = transaction,
             category = category,
@@ -51,8 +62,8 @@ private fun TransferItem(
     onDelete: (Transaction) -> Unit,
     onEdit: (Transaction) -> Unit
 ) {
-    val from = transaction.accountType.name.lowercase().replaceFirstChar { it.uppercase() }
-    val to = transaction.toAccountType?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "?"
+    val from = formatAccountLabel(transaction.accountType)
+    val to = transaction.toAccountType?.let { formatAccountLabel(it) } ?: "?"
 
     Surface(
         tonalElevation = 2.dp,
@@ -96,6 +107,79 @@ private fun TransferItem(
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete transfer",
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WalletMoveItem(
+    transaction: Transaction,
+    onDelete: (Transaction) -> Unit,
+    onEdit: (Transaction) -> Unit
+) {
+    val from = formatAccountLabel(transaction.accountType)
+    val to = transaction.toAccountType?.let { formatAccountLabel(it) } ?: "?"
+
+    Surface(
+        tonalElevation = 2.dp,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onEdit(transaction) }
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Surface(
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = WalletAccent.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        "Wallet move",
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = WalletAccent
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    transaction.description.ifBlank { "Wallet move" },
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    "$from → $to · ${DateUtils.formatDate(transaction.date)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = WalletAccent
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    CurrencyUtils.formatCurrency(transaction.amount),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = WalletAccent
+                )
+                IconButton(
+                    onClick = { onDelete(transaction) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete wallet move",
                         tint = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.size(18.dp)
                     )
@@ -187,15 +271,38 @@ private fun StandardTransactionItem(
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Spacer(modifier = Modifier.height(2.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         if (category != null) {
                             Text(
                                 category.name,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (isOwed) OwedAccent else MaterialTheme.colorScheme.primary
                             )
-                            Text("·", style = MaterialTheme.typography.labelSmall)
+                            Text("·", style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline)
                         }
+                        // Account badge so user can instantly see Cash vs Bank
+                        val accountLabel = when (transaction.accountType) {
+                            AccountType.CASH -> "💵 Cash"
+                            AccountType.BANK -> "🏦 Bank"
+                            AccountType.WALLET -> "👛 Wallet"
+                        }
+                        Surface(
+                            shape = MaterialTheme.shapes.extraSmall,
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                        ) {
+                            Text(
+                                accountLabel,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                        Text("·", style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline)
                         Text(
                             DateUtils.formatDate(transaction.date),
                             style = MaterialTheme.typography.bodySmall,

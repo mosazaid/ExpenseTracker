@@ -67,6 +67,7 @@ class AddEditTransactionViewModel @Inject constructor(
             linkedExpenseId = transaction.linkedExpenseId,
             awaitingReimbursement = transaction.awaitingReimbursement,
             startsNewPeriod = transaction.startsNewPeriod,
+            carriedForwardBalance = transaction.carriedForwardBalance,
             allowNegativeBalance = transaction.allowNegativeBalance,
             createdAt = transaction.createdAt
         )
@@ -151,6 +152,12 @@ class AddEditTransactionViewModel @Inject constructor(
         )
     }
 
+    suspend fun getPreviousPeriodSavedAmount(beforeNewSalaryDate: Date): Double {
+        val bounds = periodCalculator.getPreviousSalaryPeriodBounds(beforeNewSalaryDate)
+            ?: return 0.0
+        return balanceCalculator.buildMonthFinancialSummary(bounds.start, bounds.end).periodNet
+    }
+
     suspend fun isSalaryCategory(category: Category?): Boolean {
         return category.matchesSystemKey(CategorySystemKey.SALARY)
     }
@@ -164,6 +171,7 @@ class AddEditTransactionViewModel @Inject constructor(
         val original = originalTransaction ?: return true
         val state = _uiState.value
         return original.startsNewPeriod != state.startsNewPeriod ||
+            original.carriedForwardBalance != state.carriedForwardBalance ||
             original.date != state.selectedDate ||
             original.categoryId != category?.id ||
             original.accountType != state.accountType
@@ -236,6 +244,7 @@ data class AddEditTransactionUiState(
     val linkedExpenseId: Long? = null,
     val awaitingReimbursement: Boolean = false,
     val startsNewPeriod: Boolean = false,
+    val carriedForwardBalance: Double? = null,
     val allowNegativeBalance: Boolean = false,
     val createdAt: Date? = null,
     val pendingRecurringId: Long? = null

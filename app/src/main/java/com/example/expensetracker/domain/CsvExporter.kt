@@ -24,8 +24,8 @@ class CsvExporter @Inject constructor(
 
         val header = listOf(
             "id", "date", "type", "category", "amount", "account", "toAccount",
-            "description", "startsNewPeriod", "linkedExpenseId", "debtorNote",
-            "awaitingReimbursement", "allowNegativeBalance", "createdAt", "updatedAt"
+            "description", "startsNewPeriod", "carriedForwardBalance", "linkedExpenseId",
+            "debtorNote", "awaitingReimbursement", "allowNegativeBalance", "createdAt", "updatedAt"
         ).joinToString(",")
 
         val rows = transactions.map { txn ->
@@ -39,6 +39,7 @@ class CsvExporter @Inject constructor(
                 csvEscape(txn.toAccountType?.name.orEmpty()),
                 csvEscape(txn.description),
                 txn.startsNewPeriod.toString(),
+                txn.carriedForwardBalance?.toString().orEmpty(),
                 txn.linkedExpenseId?.toString().orEmpty(),
                 csvEscape(txn.debtorNote.orEmpty()),
                 txn.awaitingReimbursement.toString(),

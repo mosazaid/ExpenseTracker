@@ -23,6 +23,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE date BETWEEN :startDate AND :endDate ORDER BY date DESC")
     fun getTransactionsBetweenDates(startDate: Date, endDate: Date): Flow<List<Transaction>>
 
+    @Query("SELECT * FROM transactions WHERE date BETWEEN :startDate AND :endDate ORDER BY date DESC")
+    suspend fun getTransactionsBetweenDatesSnapshot(startDate: Date, endDate: Date): List<Transaction>
+
     @Query("SELECT * FROM transactions WHERE type = :type ORDER BY date DESC")
     fun getTransactionsByType(type: TransactionType): Flow<List<Transaction>>
 
@@ -286,6 +289,58 @@ interface TransactionDao {
         """
     )
     suspend fun getTotalTransferInExcluding(account: AccountType, excludeId: Long): Double
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(amount), 0) FROM transactions
+        WHERE type = 'WALLET_MOVE' AND accountType = :account
+        """
+    )
+    suspend fun getTotalWalletMoveOut(account: AccountType): Double
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(amount), 0) FROM transactions
+        WHERE type = 'WALLET_MOVE' AND toAccountType = :account
+        """
+    )
+    suspend fun getTotalWalletMoveIn(account: AccountType): Double
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(amount), 0) FROM transactions
+        WHERE type = 'WALLET_MOVE' AND toAccountType = 'WALLET'
+        AND date BETWEEN :startDate AND :endDate
+        """
+    )
+    suspend fun getPeriodWalletIn(startDate: Date, endDate: Date): Double
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(amount), 0) FROM transactions
+        WHERE type = 'WALLET_MOVE' AND accountType = 'WALLET'
+        AND date BETWEEN :startDate AND :endDate
+        """
+    )
+    suspend fun getPeriodWalletOut(startDate: Date, endDate: Date): Double
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(amount), 0) FROM transactions
+        WHERE type = 'WALLET_MOVE' AND accountType = :account
+          AND id != :excludeId
+        """
+    )
+    suspend fun getTotalWalletMoveOutExcluding(account: AccountType, excludeId: Long): Double
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(amount), 0) FROM transactions
+        WHERE type = 'WALLET_MOVE' AND toAccountType = :account
+          AND id != :excludeId
+        """
+    )
+    suspend fun getTotalWalletMoveInExcluding(account: AccountType, excludeId: Long): Double
 
     @Insert
     suspend fun insertTransaction(transaction: Transaction): Long

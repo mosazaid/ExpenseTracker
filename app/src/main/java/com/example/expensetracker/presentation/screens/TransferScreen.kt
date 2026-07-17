@@ -135,7 +135,7 @@ fun TransferScreen(
 
         Text("From", style = MaterialTheme.typography.labelMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AccountType.entries.forEach { type ->
+            AccountType.entries.filter { it != AccountType.WALLET }.forEach { type ->
                 FilterChip(
                     selected = uiState.transferFromAccount == type,
                     onClick = { viewModel.updateTransferFromAccount(type) },
@@ -148,7 +148,7 @@ fun TransferScreen(
 
         Text("To", style = MaterialTheme.typography.labelMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AccountType.entries.forEach { type ->
+            AccountType.entries.filter { it != AccountType.WALLET }.forEach { type ->
                 FilterChip(
                     selected = uiState.transferToAccount == type,
                     onClick = { viewModel.updateTransferToAccount(type) },
