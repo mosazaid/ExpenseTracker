@@ -23,6 +23,12 @@ enum class MonthMode {
     SALARY
 }
 
+enum class ThemeMode {
+    SYSTEM,
+    LIGHT,
+    DARK
+}
+
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = "user_preferences"
 )
@@ -32,6 +38,7 @@ class UserPreferences @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
+    private val themeModeKey = stringPreferencesKey("theme_mode")
     private val languageKey = stringPreferencesKey("app_language")
     private val monthModeKey = stringPreferencesKey("month_mode")
     private val openingCashKey = stringPreferencesKey("opening_cash_balance")
@@ -39,7 +46,15 @@ class UserPreferences @Inject constructor(
     private val dismissedRecurringKey = stringSetPreferencesKey("dismissed_recurring_until")
 
     val biometricLockEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[biometricLockKey] ?: true
+        prefs[biometricLockKey] ?: false
+    }
+
+    val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
+        when (prefs[themeModeKey]) {
+            ThemeMode.LIGHT.name -> ThemeMode.LIGHT
+            ThemeMode.DARK.name -> ThemeMode.DARK
+            else -> ThemeMode.SYSTEM
+        }
     }
 
     val language: Flow<AppLanguage> = context.dataStore.data.map { prefs ->
@@ -68,6 +83,12 @@ class UserPreferences @Inject constructor(
     suspend fun setBiometricLockEnabled(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[biometricLockKey] = enabled
+        }
+    }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        context.dataStore.edit { prefs ->
+            prefs[themeModeKey] = mode.name
         }
     }
 

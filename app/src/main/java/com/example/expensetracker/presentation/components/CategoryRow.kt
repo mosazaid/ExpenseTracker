@@ -9,6 +9,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.data.database.entities.Category
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.ui.text.style.TextOverflow
+
 @Composable
 fun CategoryRow(
     category: Category,
@@ -26,14 +30,22 @@ fun CategoryRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f).padding(end = 8.dp)
+            ) {
                 Text(
                     text = category.icon,
-                    fontSize = MaterialTheme.typography.bodyLarge.fontSize
+                    fontSize = MaterialTheme.typography.titleMedium.fontSize
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(10.dp))
                 Column {
-                    Text(category.name, style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = category.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     if (category.isDefault) {
                         Text(
                             "Default",
@@ -43,20 +55,27 @@ fun CategoryRow(
                     }
                 }
             }
-            Row {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 if (onSetBudget != null && category.type == com.example.expensetracker.data.database.entities.TransactionType.EXPENSE) {
                     TextButton(onClick = { onSetBudget(category) }) { Text("Budget") }
                 }
                 TextButton(onClick = { onEdit(category) }) { Text("Edit") }
-                TextButton(
+                IconButton(
                     onClick = { onDelete(category) },
-                    enabled = !category.isDefault
+                    enabled = !category.isDefault,
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    Text(
-                        "Delete",
-                        color = if (category.isDefault)
-                            MaterialTheme.colorScheme.outline
-                        else Color.Red
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = if (category.isDefault)
+                            MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                        else
+                            MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }

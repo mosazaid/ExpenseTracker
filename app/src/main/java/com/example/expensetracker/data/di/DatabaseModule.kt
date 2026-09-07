@@ -41,4 +41,9 @@ object DatabaseModule {
     fun provideRecurringTransactionDao(database: AppDatabase): RecurringTransactionDao {
         return database.recurringTransactionDao()
     }
+
+    @Provides
+    fun provideSubCategoryDao(database: AppDatabase): com.example.expensetracker.data.database.dao.SubCategoryDao {
+        return database.subCategoryDao()
+    }
 }

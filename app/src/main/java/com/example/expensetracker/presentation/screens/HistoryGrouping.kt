@@ -3,7 +3,9 @@ package com.example.expensetracker.presentation.screens
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
+import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.domain.HistoryPeriod
+import com.example.expensetracker.domain.SalaryWalletPeriodSummary
 import com.example.expensetracker.presentation.theme.DateUtils
 import java.util.Date
 
@@ -29,7 +31,9 @@ object HistoryGrouping {
         period: HistoryPeriod,
         typeFilter: TransactionTypeFilter,
         categoryIdFilter: Long? = null,
-        reimbursedExpenseIds: Set<Long> = emptySet()
+        reimbursedExpenseIds: Set<Long> = emptySet(),
+        monthMode: MonthMode = MonthMode.CALENDAR,
+        salaryPeriods: List<SalaryWalletPeriodSummary> = emptyList()
     ): List<HistorySection> {
         var filtered = when (typeFilter) {
             TransactionTypeFilter.ALL -> transactions
@@ -53,7 +57,13 @@ object HistoryGrouping {
             HistoryPeriod.DAY -> listOf(buildDaySection(transactions, filtered))
             HistoryPeriod.WEEK -> buildDaySections(transactions, filtered)
             HistoryPeriod.MONTH -> buildWeekSections(transactions, filtered)
-            HistoryPeriod.YEAR -> buildMonthSections(transactions, filtered)
+            HistoryPeriod.YEAR -> {
+                if (monthMode == MonthMode.SALARY && salaryPeriods.isNotEmpty()) {
+                    buildSalaryMonthSections(transactions, filtered, salaryPeriods)
+                } else {
+                    buildMonthSections(transactions, filtered)
+                }
+            }
         }
     }
 
@@ -147,5 +157,60 @@ object HistoryGrouping {
                     transactions = sectionTransactions.sortedBy { it.date }
                 )
             }
+    }
+
+    private fun buildSalaryMonthSections(
+        allTransactions: List<Transaction>,
+        filtered: List<Transaction>,
+        salaryPeriods: List<SalaryWalletPeriodSummary>
+    ): List<HistorySection> {
+        val sortedPeriods = salaryPeriods.sortedBy { it.start }
+        val allExpense = allTransactions.filter { it.type == TransactionType.EXPENSE }
+
+        val sections = mutableListOf<HistorySection>()
+
+        sortedPeriods.forEachIndexed { index, period ->
+            val matchingFiltered = filtered.filter { txn ->
+                txn.date >= period.start && txn.date <= period.end
+            }
+            if (matchingFiltered.isNotEmpty()) {
+                val expenseTotal = allExpense
+                    .filter { txn -> txn.date >= period.start && txn.date <= period.end }
+                    .sumOf { it.amount }
+
+                sections.add(
+                    HistorySection(
+                        key = "salary-period-$index",
+                        title = period.label,
+                        expenseTotal = expenseTotal,
+                        transactions = matchingFiltered.sortedBy { it.date }
+                    )
+                )
+            }
+        }
+
+        // Catch any transactions outside defined salary periods
+        val outsideFiltered = filtered.filter { txn ->
+            sortedPeriods.none { period -> txn.date >= period.start && txn.date <= period.end }
+        }
+        if (outsideFiltered.isNotEmpty()) {
+            val outsideByMonth = outsideFiltered.groupBy { DateUtils.getMonthKey(it.date) }
+            outsideByMonth.keys.sorted().forEach { monthKey ->
+                val txns = outsideByMonth[monthKey].orEmpty()
+                val expenseTotal = allExpense
+                    .filter { txn -> txns.any { it.id == txn.id } }
+                    .sumOf { it.amount }
+                sections.add(
+                    HistorySection(
+                        key = "salary-outside-$monthKey",
+                        title = DateUtils.formatMonthYear(DateUtils.dateFromMonthKey(monthKey)),
+                        expenseTotal = expenseTotal,
+                        transactions = txns.sortedBy { it.date }
+                    )
+                )
+            }
+        }
+
+        return sections
     }
 }

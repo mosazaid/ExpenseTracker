@@ -20,7 +20,7 @@ class BiometricLockViewModel @Inject constructor(
 ) : ViewModel() {
 
     val biometricLockEnabled: StateFlow<Boolean> = userPreferences.biometricLockEnabled
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     private val _isUnlocked = MutableStateFlow(false)
     val isUnlocked: StateFlow<Boolean> = _isUnlocked.asStateFlow()

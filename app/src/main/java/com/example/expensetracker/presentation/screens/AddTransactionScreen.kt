@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +25,7 @@ import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
+import com.example.expensetracker.presentation.components.AccountBalanceCards
 import com.example.expensetracker.presentation.viewModel.AddEditTransactionViewModel
 import com.example.expensetracker.presentation.viewModel.LIQUID_ACCOUNTS
 import kotlinx.coroutines.launch
@@ -60,6 +64,19 @@ fun AddTransactionScreen(
     var pendingTransaction by remember { mutableStateOf<Transaction?>(null) }
     var unreimbursedExpenses by remember { mutableStateOf<List<Transaction>>(emptyList()) }
     var expenseMenuExpanded by remember { mutableStateOf(false) }
+
+    // Subcategory state
+    val selectedCategory = uiState.selectedCategory
+    val savedSubCategories by remember(selectedCategory?.id) {
+        if (selectedCategory != null) {
+            viewModel.getSubCategories(selectedCategory.id)
+        } else {
+            kotlinx.coroutines.flow.flowOf(emptyList())
+        }
+    }.collectAsState(initial = emptyList())
+
+    var saveAsSubCategoryChecked by remember { mutableStateOf(false) }
+    var subCategoryMenuExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -289,8 +306,10 @@ fun AddTransactionScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        // ── 1. Screen Title
         Text(
             if (isEditMode) {
                 "Edit ${uiState.transactionType.name.lowercase().replaceFirstChar { it.uppercase() }}"
@@ -300,123 +319,54 @@ fun AddTransactionScreen(
             style = MaterialTheme.typography.titleLarge
         )
 
+        // ── 2. Your Money Now (Balance Cards at top)
+        AccountBalanceCards(
+            cashBalance = cashBalance,
+            bankBalance = bankBalance,
+            selectedAccount = uiState.accountType,
+            onAccountSelected = { viewModel.updateAccountType(it) }
+        )
+
+        // ── 3. Transaction Type (Expense / Income)
         if (!isEditMode) {
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = { navController.navigate(AppRoutes.TRANSFER) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Transfer Cash ↔ Bank")
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = { navController.navigate(AppRoutes.WALLET) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Wallet ↔ Cash/Bank")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            "Your money now",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            "Same balances shown in History month summary",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-
-        // Always show both account balances so the user can see the full picture
-        // before choosing which account to debit.
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            LIQUID_ACCOUNTS.forEach { acct ->
-                val bal = if (acct == AccountType.CASH) cashBalance else bankBalance
-                val isSelected = uiState.accountType == acct
-                Card(
-                    modifier = Modifier.weight(1f),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isSelected)
-                            MaterialTheme.colorScheme.primaryContainer
-                        else
-                            MaterialTheme.colorScheme.surfaceContainerLow
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
-                        Text(
-                            acct.name.lowercase().replaceFirstChar { it.uppercase() },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            if (bal != null) CurrencyUtils.formatCurrency(bal) else "…",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = when {
-                                bal == null -> MaterialTheme.colorScheme.outline
-                                bal < 0 -> MaterialTheme.colorScheme.error
-                                else -> MaterialTheme.colorScheme.onSurface
-                            }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Type", style = MaterialTheme.typography.labelMedium)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TransactionType.entries.filter { it != TransactionType.TRANSFER }.forEach { type ->
+                        FilterChip(
+                            selected = uiState.transactionType == type,
+                            onClick = { viewModel.updateTransactionType(type) },
+                            label = { Text(type.name.lowercase().replaceFirstChar { it.uppercase() }) }
                         )
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = uiState.amount,
-            onValueChange = { viewModel.updateAmount(it) },
-            label = { Text("Amount") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            isError = uiState.amount.isNotBlank() && uiState.amount.toDoubleOrNull() == null,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = uiState.description,
-            onValueChange = { viewModel.updateDescription(it) },
-            label = { Text(stringResource(R.string.description)) },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = uiState.subDescription,
-            onValueChange = { viewModel.updateSubDescription(it) },
-            label = { Text(stringResource(R.string.sub_description)) },
-            placeholder = { Text(stringResource(R.string.sub_description_hint)) },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (!isEditMode) {
-            Text("Type", style = MaterialTheme.typography.labelMedium)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TransactionType.entries.filter { it != TransactionType.TRANSFER }.forEach { type ->
+        // ── 4. Account Selector (Bank default)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Account", style = MaterialTheme.typography.labelMedium)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LIQUID_ACCOUNTS.forEach { type ->
                     FilterChip(
-                        selected = uiState.transactionType == type,
-                        onClick = { viewModel.updateTransactionType(type) },
-                        label = { Text(type.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                        selected = uiState.accountType == type,
+                        onClick = { viewModel.updateAccountType(type) },
+                        label = {
+                            Text(
+                                if (type == AccountType.BANK) "🏦 Bank" else "💵 Cash"
+                            )
+                        }
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
+        // ── 5. Category Dropdown
         var categoryExpanded by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(expanded = categoryExpanded, onExpandedChange = { categoryExpanded = !categoryExpanded }) {
+        ExposedDropdownMenuBox(
+            expanded = categoryExpanded,
+            onExpandedChange = { categoryExpanded = !categoryExpanded }
+        ) {
             OutlinedTextField(
                 value = uiState.selectedCategory?.let { "${it.icon} ${it.name}" } ?: "Select Category",
                 onValueChange = {},
@@ -427,7 +377,10 @@ fun AddTransactionScreen(
                     .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                     .fillMaxWidth()
             )
-            ExposedDropdownMenu(expanded = categoryExpanded, onDismissRequest = { categoryExpanded = false }) {
+            ExposedDropdownMenu(
+                expanded = categoryExpanded,
+                onDismissRequest = { categoryExpanded = false }
+            ) {
                 filteredCategories.forEach { category ->
                     DropdownMenuItem(
                         text = {
@@ -445,21 +398,115 @@ fun AddTransactionScreen(
             }
         }
 
-        val selectedCategory = uiState.selectedCategory
+        // ── 6. Subcategory / Sub-description Picker & Suggestion
+        if (selectedCategory != null) {
+            ExposedDropdownMenuBox(
+                expanded = subCategoryMenuExpanded && savedSubCategories.isNotEmpty(),
+                onExpandedChange = { subCategoryMenuExpanded = !subCategoryMenuExpanded }
+            ) {
+                OutlinedTextField(
+                    value = uiState.subDescription,
+                    onValueChange = {
+                        viewModel.updateSubDescription(it)
+                        subCategoryMenuExpanded = true
+                    },
+                    label = { Text("Subcategory / Sub-description") },
+                    placeholder = { Text("e.g. Fuel, Groceries, Dining...") },
+                    trailingIcon = {
+                        if (savedSubCategories.isNotEmpty()) {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = subCategoryMenuExpanded)
+                        }
+                    },
+                    modifier = Modifier
+                        .menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true)
+                        .fillMaxWidth()
+                )
+
+                if (savedSubCategories.isNotEmpty()) {
+                    val matchingSubCats = savedSubCategories.filter {
+                        uiState.subDescription.isBlank() || it.name.contains(uiState.subDescription, ignoreCase = true)
+                    }
+                    if (matchingSubCats.isNotEmpty()) {
+                        ExposedDropdownMenu(
+                            expanded = subCategoryMenuExpanded,
+                            onDismissRequest = { subCategoryMenuExpanded = false }
+                        ) {
+                            matchingSubCats.forEach { subCat ->
+                                DropdownMenuItem(
+                                    text = { Text(subCat.name) },
+                                    onClick = {
+                                        viewModel.updateSubDescription(subCat.name)
+                                        subCategoryMenuExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Prompt to save as reusable subcategory if entered name is not in saved list
+            val trimmedSubDesc = uiState.subDescription.trim()
+            val isAlreadySaved = savedSubCategories.any { it.name.equals(trimmedSubDesc, ignoreCase = true) }
+            if (trimmedSubDesc.isNotBlank() && !isAlreadySaved) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                ) {
+                    Checkbox(
+                        checked = saveAsSubCategoryChecked,
+                        onCheckedChange = { saveAsSubCategoryChecked = it }
+                    )
+                    Text(
+                        text = "Save \"$trimmedSubDesc\" as reusable subcategory",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        // ── 7. Amount Field
+        OutlinedTextField(
+            value = uiState.amount,
+            onValueChange = { viewModel.updateAmount(it) },
+            label = { Text("Amount") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            isError = uiState.amount.isNotBlank() && uiState.amount.toDoubleOrNull() == null,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // ── 8. Description Field
+        OutlinedTextField(
+            value = uiState.description,
+            onValueChange = { viewModel.updateDescription(it) },
+            label = { Text(stringResource(R.string.description)) },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // ── 9. Date Picker Button
+        OutlinedButton(
+            onClick = { datePicker.show() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Date: ${DateUtils.formatDate(uiState.selectedDate)}")
+        }
+
+        // ── 10. Dept & Reimbursement options
         if (selectedCategory != null) {
             var isDept by remember { mutableStateOf(false) }
             LaunchedEffect(selectedCategory) {
                 isDept = viewModel.isDeptCategory(selectedCategory)
             }
             if (isDept) {
-                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = uiState.debtorNote,
                     onValueChange = { viewModel.updateDebtorNote(it) },
                     label = { Text("Who owes (optional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+
                 ExposedDropdownMenuBox(
                     expanded = expenseMenuExpanded,
                     onExpandedChange = { expenseMenuExpanded = !expenseMenuExpanded }
@@ -513,8 +560,6 @@ fun AddTransactionScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
         if (uiState.transactionType == TransactionType.EXPENSE) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -538,7 +583,6 @@ fun AddTransactionScreen(
                 )
             }
             if (uiState.awaitingReimbursement) {
-                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = uiState.debtorNote,
                     onValueChange = { viewModel.updateDebtorNote(it) },
@@ -546,28 +590,11 @@ fun AddTransactionScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Text("Account", style = MaterialTheme.typography.labelMedium)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            LIQUID_ACCOUNTS.forEach { type ->
-                FilterChip(
-                    selected = uiState.accountType == type,
-                    onClick = { viewModel.updateAccountType(type) },
-                    label = { Text(type.name.lowercase().replaceFirstChar { it.uppercase() }) }
-                )
-            }
-        }
+        Spacer(modifier = Modifier.height(12.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedButton(onClick = { datePicker.show() }, modifier = Modifier.fillMaxWidth()) {
-            Text("Date: ${DateUtils.formatDate(uiState.selectedDate)}")
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
+        // ── 11. Save Button
         val isFormValid = uiState.amount.toDoubleOrNull() != null &&
             uiState.amount.isNotBlank() &&
             uiState.selectedCategory != null
@@ -578,6 +605,12 @@ fun AddTransactionScreen(
                     val amountDouble = uiState.amount.toDoubleOrNull()
                     val category = uiState.selectedCategory
                     if (amountDouble == null || category == null) return@launch
+
+                    // Save subcategory if checked
+                    val subDescTrimmed = uiState.subDescription.trim()
+                    if (saveAsSubCategoryChecked && subDescTrimmed.isNotBlank()) {
+                        viewModel.saveSubCategory(category.id, subDescTrimmed)
+                    }
 
                     val transaction = Transaction(
                         id = uiState.editingTransactionId ?: 0L,

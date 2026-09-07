@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,10 +22,9 @@ import com.example.expensetracker.R
 import com.example.expensetracker.presentation.navigation.AppRoutes
 
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val labelRes: Int) {
+    object Overview : BottomNavItem(AppRoutes.OVERVIEW, Icons.Default.Dashboard, R.string.nav_overview)
     object History : BottomNavItem(AppRoutes.HISTORY, Icons.Default.List, R.string.nav_history)
-    object Add : BottomNavItem(AppRoutes.ADD_TRANSACTION, Icons.Default.Add, R.string.nav_add)
     object Stats : BottomNavItem(AppRoutes.STATISTICS, Icons.Default.BarChart, R.string.nav_stats)
-    object Categories : BottomNavItem(AppRoutes.CATEGORIES, Icons.Default.Category, R.string.nav_categories)
 }
 
 @Composable
@@ -39,58 +38,64 @@ fun MainScreen(initialRecurringId: Long? = null) {
     }
 
     val items = listOf(
+        BottomNavItem.Overview,
         BottomNavItem.History,
-        BottomNavItem.Add,
-        BottomNavItem.Stats,
-        BottomNavItem.Categories
+        BottomNavItem.Stats
     )
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-    val showBottomBar = currentRoute == AppRoutes.HISTORY ||
-        currentRoute == AppRoutes.STATISTICS ||
-        currentRoute == AppRoutes.CATEGORIES ||
-        currentRoute?.startsWith(AppRoutes.ADD_TRANSACTION) == true
+    val isDashboardTab = currentRoute == AppRoutes.OVERVIEW ||
+        currentRoute == AppRoutes.HISTORY ||
+        currentRoute == AppRoutes.STATISTICS
 
     Scaffold(
+        floatingActionButton = {
+            if (isDashboardTab) {
+                FloatingActionButton(
+                    onClick = { navController.navigate(AppRoutes.addTransactionRoute()) },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = stringResource(R.string.nav_add)
+                    )
+                }
+            }
+        },
         bottomBar = {
-            if (showBottomBar) {
+            if (isDashboardTab) {
                 NavigationBar {
                     val currentDestination =
                         navController.currentBackStackEntryAsState().value?.destination
                     items.forEach { item ->
-                    NavigationBarItem(
-                        icon = { Icon(item.icon, contentDescription = stringResource(item.labelRes)) },
-                        label = { Text(stringResource(item.labelRes)) },
-                        selected = when (item) {
-                            BottomNavItem.Add ->
-                                currentDestination?.route?.startsWith(AppRoutes.ADD_TRANSACTION) == true
-                            else -> currentDestination?.route == item.route
-                        },
-                        onClick = {
-                            val destination = when (item) {
-                                BottomNavItem.Add -> AppRoutes.addTransactionRoute()
-                                else -> item.route
-                            }
-                            navController.navigate(destination) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                        NavigationBarItem(
+                            icon = { Icon(item.icon, contentDescription = stringResource(item.labelRes)) },
+                            label = { Text(stringResource(item.labelRes)) },
+                            selected = currentDestination?.route == item.route,
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
-                        }
-                    )
-                }
+                        )
+                    }
                 }
             }
         }
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = BottomNavItem.History.route,
+            startDestination = AppRoutes.OVERVIEW,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(BottomNavItem.History.route) { HistoryScreen(navController) }
+            composable(AppRoutes.OVERVIEW) { OverviewScreen(navController) }
+            composable(AppRoutes.HISTORY) { HistoryScreen(navController) }
+            composable(AppRoutes.STATISTICS) { StatisticsScreen(navController) }
             composable(
                 route = AppRoutes.ADD_TRANSACTION_WITH_ARGS,
                 arguments = listOf(
@@ -132,8 +137,7 @@ fun MainScreen(initialRecurringId: Long? = null) {
                     ?.getLong(AppRoutes.EDIT_WALLET_ARG) ?: return@composable
                 WalletScreen(navController, transactionId = transactionId)
             }
-            composable(BottomNavItem.Stats.route) { StatisticsScreen(navController) }
-            composable(BottomNavItem.Categories.route) { CategoriesScreen(navController) }
+            composable(AppRoutes.CATEGORIES) { CategoriesScreen(navController) }
             composable(AppRoutes.SETTINGS) { SettingsScreen(navController) }
             composable(AppRoutes.DATABASE_BROWSER) { DatabaseBrowserScreen(navController) }
         }

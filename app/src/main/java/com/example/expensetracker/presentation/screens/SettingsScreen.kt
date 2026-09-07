@@ -48,6 +48,7 @@ fun SettingsScreen(
     val salaryReminders by viewModel.activeSalaryReminder.collectAsState()
     val exportRequest by viewModel.exportRequest.collectAsState()
     val language by viewModel.language.collectAsState()
+    val themeMode by viewModel.themeMode.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
     val context = LocalContext.current
     val activity = context as? Activity
@@ -131,6 +132,17 @@ fun SettingsScreen(
                 }
                 exportDialogRequest = null
             },
+            onShare = {
+                runCatching {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = request.mimeType
+                        putExtra(Intent.EXTRA_STREAM, request.uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, "Share ${request.fileName}"))
+                }
+                exportDialogRequest = null
+            },
             onDownload = {
                 ExportFileHelper.saveToDownloads(
                     context = context,
@@ -191,211 +203,281 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-        Text(stringResource(R.string.language), style = MaterialTheme.typography.titleSmall)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = language == AppLanguage.ENGLISH,
-                onClick = {
-                    viewModel.setLanguage(AppLanguage.ENGLISH)
-                    activity?.recreate()
-                },
-                label = { Text(stringResource(R.string.english)) }
-            )
-            FilterChip(
-                selected = language == AppLanguage.ARABIC,
-                onClick = {
-                    viewModel.setLanguage(AppLanguage.ARABIC)
-                    activity?.recreate()
-                },
-                label = { Text(stringResource(R.string.arabic)) }
-            )
-        }
+            // ── Section 1: Appearance & Language
+            Text("1. Appearance & Language", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.language), style = MaterialTheme.typography.labelMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = language == AppLanguage.ENGLISH,
+                    onClick = {
+                        viewModel.setLanguage(AppLanguage.ENGLISH)
+                        activity?.recreate()
+                    },
+                    label = { Text(stringResource(R.string.english)) }
+                )
+                FilterChip(
+                    selected = language == AppLanguage.ARABIC,
+                    onClick = {
+                        viewModel.setLanguage(AppLanguage.ARABIC)
+                        activity?.recreate()
+                    },
+                    label = { Text(stringResource(R.string.arabic)) }
+                )
+            }
 
-        HorizontalDivider()
-
-        Text(stringResource(R.string.biometric_lock), style = MaterialTheme.typography.titleSmall)
-        Text(
-            stringResource(R.string.biometric_lock_help),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(stringResource(R.string.biometric_lock_enable))
-            Switch(
-                checked = biometricLockEnabled,
-                onCheckedChange = { viewModel.setBiometricLockEnabled(it) }
-            )
-        }
-
-        HorizontalDivider()
-
-        Text(stringResource(R.string.database_browser), style = MaterialTheme.typography.titleSmall)
-        Text(
-            stringResource(R.string.database_browser_desc),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline
-        )
-        Button(
-            onClick = { navController.navigate(AppRoutes.DATABASE_BROWSER) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.database_browser))
-        }
-
-        HorizontalDivider()
-
-        Text(stringResource(R.string.balances), style = MaterialTheme.typography.titleSmall)
-        Text(
-            stringResource(R.string.balances_help),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline
-        )
-        OutlinedTextField(
-            value = cashInput,
-            onValueChange = { cashInput = it; justSaved = false },
-            label = { Text(stringResource(R.string.current_cash_balance)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            value = bankInput,
-            onValueChange = { bankInput = it; justSaved = false },
-            label = { Text(stringResource(R.string.current_bank_balance)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            modifier = Modifier.fillMaxWidth()
-        )
-        Button(
-            onClick = {
-                coroutineScope.launch {
-                    viewModel.setCurrentCashBalance(cashInput.toDoubleOrNull() ?: currentCash)
-                    viewModel.setCurrentBankBalance(bankInput.toDoubleOrNull() ?: currentBank)
-                    currentCash = viewModel.getCurrentCashBalance()
-                    currentBank = viewModel.getCurrentBankBalance()
-                    cashInput = currentCash.toString()
-                    bankInput = currentBank.toString()
-                    justSaved = true
+            Text("Dark Mode", style = MaterialTheme.typography.labelMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.example.expensetracker.data.preferences.ThemeMode.entries.forEach { mode ->
+                    FilterChip(
+                        selected = themeMode == mode,
+                        onClick = { viewModel.setThemeMode(mode) },
+                        label = {
+                            Text(
+                                when (mode) {
+                                    com.example.expensetracker.data.preferences.ThemeMode.SYSTEM -> "System"
+                                    com.example.expensetracker.data.preferences.ThemeMode.LIGHT -> "Light"
+                                    com.example.expensetracker.data.preferences.ThemeMode.DARK -> "Dark"
+                                }
+                            )
+                        }
+                    )
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.save_current_balances))
-        }
-        if (justSaved) {
-            Text(
-                stringResource(R.string.balances_saved),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
+            }
 
-        HorizontalDivider()
+            HorizontalDivider()
 
-        Text(stringResource(R.string.salary_reminder_section), style = MaterialTheme.typography.titleSmall)
-        if (salaryReminders.isEmpty()) {
+            // ── Section 2: App Lock
+            Text("2. App Lock", style = MaterialTheme.typography.titleMedium)
             Text(
-                stringResource(R.string.no_salary_reminder),
+                stringResource(R.string.biometric_lock_help),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
             )
-        } else {
-            salaryReminders.forEach { reminder ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            "${reminder.description} — ${CurrencyUtils.formatCurrency(reminder.amount)}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            "Next: ${com.example.expensetracker.presentation.theme.DateUtils.formatDate(reminder.nextDueDate)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        TextButton(onClick = { viewModel.deactivateSalaryReminder(reminder.id) }) {
-                            Text(stringResource(R.string.turn_off_reminder), color = MaterialTheme.colorScheme.error)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.biometric_lock_enable))
+                Switch(
+                    checked = biometricLockEnabled,
+                    onCheckedChange = { viewModel.setBiometricLockEnabled(it) }
+                )
+            }
+
+            HorizontalDivider()
+
+            // ── Section 3: Categories Management
+            Text("3. Categories", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Manage transaction categories and subcategories",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+            Button(
+                onClick = { navController.navigate(AppRoutes.CATEGORIES) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Category Management")
+            }
+
+            HorizontalDivider()
+
+            // ── Section 4: Database Browser
+            Text("4. Database Browser", style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.database_browser_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+            Button(
+                onClick = { navController.navigate(AppRoutes.DATABASE_BROWSER) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.database_browser))
+            }
+
+            HorizontalDivider()
+
+            // ── Section 5: Current Balances
+            Text("5. Current Balances", style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.balances_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+            OutlinedTextField(
+                value = cashInput,
+                onValueChange = { cashInput = it; justSaved = false },
+                label = { Text(stringResource(R.string.current_cash_balance)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = bankInput,
+                onValueChange = { bankInput = it; justSaved = false },
+                label = { Text(stringResource(R.string.current_bank_balance)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        viewModel.setCurrentCashBalance(cashInput.toDoubleOrNull() ?: currentCash)
+                        viewModel.setCurrentBankBalance(bankInput.toDoubleOrNull() ?: currentBank)
+                        currentCash = viewModel.getCurrentCashBalance()
+                        currentBank = viewModel.getCurrentBankBalance()
+                        cashInput = currentCash.toString()
+                        bankInput = currentBank.toString()
+                        justSaved = true
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.save_current_balances))
+            }
+            if (justSaved) {
+                Text(
+                    stringResource(R.string.balances_saved),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            HorizontalDivider()
+
+            // ── Section 6: Salary Reminders & Notifications
+            Text("6. Salary Reminders", style = MaterialTheme.typography.titleMedium)
+            val notificationsEnabled = remember { viewModel.areNotificationsEnabled() }
+            if (!notificationsEnabled) {
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Notifications are disabled in device settings. Please enable them so salary reminders can be received.",
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            } else {
+                OutlinedButton(
+                    onClick = {
+                        viewModel.sendTestSalaryNotification()
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Test notification sent!")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Send Test Notification")
+                }
+            }
+
+            if (salaryReminders.isEmpty()) {
+                Text(
+                    stringResource(R.string.no_salary_reminder),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            } else {
+                salaryReminders.forEach { reminder ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                "${reminder.description} — ${CurrencyUtils.formatCurrency(reminder.amount)}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                "Next: ${com.example.expensetracker.presentation.theme.DateUtils.formatDate(reminder.nextDueDate)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            TextButton(onClick = { viewModel.deactivateSalaryReminder(reminder.id) }) {
+                                Text(stringResource(R.string.turn_off_reminder), color = MaterialTheme.colorScheme.error)
+                            }
                         }
                     }
                 }
             }
-        }
 
-        HorizontalDivider()
+            HorizontalDivider()
 
-        Text(stringResource(R.string.data), style = MaterialTheme.typography.titleSmall)
-        Text(stringResource(R.string.export_filter), style = MaterialTheme.typography.labelMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = exportScope == ExportScope.ALL,
-                onClick = { exportScope = ExportScope.ALL },
-                label = { Text(stringResource(R.string.export_all)) }
+            // ── Section 7: Data Export & Import
+            Text("7. Data & Backup", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.export_filter), style = MaterialTheme.typography.labelMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = exportScope == ExportScope.ALL,
+                    onClick = { exportScope = ExportScope.ALL },
+                    label = { Text(stringResource(R.string.export_all)) }
+                )
+                FilterChip(
+                    selected = exportScope == ExportScope.CURRENT_MONTH,
+                    onClick = { exportScope = ExportScope.CURRENT_MONTH },
+                    label = { Text(stringResource(R.string.export_current_month)) }
+                )
+            }
+
+            Text(stringResource(R.string.export_format), style = MaterialTheme.typography.labelMedium)
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = exportFormat == ExportFormat.CSV,
+                    onClick = { exportFormat = ExportFormat.CSV },
+                    label = { Text(stringResource(R.string.export_csv)) }
+                )
+                FilterChip(
+                    selected = exportFormat == ExportFormat.EXCEL,
+                    onClick = { exportFormat = ExportFormat.EXCEL },
+                    label = { Text(stringResource(R.string.export_excel)) }
+                )
+                FilterChip(
+                    selected = exportFormat == ExportFormat.PDF,
+                    onClick = { exportFormat = ExportFormat.PDF },
+                    label = { Text(stringResource(R.string.export_pdf)) }
+                )
+            }
+            Text(
+                stringResource(R.string.export_format_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
             )
-            FilterChip(
-                selected = exportScope == ExportScope.CURRENT_MONTH,
-                onClick = { exportScope = ExportScope.CURRENT_MONTH },
-                label = { Text(stringResource(R.string.export_current_month)) }
+
+            Button(
+                onClick = { viewModel.export(exportScope, exportFormat) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.export))
+            }
+
+            OutlinedButton(
+                onClick = { importLauncher.launch(arrayOf("text/*", "text/csv", "application/csv")) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.import_csv))
+            }
+            importMessage?.let { message ->
+                Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            }
+
+            ImportFormatCard(
+                expanded = importFormatExpanded,
+                onToggle = { importFormatExpanded = !importFormatExpanded },
+                onDownloadTemplate = { viewModel.exportImportTemplate() }
             )
-        }
 
-        Text(stringResource(R.string.export_format), style = MaterialTheme.typography.labelMedium)
-        Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FilterChip(
-                selected = exportFormat == ExportFormat.CSV,
-                onClick = { exportFormat = ExportFormat.CSV },
-                label = { Text(stringResource(R.string.export_csv)) }
+            HorizontalDivider()
+
+            Text(
+                "Expense Tracker v1.1",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
             )
-            FilterChip(
-                selected = exportFormat == ExportFormat.EXCEL,
-                onClick = { exportFormat = ExportFormat.EXCEL },
-                label = { Text(stringResource(R.string.export_excel)) }
-            )
-            FilterChip(
-                selected = exportFormat == ExportFormat.PDF,
-                onClick = { exportFormat = ExportFormat.PDF },
-                label = { Text(stringResource(R.string.export_pdf)) }
-            )
-        }
-        Text(
-            stringResource(R.string.export_format_help),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline
-        )
-
-        Button(
-            onClick = { viewModel.export(exportScope, exportFormat) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.export))
-        }
-
-        OutlinedButton(
-            onClick = { importLauncher.launch(arrayOf("text/*", "text/csv", "application/csv")) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.import_csv))
-        }
-        importMessage?.let { message ->
-            Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-        }
-
-        ImportFormatCard(
-            expanded = importFormatExpanded,
-            onToggle = { importFormatExpanded = !importFormatExpanded },
-            onDownloadTemplate = { viewModel.exportImportTemplate() }
-        )
-
-        HorizontalDivider()
-
-        Text(
-            "Expense Tracker v1.0",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline
-        )
         }
     }
 }
@@ -405,6 +487,7 @@ private fun ExportReadyDialog(
     request: ExportShareRequest,
     onDismiss: () -> Unit,
     onView: () -> Unit,
+    onShare: () -> Unit,
     onDownload: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -428,6 +511,9 @@ private fun ExportReadyDialog(
                 )
                 Button(onClick = onView, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.export_view))
+                }
+                OutlinedButton(onClick = onShare, modifier = Modifier.fillMaxWidth()) {
+                    Text("Share File")
                 }
                 OutlinedButton(onClick = onDownload, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.export_download))

@@ -110,13 +110,14 @@ class HistoryViewModel @Inject constructor(
             0.0
         }
         val dueReminders = recurringRepository.getDueReminders()
+        val remaining = broughtForward + financials.periodNet - walletBalance
         return MonthSummaryUiState(
             monthBounds = bounds,
             monthIncome = financials.periodIncome,
             monthExpense = financials.periodExpense,
             monthNet = financials.periodNet,
             broughtForward = broughtForward,
-            monthRemaining = broughtForward + financials.periodNet,
+            monthRemaining = remaining,
             periodChangeByAccount = financials.periodChangeByAccount,
             incomeExpenseByAccount = financials.incomeExpenseByAccount,
             transferImpact = financials.transferImpact,

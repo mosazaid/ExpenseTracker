@@ -1,6 +1,7 @@
 package com.example.expensetracker.presentation.navigation
 
 object AppRoutes {
+    const val OVERVIEW = "overview"
     const val HISTORY = "history"
     const val ADD_TRANSACTION = "addTransaction"
     const val STATISTICS = "statistics"

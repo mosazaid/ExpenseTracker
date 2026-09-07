@@ -1,5 +1,7 @@
 package com.example.expensetracker.presentation.theme
 
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -109,9 +111,9 @@ object DateUtils {
 }
 
 object CurrencyUtils {
-    private val numberFormat = NumberFormat.getCurrencyInstance()
+    private val decimalFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale.US))
 
     fun formatCurrency(amount: Double): String {
-        return numberFormat.format(amount)
+        return "${decimalFormat.format(amount)} JOD"
     }
 }

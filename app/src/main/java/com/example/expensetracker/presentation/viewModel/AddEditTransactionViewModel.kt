@@ -28,6 +28,9 @@ import kotlinx.coroutines.flow.stateIn
 import java.util.Date
 import javax.inject.Inject
 
+import com.example.expensetracker.data.database.entities.SubCategory
+import kotlinx.coroutines.flow.Flow
+
 @HiltViewModel
 class AddEditTransactionViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
@@ -49,6 +52,14 @@ class AddEditTransactionViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MonthMode.CALENDAR)
 
     val allCategories = categoryRepository.getAllCategories()
+
+    fun getSubCategories(categoryId: Long): Flow<List<SubCategory>> {
+        return categoryRepository.getSubCategories(categoryId)
+    }
+
+    suspend fun saveSubCategory(categoryId: Long, name: String): Long {
+        return categoryRepository.saveSubCategory(categoryId, name)
+    }
 
     suspend fun loadTransactionForEdit(id: Long): Boolean {
         val transaction = transactionRepository.getTransactionById(id) ?: return false
@@ -244,7 +255,7 @@ data class AddEditTransactionUiState(
     val subDescription: String = "",
     val selectedCategory: Category? = null,
     val transactionType: TransactionType = TransactionType.EXPENSE,
-    val accountType: AccountType = AccountType.CASH,
+    val accountType: AccountType = AccountType.BANK,
     val selectedDate: Date = Date(),
     val debtorNote: String = "",
     val linkedExpenseId: Long? = null,

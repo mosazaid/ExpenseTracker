@@ -60,7 +60,8 @@ class SettingsViewModel @Inject constructor(
     private val pdfTransactionExporter: PdfTransactionExporter,
     private val recurringRepository: RecurringRepository,
     private val balanceCalculator: BalanceCalculator,
-    private val periodCalculator: PeriodCalculator
+    private val periodCalculator: PeriodCalculator,
+    private val notificationHelper: com.example.expensetracker.util.NotificationHelper
 ) : ViewModel() {
 
     val activeSalaryReminder = recurringRepository.getActiveRecurringTransactions()
@@ -72,8 +73,11 @@ class SettingsViewModel @Inject constructor(
     val language: StateFlow<AppLanguage> = userPreferences.language
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppLanguage.ENGLISH)
 
+    val themeMode: StateFlow<com.example.expensetracker.data.preferences.ThemeMode> = userPreferences.themeMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.example.expensetracker.data.preferences.ThemeMode.SYSTEM)
+
     val biometricLockEnabled: StateFlow<Boolean> = userPreferences.biometricLockEnabled
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     private val _exportRequest = MutableStateFlow<ExportShareRequest?>(null)
     val exportRequest: StateFlow<ExportShareRequest?> = _exportRequest.asStateFlow()
@@ -213,6 +217,20 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             userPreferences.setBiometricLockEnabled(enabled)
         }
+    }
+
+    fun setThemeMode(mode: com.example.expensetracker.data.preferences.ThemeMode) {
+        viewModelScope.launch {
+            userPreferences.setThemeMode(mode)
+        }
+    }
+
+    fun areNotificationsEnabled(): Boolean {
+        return notificationHelper.areNotificationsEnabled()
+    }
+
+    fun sendTestSalaryNotification() {
+        notificationHelper.showTestNotification()
     }
 
     fun deactivateSalaryReminder(id: Long) {

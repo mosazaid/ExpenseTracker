@@ -186,3 +186,42 @@ val MIGRATION_8_9 = Migration(8, 9) { db ->
 val MIGRATION_9_10 = Migration(9, 10) { db ->
     db.execSQL("ALTER TABLE transactions ADD COLUMN subDescription TEXT")
 }
+
+val MIGRATION_10_11 = Migration(10, 11) { db ->
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS sub_categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            categoryId INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            createdAt INTEGER NOT NULL,
+            FOREIGN KEY(categoryId) REFERENCES categories(id) ON DELETE CASCADE
+        )
+        """.trimIndent()
+    )
+    db.execSQL(
+        "CREATE INDEX IF NOT EXISTS index_sub_categories_categoryId ON sub_categories(categoryId)"
+    )
+
+    val now = System.currentTimeMillis()
+    val updatedCategories = listOf(
+        Triple("Car & Transportation", "🚗", "#FFA726"),
+        Triple("Groceries & Food", "🛒", "#43A047"),
+        Triple("Restaurants & Cafés", "🍽️", "#FF6B6B"),
+        Triple("Subscriptions & AI / Work", "🤖", "#26A69A"),
+        Triple("Travel & Entertainment", "🎭", "#96CEB4"),
+        Triple("Personal Care & Home", "🧴", "#AB47BC"),
+        Triple("Education & Learning", "📚", "#98D8C8")
+    )
+    updatedCategories.forEach { (name, icon, color) ->
+        db.execSQL(
+            """
+            INSERT INTO categories (name, icon, color, type, isDefault, createdAt)
+            SELECT '$name', '$icon', '$color', 'EXPENSE', 1, $now
+            WHERE NOT EXISTS (
+                SELECT 1 FROM categories WHERE name = '$name' AND type = 'EXPENSE'
+            )
+            """.trimIndent()
+        )
+    }
+}

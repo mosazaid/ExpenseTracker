@@ -2,6 +2,7 @@
     <string name="app_name">متتبع المصروفات</string>
 
     <!-- Navigation -->
+    <string name="nav_overview">نظرة عامة</string>
     <string name="nav_history">السجل</string>
     <string name="nav_add">إضافة</string>
     <string name="nav_stats">إحصائيات</string>

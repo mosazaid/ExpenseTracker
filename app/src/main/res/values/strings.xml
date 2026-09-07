@@ -2,6 +2,7 @@
     <string name="app_name">Expense Tracker</string>
 
     <!-- Navigation -->
+    <string name="nav_overview">Overview</string>
     <string name="nav_history">History</string>
     <string name="nav_add">Add</string>
     <string name="nav_stats">Stats</string>

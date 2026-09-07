@@ -74,42 +74,74 @@ private fun TransferItem(
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(14.dp)
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top
         ) {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text("🔄", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     transaction.description.ifBlank { "Transfer" },
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.titleMedium
                 )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    "$from → $to · ${DateUtils.formatDate(transaction.date)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    CurrencyUtils.formatCurrency(transaction.amount),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-                IconButton(
-                    onClick = { onDelete(transaction) },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete transfer",
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(18.dp)
+                if (!transaction.subDescription.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        transaction.subDescription,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
                     )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Surface(
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                ) {
+                    Text(
+                        "$from → $to",
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Transfer · ${DateUtils.formatDate(transaction.date)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        CurrencyUtils.formatCurrency(transaction.amount),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { onDelete(transaction) },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete transfer",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }
@@ -128,25 +160,47 @@ private fun WalletMoveItem(
     Surface(
         tonalElevation = 2.dp,
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.25f),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onEdit(transaction) }
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(14.dp)
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top
         ) {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = WalletAccent.copy(alpha = 0.15f),
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text("👛", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    transaction.description.ifBlank { "Wallet move" },
+                    style = MaterialTheme.typography.titleMedium
+                )
+                if (!transaction.subDescription.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        transaction.subDescription,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
                 Surface(
                     shape = MaterialTheme.shapes.extraSmall,
                     color = WalletAccent.copy(alpha = 0.15f)
                 ) {
                     Text(
-                        "Wallet move",
+                        "$from → $to",
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         style = MaterialTheme.typography.labelSmall,
                         color = WalletAccent
@@ -154,35 +208,33 @@ private fun WalletMoveItem(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    transaction.description.ifBlank { "Wallet move" },
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    "$from → $to · ${DateUtils.formatDate(transaction.date)}",
+                    "Wallet · ${DateUtils.formatDate(transaction.date)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = WalletAccent
                 )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    CurrencyUtils.formatCurrency(transaction.amount),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = WalletAccent
-                )
-                IconButton(
-                    onClick = { onDelete(transaction) },
-                    modifier = Modifier.size(32.dp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete wallet move",
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(18.dp)
+                    Text(
+                        CurrencyUtils.formatCurrency(transaction.amount),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = WalletAccent
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { onDelete(transaction) },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete wallet move",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }
@@ -216,6 +268,12 @@ private fun StandardTransactionItem(
     val isDept = category.matchesSystemKey(CategorySystemKey.DEPT) &&
         transaction.type == TransactionType.INCOME
 
+    val accountLabel = when (transaction.accountType) {
+        AccountType.CASH -> "💵 Cash"
+        AccountType.BANK -> "🏦 Bank"
+        AccountType.WALLET -> "👛 Wallet"
+    }
+
     Surface(
         tonalElevation = if (isOwed) 0.dp else 2.dp,
         shape = MaterialTheme.shapes.medium,
@@ -235,151 +293,129 @@ private fun StandardTransactionItem(
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(14.dp)
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
+            // Category icon at left for all of them
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.size(44.dp)
             ) {
-                if (category != null) {
+                Box(contentAlignment = Alignment.Center) {
                     Text(
-                        text = category.icon,
-                        fontSize = MaterialTheme.typography.titleMedium.fontSize,
-                        modifier = Modifier.padding(end = 12.dp)
+                        text = category?.icon ?: "📋",
+                        fontSize = MaterialTheme.typography.titleMedium.fontSize
                     )
                 }
-                Column {
-                    if (isOwed) {
-                        Surface(
-                            shape = MaterialTheme.shapes.extraSmall,
-                            color = OwedAccent.copy(alpha = 0.2f)
-                        ) {
-                            Text(
-                                "Owed to you",
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = OwedAccent
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                    }
-                    Text(
-                        transaction.description.ifBlank { "No description" },
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    transaction.subDescription?.takeIf { it.isNotBlank() }?.let { sub ->
-                        Spacer(modifier = Modifier.height(2.dp))
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                if (isOwed) {
+                    Surface(
+                        shape = MaterialTheme.shapes.extraSmall,
+                        color = OwedAccent.copy(alpha = 0.2f)
+                    ) {
                         Text(
-                            sub,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
+                            "Owed to you",
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = OwedAccent
                         )
                     }
                     Spacer(modifier = Modifier.height(2.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (category != null) {
-                            Text(
-                                category.name,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (isOwed) OwedAccent else MaterialTheme.colorScheme.primary
-                            )
-                            Text("·", style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline)
-                        }
-                        // Account badge so user can instantly see Cash vs Bank
-                        val accountLabel = when (transaction.accountType) {
-                            AccountType.CASH -> "💵 Cash"
-                            AccountType.BANK -> "🏦 Bank"
-                            AccountType.WALLET -> "👛 Wallet"
-                        }
-                        Surface(
-                            shape = MaterialTheme.shapes.extraSmall,
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
-                        ) {
-                            Text(
-                                accountLabel,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
-                        Text("·", style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline)
-                        Text(
-                            DateUtils.formatDate(transaction.date),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                    if (isOwed) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            "Awaiting Dept reimbursement",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        transaction.debtorNote?.takeIf { it.isNotBlank() }?.let { note ->
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                note,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
-                    }
-                    if (isReimbursed && transaction.type == TransactionType.EXPENSE) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            "Reimbursed",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                    }
-                    if (isDept) {
-                        linkedExpenseDescription?.let { expenseDesc ->
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                "For: $expenseDesc",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
-                        transaction.debtorNote?.takeIf { it.isNotBlank() }?.let { note ->
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                note,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
+                }
+
+                // 1. Title at top
+                Text(
+                    transaction.description.ifBlank { "No description" },
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                // 2. Subtitle below it if found
+                transaction.subDescription?.takeIf { it.isNotBlank() }?.let { sub ->
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        sub,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // 3. Left will be the type (bank, cash)
+                Surface(
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                ) {
+                    Text(
+                        accountLabel,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // 4. Below category (date)
+                Text(
+                    text = "${category?.name ?: "Other"} · ${DateUtils.formatDate(transaction.date)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+
+                if (isOwed) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        "Awaiting Dept reimbursement",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    transaction.debtorNote?.takeIf { it.isNotBlank() }?.let { note ->
+                        Text(note, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                     }
                 }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    "$amountPrefix${CurrencyUtils.formatCurrency(transaction.amount)}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = amountColor
-                )
-                IconButton(
-                    onClick = { onDelete(transaction) },
-                    modifier = Modifier.size(32.dp)
+                if (isReimbursed && transaction.type == TransactionType.EXPENSE) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text("Reimbursed", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                }
+                if (isDept) {
+                    linkedExpenseDescription?.let { expenseDesc ->
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text("For: $expenseDesc", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // 5. Below at the right: delete icon and amount
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete transaction",
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(18.dp)
+                    Text(
+                        "$amountPrefix${CurrencyUtils.formatCurrency(transaction.amount)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = amountColor
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { onDelete(transaction) },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete transaction",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }
