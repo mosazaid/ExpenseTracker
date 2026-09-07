@@ -1,0 +1,123 @@
+<resources>
+    <string name="app_name">متتبع المصروفات</string>
+
+    <!-- Navigation -->
+    <string name="nav_history">السجل</string>
+    <string name="nav_add">إضافة</string>
+    <string name="nav_stats">إحصائيات</string>
+    <string name="nav_categories">التصنيفات</string>
+
+    <!-- Common -->
+    <string name="back">رجوع</string>
+    <string name="save">حفظ</string>
+    <string name="cancel">إلغاء</string>
+    <string name="delete">حذف</string>
+    <string name="ok">موافق</string>
+    <string name="settings">الإعدادات</string>
+    <string name="no_transactions">لا توجد معاملات.</string>
+    <string name="amount">المبلغ</string>
+    <string name="description">الوصف</string>
+    <string name="sub_description">وصف فرعي (اختياري)</string>
+    <string name="sub_description_hint">مثال: قهوة، رقائق…</string>
+    <string name="category">التصنيف</string>
+    <string name="account">الحساب</string>
+    <string name="date">التاريخ</string>
+    <string name="type">النوع</string>
+    <string name="period">الفترة</string>
+    <string name="filter">تصفية</string>
+    <string name="all_categories">كل التصنيفات</string>
+    <string name="export_csv">CSV</string>
+    <string name="export_excel">Excel (منسّق)</string>
+    <string name="export_pdf">PDF</string>
+    <string name="export_format_help">يفتح CSV في Excel ويمكن إعادة استيراده. Excel المنسّق وPDF للعرض والمشاركة.</string>
+    <string name="export_ready_title">التصدير جاهز</string>
+    <string name="export_ready_message">اعرض الملف الآن أو احفظه في مجلد التنزيلات.</string>
+    <string name="export_view">عرض</string>
+    <string name="export_download">حفظ في التنزيلات</string>
+    <string name="export_saved_to_downloads">تم الحفظ في التنزيلات: %1$s</string>
+    <string name="export_saved">تم حفظ الملف</string>
+    <string name="export_view_failed">لا يوجد تطبيق لفتح هذا الملف. جرّب حفظ في التنزيلات.</string>
+    <string name="export_save_failed">تعذّر حفظ الملف. حاول مرة أخرى.</string>
+    <string name="export_format">صيغة التصدير</string>
+    <string name="export">تصدير</string>
+    <string name="import_csv">استيراد CSV</string>
+    <string name="import_csv_format">صيغة CSV المقبولة للاستيراد</string>
+    <string name="import_csv_format_desc">يتوقع الاستيراد ملف .csv عادي بهذا صف العناوين. يتم تجاهل الأسطر التي تبدأ بـ #.</string>
+    <string name="import_required_columns">الأعمدة المطلوبة</string>
+    <string name="import_optional_columns">الأعمدة الاختيارية</string>
+    <string name="import_type_values">قيم النوع</string>
+    <string name="import_account_values">قيم الحساب</string>
+    <string name="import_date_format">صيغة التاريخ</string>
+    <string name="import_example_row">مثال على صف</string>
+    <string name="download_import_template">تنزيل قالب الاستيراد</string>
+    <string name="import_note">استخدم تصدير CSV أو تنزيل قالب الاستيراد لملف عادي يمكنك تعديله وإعادة استيراده. Excel المنسّق وPDF للعرض فقط.</string>
+    <string name="language">اللغة</string>
+    <string name="english">English</string>
+    <string name="arabic">العربية</string>
+
+    <!-- Biometric lock -->
+    <string name="biometric_lock">قفل التطبيق</string>
+    <string name="biometric_lock_enable">طلب البصمة لفتح التطبيق</string>
+    <string name="biometric_lock_help">عند التفعيل، يلزم البصمة أو رمز الجهاز لعرض بياناتك. المحاولات الفاشلة تظهر خطأ وتبقي البيانات مخفية.</string>
+    <string name="biometric_locked_message">تحقق من هويتك لعرض مصروفاتك وأرصدتك.</string>
+    <string name="biometric_unlock">فتح</string>
+    <string name="biometric_prompt_title">فتح متتبع المصروفات</string>
+    <string name="biometric_prompt_subtitle">استخدم البصمة أو بيانات اعتماد الجهاز</string>
+    <string name="biometric_not_recognized">لم يتم التعرف. حاول مرة أخرى.</string>
+
+    <!-- History -->
+    <string name="history_title">سجل المعاملات</string>
+    <string name="tab_overview">نظرة عامة</string>
+    <string name="tab_transactions">المعاملات</string>
+    <string name="tab_filters">التصفية</string>
+    <string name="filter_results_title">نتائج التصفية</string>
+    <string name="filter_results_count">%1$d معاملة مطابقة</string>
+    <string name="filter_view_transactions">عرض المعاملات</string>
+    <string name="filter_active">مُصفّى حسب: %1$s</string>
+    <string name="month_summary">ملخص الشهر</string>
+    <string name="salary_month">شهر الراتب</string>
+    <string name="calendar_month">الشهر التقويمي</string>
+    <string name="from_last_salary">من آخر راتب</string>
+    <string name="first_to_last_day">من 1 إلى آخر يوم</string>
+    <string name="salary_reminder">تذكير الراتب</string>
+    <string name="record">تسجيل</string>
+    <string name="dismiss">تجاهل</string>
+    <string name="delete_transaction">حذف المعاملة</string>
+    <string name="delete_transaction_confirm">هل أنت متأكد من حذف هذه المعاملة؟</string>
+    <string name="closed_salary_month">شهر راتب مغلق</string>
+    <string name="swipe_to_delete">اسحب لليسار للحذف</string>
+
+    <!-- Settings -->
+    <string name="balances">الأرصدة</string>
+    <string name="balances_help">أدخل المبلغ الفعلي للنقد/البنك لديك الآن. سيتم إعادة معايرة رصيدك ليتطابق مع الواقع.</string>
+    <string name="current_cash_balance">رصيد النقد الحالي</string>
+    <string name="current_bank_balance">رصيد البنك الحالي</string>
+    <string name="save_current_balances">حفظ الأرصدة الحالية</string>
+    <string name="balances_saved">تم الحفظ. الأرصدة تعكس ما أدخلته.</string>
+    <string name="salary_reminder_section">تذكير الراتب</string>
+    <string name="no_salary_reminder">لا يوجد تذكير راتب نشط. أنشئ واحداً عند حفظ راتب مع بدء شهر جديد.</string>
+    <string name="turn_off_reminder">إيقاف التذكير</string>
+    <string name="data">البيانات</string>
+    <string name="export_filter">تصفية التصدير</string>
+    <string name="export_all">كل المعاملات</string>
+    <string name="export_current_month">شهر الراتب/التقويم الحالي</string>
+    <string name="import_result">اكتمل الاستيراد: %1$d مضاف، %2$d محدّث، %3$d متخطّى</string>
+    <string name="database_browser">متصفح قاعدة البيانات</string>
+    <string name="database_browser_desc">عرض الجداول والأعمدة والقيم</string>
+
+    <!-- Statistics -->
+    <string name="statistics">الإحصائيات</string>
+    <string name="income">الدخل</string>
+    <string name="expense">المصروف</string>
+    <string name="wallet">المحفظة</string>
+    <string name="balance">الرصيد</string>
+
+    <!-- Database browser -->
+    <string name="db_browser_title">قاعدة البيانات</string>
+    <string name="db_select_table">اختر جدولاً</string>
+    <string name="db_column_filters">تصفية الأعمدة</string>
+    <string name="db_apply_filters">تطبيق التصفية</string>
+    <string name="db_clear_filters">مسح التصفية</string>
+    <string name="db_rows_count">%1$d صف (حد أقصى 500)</string>
+    <string name="db_no_rows">لا توجد صفوف مطابقة.</string>
+</resources>

@@ -17,13 +17,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.ui.res.stringResource
+import com.example.expensetracker.R
 import com.example.expensetracker.presentation.navigation.AppRoutes
 
-sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: String) {
-    object History : BottomNavItem(AppRoutes.HISTORY, Icons.Default.List, "History")
-    object Add : BottomNavItem(AppRoutes.ADD_TRANSACTION, Icons.Default.Add, "Add")
-    object Stats : BottomNavItem(AppRoutes.STATISTICS, Icons.Default.BarChart, "Stats")
-    object Categories : BottomNavItem(AppRoutes.CATEGORIES, Icons.Default.Category, "Categories")
+sealed class BottomNavItem(val route: String, val icon: ImageVector, val labelRes: Int) {
+    object History : BottomNavItem(AppRoutes.HISTORY, Icons.Default.List, R.string.nav_history)
+    object Add : BottomNavItem(AppRoutes.ADD_TRANSACTION, Icons.Default.Add, R.string.nav_add)
+    object Stats : BottomNavItem(AppRoutes.STATISTICS, Icons.Default.BarChart, R.string.nav_stats)
+    object Categories : BottomNavItem(AppRoutes.CATEGORIES, Icons.Default.Category, R.string.nav_categories)
 }
 
 @Composable
@@ -43,18 +45,33 @@ fun MainScreen(initialRecurringId: Long? = null) {
         BottomNavItem.Categories
     )
 
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val showBottomBar = currentRoute == AppRoutes.HISTORY ||
+        currentRoute == AppRoutes.STATISTICS ||
+        currentRoute == AppRoutes.CATEGORIES ||
+        currentRoute?.startsWith(AppRoutes.ADD_TRANSACTION) == true
+
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                val currentDestination =
-                    navController.currentBackStackEntryAsState().value?.destination
-                items.forEach { item ->
+            if (showBottomBar) {
+                NavigationBar {
+                    val currentDestination =
+                        navController.currentBackStackEntryAsState().value?.destination
+                    items.forEach { item ->
                     NavigationBarItem(
-                        icon = { Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label) },
-                        selected = currentDestination?.route?.startsWith(item.route) == true,
+                        icon = { Icon(item.icon, contentDescription = stringResource(item.labelRes)) },
+                        label = { Text(stringResource(item.labelRes)) },
+                        selected = when (item) {
+                            BottomNavItem.Add ->
+                                currentDestination?.route?.startsWith(AppRoutes.ADD_TRANSACTION) == true
+                            else -> currentDestination?.route == item.route
+                        },
                         onClick = {
-                            navController.navigate(item.route) {
+                            val destination = when (item) {
+                                BottomNavItem.Add -> AppRoutes.addTransactionRoute()
+                                else -> item.route
+                            }
+                            navController.navigate(destination) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -63,6 +80,7 @@ fun MainScreen(initialRecurringId: Long? = null) {
                             }
                         }
                     )
+                }
                 }
             }
         }
@@ -117,6 +135,7 @@ fun MainScreen(initialRecurringId: Long? = null) {
             composable(BottomNavItem.Stats.route) { StatisticsScreen(navController) }
             composable(BottomNavItem.Categories.route) { CategoriesScreen(navController) }
             composable(AppRoutes.SETTINGS) { SettingsScreen(navController) }
+            composable(AppRoutes.DATABASE_BROWSER) { DatabaseBrowserScreen(navController) }
         }
     }
 }

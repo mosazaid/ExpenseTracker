@@ -1,55 +1,49 @@
 package com.example.expensetracker.domain
 
-import com.example.expensetracker.data.database.entities.Transaction
-import com.example.expensetracker.data.repository.CategoryRepository
-import com.example.expensetracker.data.repository.TransactionRepository
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class CsvExporter @Inject constructor(
-    private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository
+    private val loader: TransactionExportLoader
 ) {
+    private val dateFormat = SimpleDateFormat(CsvImportFormat.DATE_FORMAT, Locale.US)
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-
-    suspend fun exportTransactions(): String {
-        val transactions = transactionRepository.getAllTransactionsSnapshot()
-        val categories = categoryRepository.getAllCategoriesSnapshot()
-        val categoryMap = categories.associateBy { it.id }
-
-        val header = listOf(
-            "id", "date", "type", "category", "amount", "account", "toAccount",
-            "description", "startsNewPeriod", "carriedForwardBalance", "linkedExpenseId",
-            "debtorNote", "awaitingReimbursement", "allowNegativeBalance", "createdAt", "updatedAt"
-        ).joinToString(",")
-
-        val rows = transactions.map { txn ->
+    suspend fun exportPlainCsv(filter: TransactionExportFilter? = null): String {
+        val rows = loader.loadRows(filter)
+        val filterLabel = filter?.label ?: "All transactions"
+        val headerComments = listOf(
+            "# Expense Tracker — transaction export",
+            "# Filter: $filterLabel",
+            "# Generated: ${dateFormat.format(java.util.Date())}",
+            "# Import: use the header row below (lines starting with # are ignored)",
+            "#"
+        )
+        val header = CsvImportFormat.HEADER
+        val dataRows = rows.map { row ->
             listOf(
-                txn.id.toString(),
-                csvEscape(dateFormat.format(txn.date)),
-                csvEscape(txn.type.name),
-                csvEscape(categoryMap[txn.categoryId]?.name.orEmpty()),
-                txn.amount.toString(),
-                csvEscape(txn.accountType.name),
-                csvEscape(txn.toAccountType?.name.orEmpty()),
-                csvEscape(txn.description),
-                txn.startsNewPeriod.toString(),
-                txn.carriedForwardBalance?.toString().orEmpty(),
-                txn.linkedExpenseId?.toString().orEmpty(),
-                csvEscape(txn.debtorNote.orEmpty()),
-                txn.awaitingReimbursement.toString(),
-                txn.allowNegativeBalance.toString(),
-                csvEscape(dateFormat.format(txn.createdAt)),
-                csvEscape(dateFormat.format(txn.updatedAt))
+                row.id.toString(),
+                csvEscape(dateFormat.format(row.date)),
+                csvEscape(row.type.name),
+                csvEscape(row.categoryName),
+                row.amount.toString(),
+                csvEscape(row.account.name),
+                csvEscape(row.toAccount?.name.orEmpty()),
+                csvEscape(row.description),
+                csvEscape(row.subDescription),
+                row.startsNewPeriod.toString(),
+                row.carriedForwardBalance?.toString().orEmpty(),
+                row.linkedExpenseId?.toString().orEmpty(),
+                csvEscape(row.debtorNote),
+                row.awaitingReimbursement.toString(),
+                row.allowNegativeBalance.toString(),
+                csvEscape(dateFormat.format(row.createdAt)),
+                csvEscape(dateFormat.format(row.updatedAt))
             ).joinToString(",")
         }
-
-        return (listOf(header) + rows).joinToString("\n")
+        return (headerComments + header + dataRows).joinToString("\n")
     }
 
     private fun csvEscape(value: String): String {

@@ -270,6 +270,14 @@ private fun StandardTransactionItem(
                         transaction.description.ifBlank { "No description" },
                         style = MaterialTheme.typography.bodyLarge
                     )
+                    transaction.subDescription?.takeIf { it.isNotBlank() }?.let { sub ->
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            sub,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -375,5 +383,67 @@ private fun StandardTransactionItem(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeableTransactionItem(
+    transaction: Transaction,
+    category: Category?,
+    onDelete: (Transaction) -> Unit,
+    onEdit: (Transaction) -> Unit = {},
+    isReimbursed: Boolean = false,
+    isOwed: Boolean = false,
+    linkedExpenseDescription: String? = null
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                onDelete(transaction)
+            }
+            false
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = true,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(vertical = 4.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxHeight()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+            }
+        }
+    ) {
+        TransactionItem(
+            transaction = transaction,
+            category = category,
+            onDelete = onDelete,
+            onEdit = onEdit,
+            isReimbursed = isReimbursed,
+            isOwed = isOwed,
+            linkedExpenseDescription = linkedExpenseDescription
+        )
     }
 }

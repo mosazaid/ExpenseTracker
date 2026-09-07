@@ -8,6 +8,7 @@ object AppRoutes {
     const val TRANSFER = "transfer"
     const val WALLET = "wallet"
     const val SETTINGS = "settings"
+    const val DATABASE_BROWSER = "databaseBrowser"
 
     const val EDIT_TRANSFER = "editTransfer/{transactionId}"
     const val EDIT_TRANSFER_ARG = "transactionId"

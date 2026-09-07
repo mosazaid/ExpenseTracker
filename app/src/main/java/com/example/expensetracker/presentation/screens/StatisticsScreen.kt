@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.expensetracker.R
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.presentation.viewModel.StatisticsViewModel
 import com.example.expensetracker.presentation.components.StatisticsBarChart
@@ -34,7 +36,7 @@ fun StatisticsScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Statistics", style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.statistics), style = MaterialTheme.typography.titleLarge)
         if (state.periodLabel.isNotBlank()) {
             Text(
                 state.periodLabel,
@@ -62,25 +64,29 @@ fun StatisticsScreen(
         Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(4.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    "Income: ${CurrencyUtils.formatCurrency(state.totalIncome)}",
+                    "${stringResource(R.string.income)}: ${CurrencyUtils.formatCurrency(state.totalIncome)}",
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    "Expense: ${CurrencyUtils.formatCurrency(state.totalExpense)}",
+                    "${stringResource(R.string.expense)}: ${CurrencyUtils.formatCurrency(state.totalExpense)}",
                     color = MaterialTheme.colorScheme.error
                 )
-                Text("Balance: ${CurrencyUtils.formatCurrency(state.balance)}")
+                Text(
+                    "${stringResource(R.string.wallet)}: ${CurrencyUtils.formatCurrency(state.totalWallet)}"
+                )
+                Text("${stringResource(R.string.balance)}: ${CurrencyUtils.formatCurrency(state.balance)}")
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (state.totalIncome == 0.0 && state.totalExpense == 0.0) {
-            Text("No transactions found.", style = MaterialTheme.typography.bodyMedium)
+        if (state.totalIncome == 0.0 && state.totalExpense == 0.0 && state.totalWallet == 0.0) {
+            Text(stringResource(R.string.no_transactions), style = MaterialTheme.typography.bodyMedium)
         } else {
             StatisticsBarChart(
                 income = state.totalIncome.toFloat(),
-                expense = state.totalExpense.toFloat()
+                expense = state.totalExpense.toFloat(),
+                wallet = state.totalWallet.toFloat()
             )
         }
     }

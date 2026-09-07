@@ -23,6 +23,7 @@ data class Transaction(
     val id: Long = 0,
     val amount: Double,
     val description: String,
+    val subDescription: String? = null,
     val date: Date,
     val type: TransactionType,
     val categoryId: Long?,

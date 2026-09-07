@@ -3,11 +3,14 @@ package com.example.expensetracker.data.preferences
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.expensetracker.core.locale.AppLanguage
+import com.example.expensetracker.core.locale.LocaleHelper
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -28,10 +31,20 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 class UserPreferences @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+    private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
+    private val languageKey = stringPreferencesKey("app_language")
     private val monthModeKey = stringPreferencesKey("month_mode")
     private val openingCashKey = stringPreferencesKey("opening_cash_balance")
     private val openingBankKey = stringPreferencesKey("opening_bank_balance")
     private val dismissedRecurringKey = stringSetPreferencesKey("dismissed_recurring_until")
+
+    val biometricLockEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[biometricLockKey] ?: true
+    }
+
+    val language: Flow<AppLanguage> = context.dataStore.data.map { prefs ->
+        AppLanguage.fromCode(prefs[languageKey])
+    }
 
     val monthMode: Flow<MonthMode> = context.dataStore.data.map { prefs ->
         when (prefs[monthModeKey]) {
@@ -50,6 +63,19 @@ class UserPreferences @Inject constructor(
 
     val dismissedRecurringKeys: Flow<Set<String>> = context.dataStore.data.map { prefs ->
         prefs[dismissedRecurringKey] ?: emptySet()
+    }
+
+    suspend fun setBiometricLockEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[biometricLockKey] = enabled
+        }
+    }
+
+    suspend fun setLanguage(language: AppLanguage) {
+        LocaleHelper.persistLanguage(context, language.code)
+        context.dataStore.edit { prefs ->
+            prefs[languageKey] = language.code
+        }
     }
 
     suspend fun setMonthMode(mode: MonthMode) {

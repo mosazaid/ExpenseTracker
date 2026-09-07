@@ -8,6 +8,7 @@ import com.example.expensetracker.data.preferences.UserPreferences
 import com.example.expensetracker.data.repository.TransactionRepository
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.PeriodCalculator
+import com.example.expensetracker.domain.WalletCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -18,6 +19,7 @@ import javax.inject.Inject
 class StatisticsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val periodCalculator: PeriodCalculator,
+    private val walletCalculator: WalletCalculator,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
@@ -37,9 +39,11 @@ class StatisticsViewModel @Inject constructor(
             val totalExpense = transactionRepository.getTotalAmountByTypeAndDateRange(
                 TransactionType.EXPENSE, bounds.start, bounds.end
             )
+            val totalWallet = walletCalculator.getWalletBalance(bounds.start, bounds.end)
             _statisticsState.value = _statisticsState.value.copy(
                 totalIncome = totalIncome,
                 totalExpense = totalExpense,
+                totalWallet = totalWallet,
                 balance = totalIncome - totalExpense,
                 periodLabel = bounds.label,
                 isLoading = false
@@ -51,6 +55,7 @@ class StatisticsViewModel @Inject constructor(
 data class StatisticsState(
     val totalIncome: Double = 0.0,
     val totalExpense: Double = 0.0,
+    val totalWallet: Double = 0.0,
     val balance: Double = 0.0,
     val periodLabel: String = "",
     val isLoading: Boolean = false

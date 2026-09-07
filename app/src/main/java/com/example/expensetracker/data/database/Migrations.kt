@@ -182,3 +182,7 @@ val MIGRATION_7_8 = Migration(7, 8) { db ->
 val MIGRATION_8_9 = Migration(8, 9) { db ->
     db.execSQL("ALTER TABLE transactions ADD COLUMN carriedForwardBalance REAL")
 }
+
+val MIGRATION_9_10 = Migration(9, 10) { db ->
+    db.execSQL("ALTER TABLE transactions ADD COLUMN subDescription TEXT")
+}

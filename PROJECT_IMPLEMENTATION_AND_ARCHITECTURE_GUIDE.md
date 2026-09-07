@@ -1,18 +1,22 @@
 # ExpenseTracker Implementation and Architecture Guide
 
-This document is the technical and business reference for the current app state after the recent refactors and feature expansion work.
+This document is the technical and business reference for the current app state after Phase 2 and Phase 3 feature work (through DB version **10**, July 2026).
 
 ## 1. Project Purpose (Business View)
 
 ExpenseTracker helps a user manage personal money with:
 
-- income and expense tracking by category and account (Cash/Bank)
+- income and expense tracking by category and account (**Cash / Bank / Wallet**)
 - transfer tracking between Cash and Bank
+- **monthly wallet** (pocket money) moves scoped to the open salary month
 - salary-cycle aware history (not only calendar month)
 - reimbursement tracking ("someone owes me")
 - category budgets with progress feedback
 - recurring salary reminders
-- CSV export for backup/share
+- **CSV import** and **styled CSV/PDF export** for backup/share
+- **Arabic and English** UI
+- **Biometric app lock** on launch and resume
+- developer-style **database browser** for inspecting local data
 
 ### Core business rules
 
@@ -21,226 +25,307 @@ ExpenseTracker helps a user manage personal money with:
    - `SALARY`: month starts at the latest salary-period anchor and ends before next anchor
 
 2. **Account-aware balances**
-   - balances are computed separately for Cash and Bank
-   - transfer affects both accounts (out from source, in to target)
-   - opening balances are configurable and included in totals
+   - balances computed separately for Cash and Bank (Wallet is separate monthly bucket)
+   - transfer affects both Cash/Bank accounts
+   - wallet moves affect Wallet + one liquid account (Cash or Bank)
+   - opening balances are configurable; **Settings recalibrates “money now”** via `BalanceCalculator.setCurrentBalance`
 
-3. **Reimbursement ("owed")**
-   - an expense is owed only when explicitly marked `awaitingReimbursement = true`
+3. **Wallet (salary month only)**
+   - `WALLET_MOVE` increases/decreases period wallet balance
+   - only the **open** salary month allows add/edit/delete of wallet moves
+   - wallet balance **cannot go negative** (validated in `WalletViewModel`)
+
+4. **Reimbursement ("owed")**
+   - expense is owed only when `awaitingReimbursement = true`
    - "Dept" income can link to original expense
-   - linked expenses are treated as reimbursed
+   - linked expenses show as reimbursed
 
-4. **Budget period follows active month mode**
-   - budget progress reflects the same period bounds shown in History
+5. **Salary period start**
+   - salary income can set `startsNewPeriod = true`
+   - optional `carriedForwardBalance` brings previous period net into the new month
+
+6. **Budget period follows active month mode**
+   - budget progress uses the same period bounds as History list filters
+
+7. **Sub-description**
+   - optional detail on income/expense (e.g. items bought at a store)
+   - shown under main description in history (smaller, lighter text)
+
+8. **Biometric app lock**
+   - enabled by default via `UserPreferences.biometricLockEnabled`
+   - `BiometricGate` wraps `MainScreen` in `MainActivity`
+   - accepts **BIOMETRIC_STRONG** or **DEVICE_CREDENTIAL** (PIN/pattern)
+   - on failure/cancel: lock screen + error message; no app content rendered
+   - re-locks on `Lifecycle.Event.ON_STOP` (background)
+   - `FLAG_SECURE` while locked (blocks screenshots)
 
 ## 2. Current Architecture
 
-The codebase uses Android MVVM with Compose + Room + Hilt, with recent decomposition to reduce coupling.
+Android MVVM with Compose + Room + Hilt.
 
 ### 2.1 Layers
 
 - **Presentation**: Compose screens + ViewModels
-- **Domain**: calculators/business helpers (`PeriodCalculator`, `BalanceCalculator`, `BudgetProgressCalculator`, `CsvExporter`)
-- **Data**: Room entities/DAO + repositories + preferences
-- **Core utilities**: shared date/time helpers in `core/time`
+- **Domain**: calculators, exporters, importers, inspectors
+- **Data**: Room entities/DAO + repositories + DataStore preferences
+- **Core**: `core/time/DateUtils`, `core/locale/LocaleHelper`
 
-### 2.2 ViewModel split (important improvement)
+### 2.2 ViewModels
 
-Previously one large `TransactionViewModel` handled many unrelated features. It has been split into:
+| ViewModel | Responsibility |
+|-----------|----------------|
+| `HistoryViewModel` | Period bounds, month summary, filters, grouping, wallet year summary, delete guards |
+| `AddEditTransactionViewModel` | Add/edit income/expense form, sub-description, salary/dept flows |
+| `TransferViewModel` | Cash ↔ Bank transfers |
+| `WalletViewModel` | Wallet ↔ Cash/Bank moves, validation, closed-period guards |
+| `BudgetViewModel` | Category budgets from Categories screen |
+| `SettingsViewModel` | Balances, language, export/import, salary reminder controls |
+| `StatisticsViewModel` | Period totals including wallet bar data |
+| `DatabaseBrowserViewModel` | Table listing and filtered raw queries |
+| `BiometricLockViewModel` | Unlock state, error message, lock on background |
 
-- `HistoryViewModel`  
-  History filters, period bounds, balances, reminder visibility inputs, grouped UI data fetches.
+### 2.3 Domain services
 
-- `AddEditTransactionViewModel`  
-  Add/edit expense/income form state, validation dependencies, salary prompt decisions, reimbursement linking.
+| Service | Role |
+|---------|------|
+| `PeriodCalculator` | Day/week/month/year bounds; salary month anchors |
+| `BalanceCalculator` | Cash/Bank available balance; unified month financial summary |
+| `WalletCalculator` | Period wallet balance; open/closed period; salary-year timeline |
+| `BudgetProgressCalculator` | Spent vs limit per category for active period |
+| `TransactionExportLoader` | Filtered rows for export |
+| `CsvExporter` | Plain import-compatible CSV (with `#` comment header) |
+| `StyledExcelExporter` | Styled `.xls` (HTML Excel) with icon, title, colors |
+| `PdfTransactionExporter` | Styled PDF report with icon, title, colored table |
+| `CsvImporter` | Parse CSV, upsert by id, skip `#` lines |
+| `DatabaseInspector` | `PRAGMA table_info` + filtered `SELECT` on allowed tables |
+| `BiometricAuthManager` | Device capability check + `BiometricPrompt` authentication |
 
-- `TransferViewModel`  
-  Transfer-only state and persistence, isolated from add/edit transaction form concerns.
+### 2.4 Compose patterns
 
-- `BudgetViewModel`  
-  Budget upsert operations from Categories screen based on active month period bounds.
+- Repository pattern + MVVM + StateFlow
+- Central routes: `presentation/navigation/AppRoutes.kt`
+- One-shot UI events for post-save navigation (`AddEditUiEvent.NavigateHistory`)
+- History organized as **TabRow**: Overview | Transactions | Filters
+- `SwipeableTransactionItem` wraps `TransactionItem` with `SwipeToDismissBox`
+- `BiometricGate` + `BiometricLockScreen` gate all financial UI until authenticated
 
-- `SettingsViewModel`  
-  Opening balances, CSV export trigger, recurring reminder settings controls.
+### 2.5 Core security
 
-## 3. Compose Design and Patterns Applied
+| Component | Role |
+|-----------|------|
+| `BiometricAuthManager` | `BiometricManager.canAuthenticate`, show system prompt |
+| `BiometricGate` | Compose wrapper; lock on stop, `FLAG_SECURE`, auto-prompt |
+| `BiometricLockScreen` | Branded lock UI with error + Unlock button |
 
-### Applied patterns
+## 3. Major Features (Complete List)
 
-- **Repository Pattern** for DB access abstraction
-- **MVVM + state flows** for reactive screen state
-- **Single source of truth** in Room + DataStore
-- **Use-case style domain services** (calculators/exporter)
-- **Navigation route centralization** via `presentation/navigation/AppRoutes.kt`
-- **One-shot UI event streams** for navigation side-effects in Add/Edit and Transfer flows
+### 3.1 Salary month vs calendar month
+- Toggle in History → **Filters** tab
+- Salary period uses anchors (`startsNewPeriod` on salary category income)
+- Fallback hint when anchors missing
 
-### Compose-oriented improvements completed
+### 3.2 Week boundaries
+- Week is **Saturday to Friday** (`DateUtils.getStartOfWeek`)
 
-- Removed nested scrolling conflicts (History and Categories are single scroll containers)
-- Extracted/isolated feature state by screen
-- Reduced route string duplication
-- Introduced one-shot UI events to avoid direct imperative navigation scattered across callbacks
+### 3.3 Transfers
+- Dedicated `TransferScreen`; edit via `editTransfer/{id}`
+- Insufficient balance dialog with optional `allowNegativeBalance`
 
-## 4. Major Features Implemented
+### 3.4 Wallet
+- Routes: `wallet`, `editWallet/{id}`
+- Entry: Add screen → "Wallet ↔ Cash/Bank"
+- History: wallet in month summary; year wallet timeline in Overview (salary mode)
+- Type filter includes Wallet moves
 
-## 4.1 Salary month vs calendar month
+### 3.5 Reimbursement
+- `awaitingReimbursement`, `linkedExpenseId`, `debtorNote`
+- Owed styling and filter in history
 
-- Toggle in History
-- Salary period uses salary anchors (`startsNewPeriod`)
-- Salary period fallback messaging if anchors are missing
+### 3.6 Budgets
+- Period-bound budgets; progress in Filters → category dropdown
 
-## 4.2 Week boundaries
+### 3.7 Recurring salary reminders
+- Worker + notification; banner on History Overview tab
 
-- Week is Saturday to Friday
+### 3.8 Settings, import/export, locale, DB browser, app lock
+- **Language**: `AppLanguage` EN/AR in DataStore; `activity.recreate()` on change
+- **App lock**: biometric/PIN toggle in Settings; default **on**
+- **Export scope**: all | current month
+- **Export format**: CSV (styled `.xls`) | PDF
+- **Import**: plain CSV; format spec in UI; template download
+- **Database browser**: transactions, categories, budgets, recurring_transactions
 
-## 4.3 Transfers and balance checks
+### 3.9 Statistics
+- Income, Expense, **Wallet**, Balance for selected period
+- Three-bar chart
 
-- dedicated transfer flow and transaction type
-- insufficient funds handling with "allow negative" option
+### 3.10 History month summary (unified)
+Single calculator pass (`BalanceCalculator.buildMonthFinancialSummary`):
+- **Activity this month** — income, expense, saved (period net)
+- **Your money now** — matches Add screen Cash/Bank cards
+- **Cash & bank change this month**
+- **Wallet this month** (salary mode)
 
-## 4.4 Reimbursement tracking
+## 4. Database and Migration State
 
-- `awaitingReimbursement` explicit flag on expense
-- dept income optional note + optional linked expense
-- owed filter and owed visual style in history item rendering
+**Current version: 10**
 
-## 4.5 Budgets
+| Migration | Summary |
+|-----------|---------|
+| 1→2 | Transfer/salary anchor columns, categories |
+| 2→3, 3→4 | Salary anchor corrections |
+| 4→5 | Reimbursement columns; budget period schema |
+| 5→6 | `awaitingReimbursement` |
+| 6→7 | All transactions → `BANK` account |
+| 7→8 | Additional default expense categories |
+| 8→9 | `carriedForwardBalance` |
+| 9→10 | `subDescription` |
 
-- budget storage by exact period bounds (`periodStart`, `periodEnd`)
-- budget progress displayed in History category dropdown
-- budget set action from Categories screen
+### Transaction entity (key fields)
 
-## 4.6 Recurring reminders
+```
+id, amount, description, subDescription, date, type, categoryId,
+accountType, toAccountType, startsNewPeriod, carriedForwardBalance,
+allowNegativeBalance, linkedExpenseId, debtorNote, awaitingReimbursement,
+createdAt, updatedAt
+```
 
-- recurring salary reminders in DB
-- worker-based due checks + notification helper
-- history banner reminder and dismiss persistence
+## 5. Runtime Flows
 
-## 4.7 Settings and export
+### 5.1 Add / edit income or expense
 
-- opening balances
-- recurring reminder controls
-- CSV export using FileProvider
+1. User opens **Add** tab → `AppRoutes.addTransactionRoute()` (query args required for NavHost match)
+2. Form: type, amount, description, **subDescription**, category, account, date
+3. Optional: owed toggle, dept linking, salary month dialog, carry-forward
+4. Save via `AddEditTransactionViewModel.saveTransaction`
+5. `emitNavigateHistory()` → History tab
 
-## 5. Problems Encountered and Resolutions
+Edit from History → `addTransactionRoute(transactionId = id)`.
 
-This section documents real incidents and how they were fixed.
+### 5.2 Transfer / wallet
 
-### Problem A: History scroll/layout issues
+- Transfer: `TransferScreen` — does not use Add form
+- Wallet: `WalletScreen` — validates max amount, blocks closed periods
 
-- **Symptom**: screen not scrolling correctly
-- **Cause**: mixed fixed column + nested lazy list
-- **Fix**: single scroll container strategy (single `LazyColumn`)
+### 5.3 History
 
-### Problem B: June/July salary-cycle split
+1. **Overview**: `buildMonthSummary`, reminder, wallet year card
+2. **Transactions**: filtered stream → `HistoryGrouping` → swipe delete with confirm
+3. **Filters**: period/type/category; drives same transaction query
 
-- **Symptom**: transactions separated incorrectly across salary cycle
-- **Cause**: anchor logic + grouping behavior mismatch
-- **Fix**:
-  - corrected salary anchor handling logic
-  - fixed migration behavior around salary anchor defaults
-  - aligned grouping behavior to expected weekly sectioning inside selected period
+### 5.4 Export
 
-### Problem C: Startup crash on migration validation
+1. User picks scope + format in Settings
+2. `TransactionExportLoader.loadRows(filter)`
+3. CSV → `StyledExcelExporter` → `.xls` file
+4. PDF → `PdfTransactionExporter` → `.pdf` file
+5. Share via `FileProvider` + `ExportShareRequest`
 
-- **Symptom**: Room migration validation crash on app start
-- **Cause**: schema/entity mismatch (foreign key expectation mismatch during migration)
-- **Fix**: aligned entity schema with what migration can safely produce, rebuilt migration path
+Import template uses `CsvExporter.exportPlainCsv()` → plain `.csv`.
 
-### Problem D: All expenses marked as owed
+### 5.5 Import
 
-- **Symptom**: every unreimbursed expense looked "owed"
-- **Cause**: owed visual logic inferred from "not linked" instead of explicit business intent
-- **Fix**:
-  - added `awaitingReimbursement` DB field with migration
-  - added explicit form toggle ("Someone owes me")
-  - owed filter and styling now depend on explicit flag
+1. User picks file → `CsvImporter.importTransactions`
+2. Skip `#` lines; first data line = header
+3. Upsert by `id` if exists, else insert
+4. Categories matched by name + type
 
-### Problem E: Destructive budget migration
+### 5.6 Locale
 
-- **Symptom/risk**: migration dropped budgets table (possible data loss)
-- **Fix**: replaced with copy-forward migration (`budgets_new` + transform + rename)
+1. `UserPreferences.setLanguage` → DataStore + SharedPreferences
+2. `App.attachBaseContext` → `LocaleHelper.onAttach`
+3. Settings language chip → `activity.recreate()`
 
-### Problem F: Recurring advance no-op
+### 5.7 Biometric lock
 
-- **Symptom**: recurring due date not advanced in some save scenarios
-- **Cause**: lookup only among currently due reminders
-- **Fix**: fetch recurring by ID and advance deterministically
+1. App starts → `BiometricGate` in `MainActivity`
+2. If lock enabled and not unlocked → show `BiometricLockScreen` (no `MainScreen`)
+3. `LaunchedEffect` triggers `BiometricPrompt` automatically; **Unlock** button retries
+4. Success → `isUnlocked = true` → `MainScreen` visible
+5. Failed attempt → error on lock screen (e.g. "Not recognized. Try again.")
+6. Error/cancel → error message, data remains hidden
+7. `ON_STOP` → `lock()` → next resume requires auth again
 
-## 6. Database and Migration State
+## 6. Navigation Reference
 
-Current database version: **6**
+```kotlin
+// AppRoutes.kt
+HISTORY = "history"
+ADD_TRANSACTION = "addTransaction"  // use addTransactionRoute() for navigation
+STATISTICS, CATEGORIES, SETTINGS, DATABASE_BROWSER
+TRANSFER, WALLET
+EDIT_TRANSFER = "editTransfer/{transactionId}"
+EDIT_WALLET = "editWallet/{transactionId}"
+```
 
-High-level migration chain:
+**Important**: Bottom nav Add must call `addTransactionRoute()`, not bare `addTransaction`, because NavHost registers `ADD_TRANSACTION_WITH_ARGS`.
 
-- `1 -> 2`: transfer/salary anchor/negative-balance columns + default category updates
-- `2 -> 3`: salary anchor mark adjustments
-- `3 -> 4`: salary anchor correction
-- `4 -> 5`: reimbursement-link columns + budget schema transition
-- `5 -> 6`: explicit `awaitingReimbursement`
+## 7. CSV Import Format (Canonical)
 
-## 7. How the Code Works (Runtime Flow)
+Header (single line):
 
-## 7.1 Add/Edit transaction flow
+```
+id,date,type,category,amount,account,toAccount,description,subDescription,startsNewPeriod,carriedForwardBalance,linkedExpenseId,debtorNote,awaitingReimbursement,allowNegativeBalance,createdAt,updatedAt
+```
 
-1. Screen collects `AddEditTransactionUiState`
-2. User edits fields and business toggles
-3. ViewModel validates dependencies (balance, category semantics, salary prompts)
-4. Save writes via repository
-5. Optional recurring update and one-shot navigation event
+- **Required for import**: `date`, `type`, `amount`, `account`, `description`
+- **Date format**: `yyyy-MM-dd HH:mm:ss` (US locale)
+- **Type**: `INCOME` | `EXPENSE` | `TRANSFER` | `WALLET_MOVE`
+- **Account**: `CASH` | `BANK` | `WALLET`
+- Lines starting with `#` ignored (export comment header)
 
-## 7.2 Transfer flow
+Defined in `domain/TransactionExportRow.kt` → `CsvImportFormat` object.
 
-1. Screen collects `TransferUiState`
-2. User selects from/to accounts, amount, date
-3. ViewModel computes available balance (edit-aware)
-4. Save creates/updates transfer transaction
-5. One-shot back navigation event
+## 8. File-Level Source of Truth
 
-## 7.3 History flow
+| Area | Files |
+|------|-------|
+| Navigation | `MainScreen.kt`, `AppRoutes.kt` |
+| History | `HistoryScreen.kt`, `HistoryViewModel.kt`, `TransactionItem.kt`, `SwipeableTransactionItem` |
+| Add/Edit | `AddTransactionScreen.kt`, `AddEditTransactionViewModel.kt` |
+| Transfer | `TransferScreen.kt`, `TransferViewModel.kt` |
+| Wallet | `WalletScreen.kt`, `WalletViewModel.kt`, `WalletCalculator.kt` |
+| Statistics | `StatisticsScreen.kt`, `StatisticsViewModel.kt`, `StatisticsBarChart.kt` |
+| Settings | `SettingsScreen.kt`, `SettingsViewModel.kt` |
+| Export/Import | `CsvExporter.kt`, `CsvImporter.kt`, `StyledExcelExporter.kt`, `PdfTransactionExporter.kt`, `TransactionExportLoader.kt` |
+| DB browser | `DatabaseBrowserScreen.kt`, `DatabaseBrowserViewModel.kt`, `DatabaseInspector.kt` |
+| Locale | `LocaleHelper.kt`, `UserPreferences.kt`, `values/strings.xml`, `values-ar/strings.xml` |
+| Biometric lock | `BiometricAuthManager.kt`, `BiometricGate.kt`, `BiometricLockScreen.kt`, `BiometricLockViewModel.kt`, `MainActivity.kt` |
+| Period/Balance | `PeriodCalculator.kt`, `BalanceCalculator.kt`, `core/time/DateUtils.kt` |
+| Data | `entities/*`, `dao/*`, `Migrations.kt`, `AppDatabase.kt` |
 
-1. User chooses period/filter mode
-2. ViewModel computes bounds and summary state (`HistoryUiState`)
-3. Transaction stream loaded for period
-4. Grouping and rendering done with filter state + reimbursement map
-5. Reminder card actions call ViewModel persist helpers
+## 9. Problems Encountered and Resolutions (Selected)
 
-## 7.4 Settings flow
-
-1. Opening balances read/write via DataStore
-2. Export requests CSV from domain exporter and shares URI
-3. Reminder controls update recurring entries
-
-## 8. File-Level Source of Truth (Key Files)
-
-- **Navigation**: `presentation/screens/MainScreen.kt`, `presentation/navigation/AppRoutes.kt`
-- **History**: `presentation/screens/HistoryScreen.kt`, `presentation/viewModel/HistoryViewModel.kt`
-- **Add/Edit**: `presentation/screens/AddTransactionScreen.kt`, `presentation/viewModel/AddEditTransactionViewModel.kt`
-- **Transfer**: `presentation/screens/TransferScreen.kt`, `presentation/viewModel/TransferViewModel.kt`
-- **Budgets**: `presentation/viewModel/BudgetViewModel.kt`, `domain/BudgetProgressCalculator.kt`
-- **Settings/export**: `presentation/screens/SettingsScreen.kt`, `presentation/viewModel/SettingsViewModel.kt`, `domain/CsvExporter.kt`
-- **Period/balance**: `domain/PeriodCalculator.kt`, `domain/BalanceCalculator.kt`, `core/time/DateUtils.kt`
-- **Data model**: `data/database/entities/*`, `data/database/dao/*`, `data/database/Migrations.kt`
-
-## 9. Remaining Architectural Opportunities
-
-The code is substantially improved, but these are still worthwhile:
-
-1. Move more screen callback orchestration into explicit use-cases
-2. Replace display-name based system category detection with persistent category system key column
-3. Expand automated tests around migration and period logic
-4. Further split very large composables into smaller, testable UI units
-5. Introduce immutable screen contract objects for each screen (already started with `HistoryUiState`)
+| Issue | Fix |
+|-------|-----|
+| History too cluttered | Tabbed Overview / Transactions / Filters |
+| Add tab blank/wrong route | Navigate with `addTransactionRoute()` |
+| Balance confusion (Add vs History) | Unified `buildMonthFinancialSummary` |
+| Wallet negative balance | Validation + max allowed UI |
+| Closed month wallet edits | `WalletCalculator.isPeriodClosedForDate` guards |
+| CSV re-import with export comments | Importer skips `#` lines |
+| Styled vs importable CSV | Separate plain template export + documented format |
+| Sensitive data visible without auth | `BiometricGate` blocks `MainScreen` until prompt succeeds |
 
 ## 10. Business Glossary
 
 - **Salary month**: spending period anchored by salary start event
-- **Dept income**: reimbursement income returned by other people
-- **Owed expense**: expense marked as awaiting reimbursement
-- **Reimbursed expense**: owed expense linked by a returning dept income
-- **Period change**: net delta during selected period
-- **Current balance**: all-time current amount including opening balances
+- **Wallet**: monthly pocket-money bucket (salary-mode); not the same as “all cash”
+- **Dept income**: reimbursement income from others
+- **Owed expense**: `awaitingReimbursement = true`
+- **Sub-description**: optional item-level detail under main description
+- **Activity this month**: income/expense/saved within period bounds
+- **Your money now**: current Cash + Bank available (matches Add screen)
+- **Carry-forward**: previous period net added when starting new salary month
+
+## 11. Remaining Opportunities
+
+1. Localize Transfer, Wallet, Categories screens (partial i18n today)
+2. Persistent category system key column (vs display-name matching)
+3. Automated tests for migrations 7–10 and export/import round-trip
+4. Split large composables (HistoryScreen) further
+5. Optional true `.xlsx` export via library if needed
 
 ---
 
-If features evolve, update this document first, then implementation. It is the operational reference for architecture decisions, business rules, and known edge cases.
+**Maintenance rule**: When adding features, update this guide and `RELEASE_NOTES.md` first, then `QA_CHECKLIST.md` and `Readme.md`.

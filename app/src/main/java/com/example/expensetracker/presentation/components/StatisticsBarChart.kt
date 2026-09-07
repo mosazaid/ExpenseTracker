@@ -15,16 +15,19 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 private val MAX_BAR_HEIGHT = 180.dp
-private val BAR_WIDTH = 64.dp
+private val BAR_WIDTH = 52.dp
+private val WalletColor = Color(0xFF7E57C2)
 
 @Composable
 fun StatisticsBarChart(
     income: Float,
-    expense: Float
+    expense: Float,
+    wallet: Float
 ) {
-    val max = maxOf(income, expense, 1f)
+    val max = maxOf(income, expense, kotlin.math.abs(wallet), 1f)
     val incomeRatio = income / max
     val expenseRatio = expense / max
+    val walletRatio = kotlin.math.abs(wallet) / max
 
     Row(
         modifier = Modifier
@@ -43,6 +46,12 @@ fun StatisticsBarChart(
             label = "Expense",
             ratio = expenseRatio,
             color = Color(0xFFF44336),
+            barWidth = BAR_WIDTH
+        )
+        BarColumn(
+            label = "Wallet",
+            ratio = walletRatio,
+            color = WalletColor,
             barWidth = BAR_WIDTH
         )
     }

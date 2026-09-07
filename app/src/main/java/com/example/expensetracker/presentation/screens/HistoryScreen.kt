@@ -17,8 +17,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.expensetracker.R
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
@@ -27,6 +29,7 @@ import com.example.expensetracker.data.database.entities.RecurringTransaction
 import com.example.expensetracker.domain.AccountBalances
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.PeriodBounds
+import com.example.expensetracker.presentation.components.SwipeableTransactionItem
 import com.example.expensetracker.presentation.components.TransactionItem
 import com.example.expensetracker.presentation.navigation.AppRoutes
 import com.example.expensetracker.presentation.viewModel.HistoryViewModel
@@ -46,6 +49,7 @@ fun HistoryScreen(
     var selectedCategoryFilter by remember { mutableStateOf<Category?>(null) }
     var categoryMenuExpanded by remember { mutableStateOf(false) }
     var summaryExpanded by remember { mutableStateOf(true) }
+    var selectedTab by remember { mutableStateOf(HistoryTab.OVERVIEW) }
 
     val monthMode by viewModel.monthMode.collectAsState()
     val allCategories by viewModel.allCategories.collectAsState(initial = emptyList())
@@ -74,11 +78,20 @@ fun HistoryScreen(
         periodBounds = viewModel.getPeriodBounds(selectedPeriod, monthMode, now)
     }
 
-    val startDate = periodBounds?.start ?: now
-    val endDate = periodBounds?.end ?: now
+    val startDate = periodBounds?.start
+    val endDate = periodBounds?.end
 
-    val transactions by viewModel.getTransactionsBetweenDates(startDate, endDate)
-        .collectAsState(initial = emptyList())
+    val transactions by produceState<List<Transaction>>(
+        initialValue = emptyList(),
+        startDate,
+        endDate
+    ) {
+        if (startDate == null || endDate == null) {
+            value = emptyList()
+            return@produceState
+        }
+        viewModel.getTransactionsBetweenDates(startDate, endDate).collect { value = it }
+    }
 
     // 1. Recompute month summary whenever month mode or any transaction changes
     LaunchedEffect(monthMode, allTransactions) {
@@ -90,7 +103,7 @@ fun HistoryScreen(
 
     // 3. Recompute category/budget data whenever list period or categories change
     LaunchedEffect(startDate, endDate, allCategories) {
-        if (allCategories.isNotEmpty()) {
+        if (allCategories.isNotEmpty() && startDate != null && endDate != null) {
             periodUiState = viewModel.buildPeriodUiState(
                 categories = allCategories,
                 expenseCategoryIds = expenseCategories.map { it.id },
@@ -147,8 +160,8 @@ fun HistoryScreen(
         mutableStateOf<List<com.example.expensetracker.domain.SalaryWalletPeriodSummary>>(emptyList())
     }
 
-    LaunchedEffect(selectedPeriod, monthMode, allTransactions) {
-        if (selectedPeriod == HistoryPeriod.YEAR && monthMode == MonthMode.SALARY) {
+    LaunchedEffect(monthMode, allTransactions) {
+        if (monthMode == MonthMode.SALARY) {
             val year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
             salaryWalletYearSummary = viewModel.buildSalaryWalletYearSummary(year)
         } else {
@@ -159,10 +172,10 @@ fun HistoryScreen(
     if (blockedActionMessage != null) {
         AlertDialog(
             onDismissRequest = { blockedActionMessage = null },
-            title = { Text("Closed salary month") },
+            title = { Text(stringResource(R.string.closed_salary_month)) },
             text = { Text(blockedActionMessage!!) },
             confirmButton = {
-                TextButton(onClick = { blockedActionMessage = null }) { Text("OK") }
+                TextButton(onClick = { blockedActionMessage = null }) { Text(stringResource(R.string.ok)) }
             }
         )
     }
@@ -170,16 +183,16 @@ fun HistoryScreen(
     if (deleteTarget != null) {
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
-            title = { Text("Delete Transaction") },
-            text = { Text("Are you sure you want to delete this transaction?") },
+            title = { Text(stringResource(R.string.delete_transaction)) },
+            text = { Text(stringResource(R.string.delete_transaction_confirm)) },
             confirmButton = {
                 TextButton(onClick = {
                     deleteTarget?.let { viewModel.deleteTransaction(it) }
                     deleteTarget = null
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) { Text("Cancel") }
+                TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -198,27 +211,39 @@ fun HistoryScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Transaction History", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.history_title), style = MaterialTheme.typography.titleLarge)
                 IconButton(onClick = { navController.navigate(AppRoutes.SETTINGS) }) {
-                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
                 }
             }
         }
 
-        // ── Month summary card (always salary/calendar month, collapsible)
-        item(key = "month-summary") {
-            MonthSummaryCard(
-                summary = monthSummary,
-                expanded = summaryExpanded,
-                onToggle = { summaryExpanded = !summaryExpanded },
-                isSalaryMode = monthMode == MonthMode.SALARY,
-                onWalletClick = { navController.navigate(AppRoutes.WALLET) }
-            )
+        item(key = "tabs") {
+            TabRow(selectedTabIndex = selectedTab.ordinal) {
+                HistoryTab.entries.forEach { tab ->
+                    Tab(
+                        selected = selectedTab == tab,
+                        onClick = { selectedTab = tab },
+                        text = { Text(stringResource(tab.labelRes)) }
+                    )
+                }
+            }
         }
 
-        // ── Salary reminder banner
-        visibleReminder?.let { reminder ->
-            item(key = "salary-reminder-${reminder.id}") {
+        // ── Overview tab
+        if (selectedTab == HistoryTab.OVERVIEW) {
+            item(key = "month-summary") {
+                MonthSummaryCard(
+                    summary = monthSummary,
+                    expanded = summaryExpanded,
+                    onToggle = { summaryExpanded = !summaryExpanded },
+                    isSalaryMode = monthMode == MonthMode.SALARY,
+                    onWalletClick = { navController.navigate(AppRoutes.WALLET) }
+                )
+            }
+
+            visibleReminder?.let { reminder ->
+                item(key = "salary-reminder-${reminder.id}") {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -255,259 +280,308 @@ fun HistoryScreen(
                     }
                 }
             }
+            }
+
+            if (salaryWalletYearSummary.isNotEmpty()) {
+                item(key = "salary-wallet-year") {
+                    SalaryWalletYearCard(
+                        periods = salaryWalletYearSummary,
+                        onAddWalletMove = { navController.navigate(AppRoutes.WALLET) }
+                    )
+                }
+            }
         }
 
-        // ── Month mode toggle + period selector
-        item(key = "month-toggle") {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            if (monthMode == MonthMode.SALARY) "Salary month" else "Calendar month",
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        Text(
-                            if (selectedPeriod == HistoryPeriod.MONTH) {
-                                periodBounds?.label ?: ""
-                            } else {
-                                periodBounds?.label ?: selectedPeriod.label
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        periodBounds?.hint?.let { hint ->
+        // ── Transactions tab (filters + list)
+        if (selectedTab == HistoryTab.TRANSACTIONS) {
+            item(key = "month-toggle") {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                hint,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.error
+                                if (monthMode == MonthMode.SALARY) {
+                                    stringResource(R.string.salary_month)
+                                } else {
+                                    stringResource(R.string.calendar_month)
+                                },
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Text(
+                                if (selectedPeriod == HistoryPeriod.MONTH) {
+                                    periodBounds?.label ?: ""
+                                } else {
+                                    periodBounds?.label ?: selectedPeriod.label
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            periodBounds?.hint?.let { hint ->
+                                Text(
+                                    hint,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                        Switch(
+                            checked = monthMode == MonthMode.SALARY,
+                            onCheckedChange = { checked ->
+                                viewModel.setMonthMode(
+                                    if (checked) MonthMode.SALARY else MonthMode.CALENDAR
+                                )
+                            }
+                        )
+                    }
+                    Text(
+                        if (monthMode == MonthMode.SALARY) {
+                            stringResource(R.string.from_last_salary)
+                        } else {
+                            stringResource(R.string.first_to_last_day)
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+
+            item(key = "period-filter") {
+                Column {
+                    Text(stringResource(R.string.period), style = MaterialTheme.typography.labelMedium)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        HistoryPeriod.entries.forEach { period ->
+                            FilterChip(
+                                selected = selectedPeriod == period,
+                                onClick = {
+                                    selectedPeriod = period
+                                    selectedCategoryFilter = null
+                                },
+                                label = { Text(period.label) }
                             )
                         }
                     }
-                    Switch(
-                        checked = monthMode == MonthMode.SALARY,
-                        onCheckedChange = { checked ->
-                            viewModel.setMonthMode(
-                                if (checked) MonthMode.SALARY else MonthMode.CALENDAR
+                }
+            }
+
+            item(key = "type-filter") {
+                Column {
+                    Text(stringResource(R.string.filter), style = MaterialTheme.typography.labelMedium)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TransactionTypeFilter.entries.forEach { filter ->
+                            FilterChip(
+                                selected = selectedTypeFilter == filter,
+                                onClick = {
+                                    selectedTypeFilter = filter
+                                },
+                                label = { Text(filter.label) }
                             )
                         }
+                    }
+                }
+            }
+
+            if (expenseCategories.isNotEmpty()) {
+                item(key = "category-filter") {
+                    ExposedDropdownMenuBox(
+                        expanded = categoryMenuExpanded,
+                        onExpandedChange = { categoryMenuExpanded = !categoryMenuExpanded }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedCategoryFilter?.let {
+                                "${it.icon} ${it.name}"
+                            } ?: stringResource(R.string.all_categories),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.category)) },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryMenuExpanded)
+                            },
+                            modifier = Modifier
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                                .fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = categoryMenuExpanded,
+                            onDismissRequest = { categoryMenuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.all_categories)) },
+                                onClick = {
+                                    selectedCategoryFilter = null
+                                    categoryMenuExpanded = false
+                                }
+                            )
+                            expenseCategories.forEach { category ->
+                                val total = periodUiState.categoryTotals[category.id] ?: 0.0
+                                val progress = periodUiState.budgetProgress[category.id]
+                                DropdownMenuItem(
+                                    text = {
+                                        Column(modifier = Modifier.fillMaxWidth()) {
+                                            Text(
+                                                "${category.icon} ${category.name} — " +
+                                                    CurrencyUtils.formatCurrency(total)
+                                            )
+                                            progress?.let { p ->
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                LinearProgressIndicator(
+                                                    progress = { p.percent.coerceAtMost(1f) },
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    color = when {
+                                                        p.isOverBudget -> MaterialTheme.colorScheme.error
+                                                        p.isNearLimit -> MaterialTheme.colorScheme.tertiary
+                                                        else -> MaterialTheme.colorScheme.primary
+                                                    }
+                                                )
+                                                Text(
+                                                    "${CurrencyUtils.formatCurrency(p.spent)} / " +
+                                                        CurrencyUtils.formatCurrency(p.limit),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                            }
+                                        }
+                                    },
+                                    onClick = {
+                                        selectedCategoryFilter = category
+                                        categoryMenuExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item(key = "active-period") {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        periodBounds?.label ?: selectedPeriod.label,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    ActiveFiltersLine(
+                        typeFilter = selectedTypeFilter,
+                        categoryFilter = selectedCategoryFilter
                     )
                 }
+            }
+            item(key = "swipe-hint") {
                 Text(
-                    if (monthMode == MonthMode.SALARY) "From last salary" else "1st – last day",
+                    stringResource(R.string.swipe_to_delete),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )
             }
-        }
-
-        // ── Period selector chips
-        item(key = "period-filter") {
-            Column {
-                Text("Period", style = MaterialTheme.typography.labelMedium)
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    HistoryPeriod.entries.forEach { period ->
-                        FilterChip(
-                            selected = selectedPeriod == period,
-                            onClick = {
-                                selectedPeriod = period
-                                selectedCategoryFilter = null
-                            },
-                            label = { Text(period.label) }
-                        )
-                    }
+            if (sections.isEmpty()) {
+                item(key = "empty") {
+                    Text(stringResource(R.string.no_transactions), style = MaterialTheme.typography.bodyMedium)
                 }
-            }
-        }
-
-        // ── Type filter chips
-        item(key = "type-filter") {
-            Column {
-                Text("Filter", style = MaterialTheme.typography.labelMedium)
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    TransactionTypeFilter.entries.forEach { filter ->
-                        FilterChip(
-                            selected = selectedTypeFilter == filter,
-                            onClick = { selectedTypeFilter = filter },
-                            label = { Text(filter.label) }
-                        )
-                    }
-                }
-            }
-        }
-
-        // ── Category filter (expense only, when categories available)
-        if (expenseCategories.isNotEmpty()) {
-            item(key = "category-filter") {
-                ExposedDropdownMenuBox(
-                    expanded = categoryMenuExpanded,
-                    onExpandedChange = { categoryMenuExpanded = !categoryMenuExpanded }
-                ) {
-                    OutlinedTextField(
-                        value = selectedCategoryFilter?.let {
-                            "${it.icon} ${it.name}"
-                        } ?: "All categories",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Category") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryMenuExpanded)
-                        },
-                        modifier = Modifier
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
-                            .fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = categoryMenuExpanded,
-                        onDismissRequest = { categoryMenuExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("All categories") },
-                            onClick = {
-                                selectedCategoryFilter = null
-                                categoryMenuExpanded = false
-                            }
-                        )
-                        expenseCategories.forEach { category ->
-                            val total = periodUiState.categoryTotals[category.id] ?: 0.0
-                            val progress = periodUiState.budgetProgress[category.id]
-                            DropdownMenuItem(
-                                text = {
-                                    Column(modifier = Modifier.fillMaxWidth()) {
-                                        Text(
-                                            "${category.icon} ${category.name} — " +
-                                                CurrencyUtils.formatCurrency(total)
-                                        )
-                                        progress?.let { p ->
-                                            Spacer(modifier = Modifier.height(4.dp))
-                                            LinearProgressIndicator(
-                                                progress = { p.percent.coerceAtMost(1f) },
-                                                modifier = Modifier.fillMaxWidth(),
-                                                color = when {
-                                                    p.isOverBudget -> MaterialTheme.colorScheme.error
-                                                    p.isNearLimit -> MaterialTheme.colorScheme.tertiary
-                                                    else -> MaterialTheme.colorScheme.primary
-                                                }
-                                            )
-                                            Text(
-                                                "${CurrencyUtils.formatCurrency(p.spent)} / " +
-                                                    CurrencyUtils.formatCurrency(p.limit),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.outline
-                                            )
-                                        }
-                                    }
-                                },
-                                onClick = {
-                                    selectedCategoryFilter = category
-                                    categoryMenuExpanded = false
-                                },
-                                enabled = total > 0.0 || selectedCategoryFilter?.id == category.id
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // ── Salary wallet year timeline (salary mode + year period only)
-        if (salaryWalletYearSummary.isNotEmpty()) {
-            item(key = "salary-wallet-year") {
-                SalaryWalletYearCard(
-                    periods = salaryWalletYearSummary,
-                    onAddWalletMove = { navController.navigate(AppRoutes.WALLET) }
-                )
-            }
-        }
-
-        // ── Transaction list or empty state
-        if (sections.isEmpty()) {
-            item(key = "empty") {
-                Text("No transactions found.", style = MaterialTheme.typography.bodyMedium)
-            }
-        } else {
-            sections.forEach { section ->
-                val isExpanded = section.key in expandedSections
-                item(key = "header-${section.key}") {
-                    HistorySectionHeader(
-                        title = section.title,
-                        expenseTotal = section.expenseTotal,
-                        transactionCount = section.transactions.size,
-                        isExpanded = isExpanded,
-                        onToggle = {
-                            expandedSections = if (isExpanded) {
-                                expandedSections - section.key
-                            } else {
-                                expandedSections + section.key
-                            }
-                        }
-                    )
-                }
-                if (isExpanded) {
-                    items(section.transactions, key = { it.id }) { txn ->
-                        TransactionItem(
-                            transaction = txn,
-                            category = categoryMap[txn.categoryId],
-                            onDelete = {
-                                coroutineScope.launch {
-                                    if (viewModel.canModifyTransaction(it)) {
-                                        deleteTarget = it
-                                    } else {
-                                        blockedActionMessage =
-                                            "Wallet moves in closed salary months cannot be deleted."
-                                    }
+            } else {
+                sections.forEach { section ->
+                    val isExpanded = section.key in expandedSections
+                    item(key = "header-${section.key}") {
+                        HistorySectionHeader(
+                            title = section.title,
+                            expenseTotal = section.expenseTotal,
+                            transactionCount = section.transactions.size,
+                            isExpanded = isExpanded,
+                            onToggle = {
+                                expandedSections = if (isExpanded) {
+                                    expandedSections - section.key
+                                } else {
+                                    expandedSections + section.key
                                 }
-                            },
-                            onEdit = { transaction ->
-                                coroutineScope.launch {
-                                    when (transaction.type) {
-                                        TransactionType.TRANSFER -> {
-                                            navController.navigate(
-                                                AppRoutes.editTransferRoute(transaction.id)
-                                            )
+                            }
+                        )
+                    }
+                    if (isExpanded) {
+                        items(section.transactions, key = { it.id }) { txn ->
+                            SwipeableTransactionItem(
+                                transaction = txn,
+                                category = categoryMap[txn.categoryId],
+                                onDelete = {
+                                    coroutineScope.launch {
+                                        if (viewModel.canModifyTransaction(it)) {
+                                            deleteTarget = it
+                                        } else {
+                                            blockedActionMessage =
+                                                "Wallet moves in closed salary months cannot be deleted."
                                         }
-                                        TransactionType.WALLET_MOVE -> {
-                                            if (viewModel.canModifyTransaction(transaction)) {
+                                    }
+                                },
+                                onEdit = { transaction ->
+                                    coroutineScope.launch {
+                                        when (transaction.type) {
+                                            TransactionType.TRANSFER -> {
                                                 navController.navigate(
-                                                    AppRoutes.editWalletRoute(transaction.id)
+                                                    AppRoutes.editTransferRoute(transaction.id)
                                                 )
-                                            } else {
-                                                blockedActionMessage =
-                                                    "Wallet moves in closed salary months are read-only."
+                                            }
+                                            TransactionType.WALLET_MOVE -> {
+                                                if (viewModel.canModifyTransaction(transaction)) {
+                                                    navController.navigate(
+                                                        AppRoutes.editWalletRoute(transaction.id)
+                                                    )
+                                                } else {
+                                                    blockedActionMessage =
+                                                        "Wallet moves in closed salary months are read-only."
+                                                }
+                                            }
+                                            else -> {
+                                                navController.navigate(
+                                                    AppRoutes.addTransactionRoute(
+                                                        transactionId = transaction.id
+                                                    )
+                                                )
                                             }
                                         }
-                                        else -> {
-                                            navController.navigate(
-                                                AppRoutes.addTransactionRoute(
-                                                    transactionId = transaction.id
-                                                )
-                                            )
-                                        }
                                     }
-                                }
-                            },
-                            isReimbursed = txn.id in reimbursedExpenseIds,
-                            isOwed = txn.type == TransactionType.EXPENSE &&
-                                txn.awaitingReimbursement &&
-                                txn.id !in reimbursedExpenseIds,
-                            linkedExpenseDescription = linkedExpenseDescriptions[txn.id]
-                        )
+                                },
+                                isReimbursed = txn.id in reimbursedExpenseIds,
+                                isOwed = txn.type == TransactionType.EXPENSE &&
+                                    txn.awaitingReimbursement &&
+                                    txn.id !in reimbursedExpenseIds,
+                                linkedExpenseDescription = linkedExpenseDescriptions[txn.id]
+                            )
+                        }
                     }
                 }
             }
         }
     }
+}
+
+private enum class HistoryTab(val labelRes: Int) {
+    OVERVIEW(R.string.tab_overview),
+    TRANSACTIONS(R.string.tab_transactions)
+}
+
+@Composable
+private fun ActiveFiltersLine(
+    typeFilter: TransactionTypeFilter,
+    categoryFilter: Category?
+) {
+    val parts = buildList {
+        if (typeFilter != TransactionTypeFilter.ALL) add(typeFilter.label)
+        categoryFilter?.let { add("${it.icon} ${it.name}") }
+    }
+    if (parts.isEmpty()) return
+    Text(
+        text = stringResource(R.string.filter_active, parts.joinToString(" · ")),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.outline
+    )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -11,8 +11,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.expensetracker.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
@@ -383,7 +385,17 @@ fun AddTransactionScreen(
         OutlinedTextField(
             value = uiState.description,
             onValueChange = { viewModel.updateDescription(it) },
-            label = { Text("Description") },
+            label = { Text(stringResource(R.string.description)) },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = uiState.subDescription,
+            onValueChange = { viewModel.updateSubDescription(it) },
+            label = { Text(stringResource(R.string.sub_description)) },
+            placeholder = { Text(stringResource(R.string.sub_description_hint)) },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -571,6 +583,7 @@ fun AddTransactionScreen(
                         id = uiState.editingTransactionId ?: 0L,
                         amount = amountDouble,
                         description = uiState.description,
+                        subDescription = uiState.subDescription.takeIf { it.isNotBlank() },
                         categoryId = category.id,
                         type = uiState.transactionType,
                         accountType = uiState.accountType,

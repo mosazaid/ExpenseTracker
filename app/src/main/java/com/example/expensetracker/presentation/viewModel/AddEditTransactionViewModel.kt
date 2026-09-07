@@ -59,6 +59,7 @@ class AddEditTransactionViewModel @Inject constructor(
             editingTransactionId = id,
             amount = transaction.amount.toString(),
             description = transaction.description,
+            subDescription = transaction.subDescription.orEmpty(),
             selectedCategory = category,
             transactionType = transaction.type,
             accountType = transaction.accountType,
@@ -185,6 +186,10 @@ class AddEditTransactionViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(description = description)
     }
 
+    fun updateSubDescription(subDescription: String) {
+        _uiState.value = _uiState.value.copy(subDescription = subDescription)
+    }
+
     fun updateSelectedCategory(category: Category?) {
         _uiState.value = _uiState.value.copy(selectedCategory = category)
     }
@@ -236,6 +241,7 @@ data class AddEditTransactionUiState(
     val editingTransactionId: Long? = null,
     val amount: String = "",
     val description: String = "",
+    val subDescription: String = "",
     val selectedCategory: Category? = null,
     val transactionType: TransactionType = TransactionType.EXPENSE,
     val accountType: AccountType = AccountType.CASH,

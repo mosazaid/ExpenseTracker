@@ -1,254 +1,151 @@
-Expense Tracker App - Complete Documentation
-Overview
-A modern Android expense tracking application built with Kotlin, Jetpack Compose, Room Database, and MVVM architecture with Repository pattern.
-Features
+# ExpenseTracker — Documentation
+
+A modern Android expense tracking app built with **Kotlin**, **Jetpack Compose**, **Room**, **Hilt**, and **MVVM**.
+
+## Overview
+
+ExpenseTracker helps you track personal money with salary-aware months, Cash/Bank/Wallet accounts, reimbursements, budgets, and local backup via import/export.
+
+## Features (Current)
+
+### Transactions
+- **Add / edit income and expense** — bottom nav **Add** tab (+ icon)
+- **Optional sub-description** — e.g. main “Supermarket X”, sub “coffee, chips…”
+- **Transfer** Cash ↔ Bank — from Add screen
+- **Wallet moves** Wallet ↔ Cash/Bank — salary-month scoped pocket money
+- **Categories** — predefined + custom (Categories tab)
+- **Account types** — Cash, Bank; Wallet for monthly allowance moves
+
+### History
+- **Three tabs**: Overview | Transactions | Filters
+- **Overview**: collapsible month summary, salary reminder, wallet year timeline (salary mode)
+- **Transactions**: grouped list, swipe-left to delete
+- **Filters**: calendar/salary mode, period (Day/Week/Month/Year), type, category + budget progress
+- Tap row to **edit**; account badge (Cash/Bank) on each row
+
+### Statistics
+- Period filters: Day, Week, Month, Year
+- Totals: Income, Expense, **Wallet**, Balance
+- Bar chart: Income (green), Expense (red), Wallet (purple)
+
+### Settings
+- **Language**: English / Arabic (RTL)
+- **App lock**: Biometric / device PIN required on open (toggle in Settings)
+- **Balances**: recalibrate current cash/bank to match reality
+- **Export**: filter (all / current month) + format (**CSV** styled spreadsheet or **PDF** report)
+- **Import CSV**: documented format + download import template
+- **Database browser**: inspect Room tables with column filters
+- Salary reminder management
+
+## Navigation
+
+| Bottom tab | Route | Purpose |
+|------------|-------|---------|
+| History | `history` | Transaction list & summaries |
+| **Add** | `addTransaction?...` | Add/edit income & expense |
+| Stats | `statistics` | Charts |
+| Categories | `categories` | Category & budget management |
+
+Additional routes (from History / Add): `settings`, `databaseBrowser`, `transfer`, `wallet`, `editTransfer/{id}`, `editWallet/{id}`.
+
+After **Save Transaction**, app navigates to **History**.
+
+## Security
+
+- **Biometric app lock** (enabled by default): fingerprint or device PIN/pattern required before any financial data is shown.
+- Failed or cancelled authentication shows an error on the lock screen; data stays hidden.
+- App re-locks when sent to background.
+- Screenshots blocked while locked (`FLAG_SECURE`).
+- Disable in **Settings → App lock** if needed.
+
+## Architecture
+
+- **MVVM** — Compose UI + ViewModels + StateFlow
+- **Repository pattern** — Room DAOs behind repositories
+- **Hilt** — dependency injection
+- **Domain calculators** — `PeriodCalculator`, `BalanceCalculator`, `WalletCalculator`, `BudgetProgressCalculator`
+- **Offline-first** — all data in local Room DB (version **10**)
+
+### Project structure
+
+```
+app/src/main/java/com/example/expensetracker/
+├── core/
+│   ├── locale/LocaleHelper.kt
+│   ├── security/BiometricAuthManager.kt
+│   └── time/DateUtils.kt
+├── data/
+│   ├── database/ (entities, dao, Migrations.kt, AppDatabase.kt)
+│   ├── preferences/UserPreferences.kt
+│   └── repository/
+├── domain/
+│   ├── BalanceCalculator.kt, WalletCalculator.kt, PeriodCalculator.kt
+│   ├── CsvExporter.kt, CsvImporter.kt, CsvImportFormat (in TransactionExportRow.kt)
+│   ├── PdfTransactionExporter.kt, StyledExcelExporter.kt
+│   ├── TransactionExportLoader.kt, DatabaseInspector.kt
+│   └── ...
+├── presentation/
+│   ├── navigation/AppRoutes.kt
+│   ├── screens/ (History, Add, Stats, Categories, Settings, Wallet, Transfer, DatabaseBrowser)
+│   ├── components/ (TransactionItem, SwipeableTransactionItem, StatisticsBarChart, BiometricGate)
+│   └── viewModel/
+└── MainActivity.kt, App.kt
+```
+
+## Database (Room v10)
+
+### Entities
+- `Transaction` — amount, description, **subDescription**, date, type, categoryId, accountType, toAccountType, startsNewPeriod, **carriedForwardBalance**, reimbursement fields, etc.
+- `Category`, `Budget`, `RecurringTransaction`
+
+### Transaction types
+`INCOME`, `EXPENSE`, `TRANSFER`, `WALLET_MOVE`
 
-Add/Edit Expenses & Income: Easy transaction entry with intuitive UI
-Category Management: Predefined categories with ability to add custom ones
-Account Types: Support for Cash and Bank accounts
-Date/Time Selection: User-friendly date-time picker
-History Views: Filter by Day, Week, Month, and Year
-Statistics: Visual representation of spending patterns
-Material Design 3: Modern UI following Google's design guidelines
-Offline Support: All data stored locally using Room database
+### Account types
+`CASH`, `BANK`, `WALLET`
 
-Architecture Patterns Used
-1. MVVM (Model-View-ViewModel)
+### Key migrations
+| Version | Change |
+|---------|--------|
+| 6→7 | Default existing transactions to BANK |
+| 7→8 | Extra default expense categories |
+| 8→9 | `carriedForwardBalance` |
+| 9→10 | `subDescription` |
 
-Model: Data layer with Room entities and repositories
-View: Jetpack Compose UI screens
-ViewModel: Business logic and state management
+## Import / Export
 
-2. Repository Pattern
+### Export (Settings → Data)
+- **Scope**: All transactions | Current salary/calendar month
+- **CSV**: Styled `.xls` (HTML Excel) — app icon, title, blue headers, type-colored values
+- **PDF**: Styled report — same branding, paginated table
+- **Import template**: Plain `.csv` for editing and re-import
 
-Abstraction layer between ViewModels and data sources
-Centralized data access logic
-Easy to test and maintain
+### Import (Settings → Import CSV)
+Required columns: `date`, `type`, `amount`, `account`, `description`  
+Date format: `yyyy-MM-dd HH:mm:ss`  
+Types: `INCOME`, `EXPENSE`, `TRANSFER`, `WALLET_MOVE`  
+Accounts: `CASH`, `BANK`, `WALLET`  
+Lines starting with `#` are ignored.
 
-3. Dependency Injection (Hilt)
+Full spec shown in Settings → **Accepted CSV import format** (expandable card).
 
-Automatic dependency management
-Improved testability
-Reduced boilerplate code
+## Localization
 
-4. Single Source of Truth
+- `res/values/strings.xml` — English
+- `res/values-ar/strings.xml` — Arabic
+- Preference stored in DataStore + SharedPreferences; `App.attachBaseContext` applies locale via `LocaleHelper`
 
-Room database as the primary data source
-StateFlow for reactive UI updates
+## Build
 
-Project Structure
-app/
-├── src/main/java/com/expensetracker/
-│   ├── data/
-│   │   ├── database/
-│   │   │   ├── entities/
-│   │   │   ├── dao/
-│   │   │   └── AppDatabase.kt
-│   │   ├── repository/
-│   │   └── di/
-│   ├── domain/
-│   │   ├── model/
-│   │   └── repository/
-│   ├── presentation/
-│   │   ├── screens/
-│   │   ├── components/
-│   │   ├── viewmodel/
-│   │   └── theme/
-│   └── MainActivity.kt
-└── build.gradle.kts
-Key Components
-Database Schema
+- **Min SDK**: 26 | **Target SDK**: 35
+- Open in Android Studio, sync Gradle, run `assembleDebug`
 
-Transaction: Main table for expenses/income
-Category: Categories for transactions
-Account: Cash/Bank account types
+## Related docs
 
-ViewModels
+- **[PROJECT_IMPLEMENTATION_AND_ARCHITECTURE_GUIDE.md](PROJECT_IMPLEMENTATION_AND_ARCHITECTURE_GUIDE.md)** — business rules, flows, file map
+- **[RELEASE_NOTES.md](RELEASE_NOTES.md)** — version changelog
+- **[QA_CHECKLIST.md](QA_CHECKLIST.md)** — manual test checklist
 
-TransactionViewModel: Manages transaction operations
-CategoryViewModel: Handles category management
-HistoryViewModel: Manages filtered transaction history
+---
 
-Screens
-
-AddTransactionScreen: Form for adding new transactions
-HistoryScreen: List of transactions with filters
-StatisticsScreen: Visual charts and summaries
-CategoriesScreen: Manage transaction categories
-
-Enhancement Ideas Implemented
-1. Smart Category Suggestions
-
-AI-powered category recommendations based on description
-Learning from user patterns
-
-2. Recurring Transactions
-
-Set up monthly bills, salary, etc.
-Automatic transaction creation
-
-3. Budget Tracking
-
-Set monthly budgets per category
-Visual indicators for budget status
-
-4. Export Functionality
-
-Export data to CSV/Excel
-Backup and restore features
-
-5. Dark Theme Support
-
-Automatic theme switching
-Follows system preferences
-
-6. Biometric Security
-
-Secure app with fingerprint/face unlock
-Protect sensitive financial data
-
-7. Multi-Currency Support
-
-Support for different currencies
-Exchange rate conversion
-
-8. Advanced Analytics
-
-Spending trends
-Category-wise analysis
-Monthly comparisons
-
-Installation & Setup
-Prerequisites
-
-Android Studio Arctic Fox or later
-Kotlin 1.8+
-Minimum SDK: 24 (Android 7.0)
-Target SDK: 34 (Android 14)
-
-Build Instructions
-
-Clone the repository
-Open in Android Studio
-Sync project with Gradle files
-Run the app on device/emulator
-
-Gradle Dependencies
-All required dependencies are included in the provided build.gradle.kts files.
-Usage Guide
-
-**Adding Transactions**
-✅ Features included:
-
-Amount input
-Description input
-Transaction type toggle (Income/Expense)
-Category dropdown (filtered by type)
-Account type selection (Cash/Bank)
-Date picker
-Save button with validation
-
-**Viewing History**
- ✅ Features:
-
-Filter chips: Day, Week, Month, Year
-List of transactions from Room
-Optional click-to-edit logic (navigation prepared)
-
-**StatisticsScreen**
-✅ Features:
-
-Show total income, expense, and balance
-Period range: Month by default
-Simple bar chart (income vs expense)
-
-**CategoriesScreen**
-✅ Features:
-
-View categories by type (Income, Expense)
-Add/edit/delete categories
-Choose color (basic)
-
-Managing Categories
-
-Go to Categories screen
-Add new categories with icons and colors
-Edit existing categories
-Delete unused categories
-
-Testing Strategy
-
-Unit tests for ViewModels and Repository
-Integration tests for Room database
-UI tests for Compose screens
-Instrumented tests for end-to-end flows
-
-Performance Optimizations
-
-Lazy loading for transaction lists
-Database indexing for common queries
-Image caching for category icons
-Background operations using coroutines
-
-Security Features
-
-Local data encryption
-Biometric authentication
-No network requests (offline-first)
-Secure backup mechanisms
-
-Future Enhancements
-
-Cloud Sync: Sync data across devices
-AI Insights: Smart financial advice
-Bill Reminders: Notification system
-Photo Receipts: OCR for receipt scanning
-Investment Tracking: Portfolio management
-Family Sharing: Multi-user support
-
-Troubleshooting
-Common Issues
-
-Database Migration: Handled automatically
-Date Formatting: Follows system locale
-Memory Usage: Optimized with pagination
-Crash Recovery: Automatic state restoration
-
-Performance Tips
-
-Regular database cleanup
-Limit transaction history display
-Use appropriate image sizes for categories
-Enable ProGuard for release builds
-
-Contributing
-
-Follow Kotlin coding conventions
-Write tests for new features
-Update documentation
-Use conventional commit messages
-
-.....................................................
-
-✅ What is libs.versions.toml?
-libs.versions.toml is a Gradle Version Catalog file. It's a centralized configuration file used to manage:
-
-Versions of your dependencies
-Library coordinates (group:name:version)
-Plugin versions as well
-
-✅ What does .toml mean?
-.toml stands for Tom's Obvious, Minimal Language — it’s a configuration file format like .json or .yaml, but designed to be more human-readable and used mostly for settings and config data (especially in Gradle and Rust projects).
-
-✅ What does libs.versions.toml do for you?
-Instead of writing this in every build.gradle.kts:
-
-implementation("androidx.core:core-ktx:1.12.0")
-You write this once in libs.versions.toml:
-
-[libraries]
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version = "1.12.0" }
-And in your build file:
-
-implementation(libs.androidx.core.ktx)
-➡️ This makes upgrading, reusing, and keeping things clean much easier.
+*For architecture decisions and edge cases, update `PROJECT_IMPLEMENTATION_AND_ARCHITECTURE_GUIDE.md` first, then code.*
