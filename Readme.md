@@ -17,14 +17,18 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 - **Wallet moves** Wallet ↔ Cash/Bank — dedicated screen for salary-month scoped pocket money
 - **Categories** — predefined + custom + hierarchical subcategories (Categories tab)
 - **Account types** — Cash, Bank; Wallet for monthly allowance moves
+- **3-Decimal Currency Formatting** — all amounts formatted to 3 fractional decimal places (`#,##0.000 JOD`) with thousands separators
+- **Harden Form Inputs** — single-line text fields with decimal keyboards and Next/Done IME actions
 
 ### History
 - **Three tabs**: Overview | Transactions | Filters
 - **Overview**:
-  - Detailed balance cards: Cash, Bank, and total available
+  - Detailed balance cards: Cash, Bank, and total available (centered amounts and currency)
   - **Remaining Breakdown**: Clarifies **Remaining This Month** vs **Remaining Carried Over from Last Month** totaling **Total Remaining**
   - Collapsible month summary, salary reminder, wallet year timeline (salary mode)
-- **Transactions**: grouped list, swipe-left to delete, tap to edit
+- **Transactions**:
+  - Grouped list, swipe-left to delete (trash icon hidden to prevent visual clutter), tap to edit
+  - **Structured Item Rows**: Row 1 (description + Cash/Bank badge), Row 2 (category in darker grey `onSurfaceVariant` / Medium + dot • + date in lighter grey `outline`), Row 3 (subcategory chip + formatted amount)
 - **Filters**:
   - Calendar/salary mode, period (Day/Week/Month/Year), type, category + budget progress
   - **Subcategory filter**: filter by specific subcategories or choose **"Other"** for transactions without assigned subcategories
@@ -145,7 +149,7 @@ Run all unit tests via Gradle:
 6. **`HistoryGroupingOtherSubcategoryTest`**: Subcategory filtering with the dedicated "Other" option for unassigned subcategory transactions.
 7. **`MonthSummaryRemainingTest`**: Overview balance breakdown reconciliation (Remaining This Month vs Carried Over vs Total Remaining).
 8. **`presentation/StatisticsCalculationsTest`**: 3-month stats aggregation, MoM spending change, and category expense share percentages.
-9. **`core/CoreUtilsTest`**: Currency formatting with "JOD" suffix and DateUtils start/end calculations.
+9. **`core/CoreUtilsTest`**: Currency formatting with 3 decimals and thousands grouping (`#,##0.000 JOD`), DateUtils custom pattern formatting (`PATTERN_FULL_DATE`, `PATTERN_ISO`), safe parsing, invalid rejection, and start/end bounds.
 
 ## Import / Export
 

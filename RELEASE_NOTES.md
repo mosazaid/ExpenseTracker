@@ -1,5 +1,39 @@
 # Release Notes
 
+## Version: Feature Expansion Phase 4 (September 2026)
+
+### Highlights
+- **Usage-based Category Sorting**: Categories across dropdowns and selection pickers automatically sort by frequency of usage across all transactions.
+- **Hierarchical Subcategories & "Other" Filter**:
+  - Subcategories supported in Room DB (`sub_categories` table).
+  - Transaction history includes an **"Other"** subcategory filter option displaying exact spending totals for unassigned transactions.
+- **Advanced 3-Month Multi-Chart & Category Donut/Pie Charts**:
+  - `ThreeMonthMultiChart`: Custom Compose Canvas with switchable **Grouped Bar**, **Smooth Spline Trend Line**, and **Combined** modes.
+  - `CategoryPieChart`: Interactive donut chart with touch selection, center details, and month-by-month filtering tabs.
+  - Horizontal chip scrolling for clutter-free navigation across statistics screens.
+- **Overview Remaining Balance Clarification**:
+  - Explicit breakdown for **Remaining Income** vs **Total Remaining (Cash + Bank)** vs **Carried Over from Last Month**.
+  - Centered balance numbers and labels with currency ("JOD") centered under amounts.
+- **Streamlined Add Transaction**:
+  - Add form restricted to **Expense** and **Income** types only.
+- **3-Decimal Currency Formatting with Thousands Separator**:
+  - Standardized formatting to `#,##0.000 JOD` with `Double.formatCurrency()` and `Double.formatAmount()` extension functions.
+- **Form Input Hardening**:
+  - Enforced `singleLine = true`, decimal keyboards with sanitization (`cleanDecimalInput`), and appropriate `ImeAction.Next` / `ImeAction.Done`.
+- **Transaction History Item Visual Hierarchy**:
+  - Clean 3-row layout: Row 1 (description + account badge), Row 2 (category in primary/Medium + dot • + date in outline), Row 3 (subcategory + amount).
+  - Redundant trash icon hidden in favor of swipe-to-delete.
+- **Universal Date Formatting (`DateUtils`)**:
+  - Standardized format constants (`PATTERN_DEFAULT`, `PATTERN_FULL_DATE`, `PATTERN_ISO`, etc.), `DateUtils.format()`, `DateUtils.parse()`, and extension functions on `Date`.
+- **Automated JVM Unit Test Suite**:
+  - Comprehensive 28-test suite across 9 test classes covering domain calculators, grouping/filtering, overview reconciliation, and formatting.
+
+### Data and Migration Changes
+- Database version **11**.
+- `10 -> 11`: Added `sub_categories` table, added `subCategoryId` column to `transactions`, and consolidated overlapping default categories.
+
+---
+
 ## Version: Feature Expansion Phase 3 (July 2026)
 
 ### Highlights

@@ -6,6 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.presentation.theme.CurrencyUtils
@@ -51,14 +52,18 @@ fun AccountBalanceCards(
                     elevation = CardDefaults.cardElevation(if (isSelected) 2.dp else 0.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.Center
                         ) {
                             Text(if (acct == AccountType.CASH) "💵" else "🏦")
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 acct.name.lowercase().replaceFirstChar { it.uppercase() },
                                 style = MaterialTheme.typography.labelMedium,
@@ -68,6 +73,8 @@ fun AccountBalanceCards(
                         Text(
                             text = if (bal != null) CurrencyUtils.formatCurrency(bal) else "…",
                             style = MaterialTheme.typography.titleMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
                             color = when {
                                 bal == null -> MaterialTheme.colorScheme.outline
                                 bal < 0 -> MaterialTheme.colorScheme.error

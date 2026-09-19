@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -255,7 +256,7 @@ fun WalletScreen(
 
         OutlinedTextField(
             value = uiState.amount,
-            onValueChange = { viewModel.updateAmount(it) },
+            onValueChange = { viewModel.updateAmount(CurrencyUtils.cleanDecimalInput(it)) },
             label = { Text("Amount") },
             supportingText = {
                 Text(
@@ -265,7 +266,8 @@ fun WalletScreen(
                 )
             },
             isError = exceedsAvailable,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
             modifier = Modifier.fillMaxWidth(),
             enabled = canSave
         )
@@ -276,6 +278,8 @@ fun WalletScreen(
             value = uiState.description,
             onValueChange = { viewModel.updateDescription(it) },
             label = { Text("Note (optional)") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             modifier = Modifier.fillMaxWidth(),
             enabled = canSave
         )

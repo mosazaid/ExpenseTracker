@@ -14,10 +14,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.expensetracker.presentation.theme.CurrencyUtils
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.presentation.components.CategoryRow
@@ -57,9 +59,10 @@ fun CategoriesScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = budgetAmount,
-                        onValueChange = { budgetAmount = it },
+                        onValueChange = { budgetAmount = CurrencyUtils.cleanDecimalInput(it) },
                         label = { Text("Budget amount") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -125,6 +128,8 @@ fun CategoriesScreen(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Category Name") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth()
             )
         }

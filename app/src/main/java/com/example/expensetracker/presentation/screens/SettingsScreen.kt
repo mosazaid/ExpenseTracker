@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -308,16 +309,18 @@ fun SettingsScreen(
             )
             OutlinedTextField(
                 value = cashInput,
-                onValueChange = { cashInput = it; justSaved = false },
+                onValueChange = { cashInput = CurrencyUtils.cleanDecimalInput(it); justSaved = false },
                 label = { Text(stringResource(R.string.current_cash_balance)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = bankInput,
-                onValueChange = { bankInput = it; justSaved = false },
+                onValueChange = { bankInput = CurrencyUtils.cleanDecimalInput(it); justSaved = false },
                 label = { Text(stringResource(R.string.current_bank_balance)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth()
             )
             Button(

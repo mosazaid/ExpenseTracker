@@ -213,7 +213,7 @@ class WalletViewModel @Inject constructor(
     }
 
     private fun formatAmount(amount: Double): String {
-        return String.format(java.util.Locale.getDefault(), "%.2f", amount)
+        return String.format(java.util.Locale.US, "%.3f", amount)
     }
 }
 

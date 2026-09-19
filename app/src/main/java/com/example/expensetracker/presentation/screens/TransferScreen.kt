@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -116,9 +117,10 @@ fun TransferScreen(
 
         OutlinedTextField(
             value = uiState.amount,
-            onValueChange = { viewModel.updateAmount(it) },
+            onValueChange = { viewModel.updateAmount(CurrencyUtils.cleanDecimalInput(it)) },
             label = { Text("Amount") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -128,6 +130,8 @@ fun TransferScreen(
             value = uiState.description,
             onValueChange = { viewModel.updateDescription(it) },
             label = { Text("Note (optional)") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             modifier = Modifier.fillMaxWidth()
         )
 

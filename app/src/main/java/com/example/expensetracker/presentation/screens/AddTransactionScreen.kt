@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.R
@@ -432,6 +433,8 @@ fun AddTransactionScreen(
                     },
                     label = { Text("Subcategory / Sub-description") },
                     placeholder = { Text("e.g. Fuel, Groceries, Dining...") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     trailingIcon = {
                         if (savedSubCategories.isNotEmpty()) {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = subCategoryMenuExpanded)
@@ -490,9 +493,10 @@ fun AddTransactionScreen(
         // ── 7. Amount Field
         OutlinedTextField(
             value = uiState.amount,
-            onValueChange = { viewModel.updateAmount(it) },
+            onValueChange = { viewModel.updateAmount(CurrencyUtils.cleanDecimalInput(it)) },
             label = { Text("Amount") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
             isError = uiState.amount.isNotBlank() && uiState.amount.toDoubleOrNull() == null,
             modifier = Modifier.fillMaxWidth()
         )
@@ -502,6 +506,8 @@ fun AddTransactionScreen(
             value = uiState.description,
             onValueChange = { viewModel.updateDescription(it) },
             label = { Text(stringResource(R.string.description)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -524,6 +530,8 @@ fun AddTransactionScreen(
                     value = uiState.debtorNote,
                     onValueChange = { viewModel.updateDebtorNote(it) },
                     label = { Text("Who owes (optional)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -607,6 +615,8 @@ fun AddTransactionScreen(
                     value = uiState.debtorNote,
                     onValueChange = { viewModel.updateDebtorNote(it) },
                     label = { Text("Who owes (optional)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
