@@ -1,11 +1,14 @@
 package com.example.expensetracker.presentation.components
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.domain.HistoryPeriod
+import com.example.expensetracker.presentation.screens.TransactionSortOrder
 import com.example.expensetracker.presentation.screens.TransactionTypeFilter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -13,8 +16,10 @@ import com.example.expensetracker.presentation.screens.TransactionTypeFilter
 fun TransactionFilterBottomSheet(
     selectedType: TransactionTypeFilter,
     selectedPeriod: HistoryPeriod,
+    selectedSortOrder: TransactionSortOrder = TransactionSortOrder.DESC,
     onTypeSelected: (TransactionTypeFilter) -> Unit,
     onPeriodSelected: (HistoryPeriod) -> Unit,
+    onSortOrderSelected: (TransactionSortOrder) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(
@@ -28,7 +33,7 @@ fun TransactionFilterBottomSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Filters",
+                text = "Filters & Sorting",
                 style = MaterialTheme.typography.titleLarge
             )
 
@@ -40,7 +45,9 @@ fun TransactionFilterBottomSheet(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     HistoryPeriod.entries.forEach { period ->
@@ -63,7 +70,9 @@ fun TransactionFilterBottomSheet(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     TransactionTypeFilter.entries.forEach { type ->
@@ -76,13 +85,38 @@ fun TransactionFilterBottomSheet(
                 }
             }
 
+            HorizontalDivider()
+
+            // Sort Order Section
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Sort by Date",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TransactionSortOrder.entries.forEach { sortOrder ->
+                        FilterChip(
+                            selected = selectedSortOrder == sortOrder,
+                            onClick = { onSortOrderSelected(sortOrder) },
+                            label = { Text(sortOrder.label) }
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Apply Filters")
+                Text("Apply")
             }
         }
     }

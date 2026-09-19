@@ -37,8 +37,6 @@ fun OverviewScreen(
     val monthMode by viewModel.monthMode.collectAsState()
     val allTransactions by viewModel.allTransactions.collectAsState(initial = emptyList())
     val coroutineScope = rememberCoroutineScope()
-    val now = remember { Date() }
-
     var monthSummary by remember { mutableStateOf(HistoryViewModel.MonthSummaryUiState()) }
     var visibleReminder by remember { mutableStateOf<RecurringTransaction?>(null) }
     var summaryExpanded by remember { mutableStateOf(true) }
@@ -49,15 +47,20 @@ fun OverviewScreen(
     }
 
     LaunchedEffect(monthMode, allTransactions) {
-        monthSummary = viewModel.buildMonthSummary(monthMode, now)
-        visibleReminder = monthSummary.dueReminders.firstOrNull { reminder ->
-            !viewModel.isRecurringBannerDismissed(reminder)
-        }
-        if (monthMode == MonthMode.SALARY) {
-            val year = Calendar.getInstance().get(Calendar.YEAR)
-            salaryWalletYearSummary = viewModel.buildSalaryWalletYearSummary(year)
-        } else {
-            salaryWalletYearSummary = emptyList()
+        val currentNow = Date()
+        try {
+            monthSummary = viewModel.buildMonthSummary(monthMode, currentNow)
+            visibleReminder = monthSummary.dueReminders.firstOrNull { reminder ->
+                !viewModel.isRecurringBannerDismissed(reminder)
+            }
+            if (monthMode == MonthMode.SALARY) {
+                val year = Calendar.getInstance().get(Calendar.YEAR)
+                salaryWalletYearSummary = viewModel.buildSalaryWalletYearSummary(year)
+            } else {
+                salaryWalletYearSummary = emptyList()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

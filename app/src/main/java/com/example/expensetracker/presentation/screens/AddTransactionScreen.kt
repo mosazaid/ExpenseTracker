@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material3.*
@@ -82,8 +83,10 @@ fun AddTransactionScreen(
         viewModel.events.collect { event ->
             when (event) {
                 com.example.expensetracker.presentation.viewModel.AddEditUiEvent.NavigateHistory -> {
-                    navController.navigate(AppRoutes.HISTORY) {
-                        popUpTo(AppRoutes.HISTORY) { inclusive = true }
+                    if (!navController.popBackStack()) {
+                        navController.navigate(AppRoutes.OVERVIEW) {
+                            popUpTo(AppRoutes.OVERVIEW) { inclusive = true }
+                        }
                     }
                 }
             }
@@ -309,15 +312,32 @@ fun AddTransactionScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // ── 1. Screen Title
-        Text(
-            if (isEditMode) {
-                "Edit ${uiState.transactionType.name.lowercase().replaceFirstChar { it.uppercase() }}"
-            } else {
-                "Add ${uiState.transactionType.name.lowercase().replaceFirstChar { it.uppercase() }}"
-            },
-            style = MaterialTheme.typography.titleLarge
-        )
+        // ── 1. Screen Title with Back Button
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            IconButton(onClick = {
+                if (!navController.popBackStack()) {
+                    navController.navigate(AppRoutes.OVERVIEW) {
+                        popUpTo(AppRoutes.OVERVIEW) { inclusive = true }
+                    }
+                }
+            }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back"
+                )
+            }
+            Text(
+                if (isEditMode) {
+                    "Edit ${uiState.transactionType.name.lowercase().replaceFirstChar { it.uppercase() }}"
+                } else {
+                    "Add ${uiState.transactionType.name.lowercase().replaceFirstChar { it.uppercase() }}"
+                },
+                style = MaterialTheme.typography.titleLarge
+            )
+        }
 
         // ── 2. Your Money Now (Balance Cards at top)
         AccountBalanceCards(

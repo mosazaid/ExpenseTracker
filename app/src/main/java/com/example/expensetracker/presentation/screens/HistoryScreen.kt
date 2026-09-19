@@ -43,7 +43,10 @@ fun HistoryScreen(
     var selectedPeriod by remember { mutableStateOf(HistoryPeriod.MONTH) }
     var selectedTypeFilter by remember { mutableStateOf(TransactionTypeFilter.ALL) }
     var selectedCategoryFilter by remember { mutableStateOf<Category?>(null) }
+    var selectedSubCategoryFilter by remember { mutableStateOf<String?>(null) }
     var categoryMenuExpanded by remember { mutableStateOf(false) }
+    var subCategoryMenuExpanded by remember { mutableStateOf(false) }
+    var selectedSortOrder by remember { mutableStateOf(TransactionSortOrder.DESC) }
     var showFilterSheet by remember { mutableStateOf(false) }
 
     val monthMode by viewModel.monthMode.collectAsState()
@@ -52,6 +55,15 @@ fun HistoryScreen(
     val expenseCategories = remember(allCategories) {
         allCategories.filter { it.type == TransactionType.EXPENSE }
     }
+
+    val currentSubCategories by remember(selectedCategoryFilter?.id) {
+        val catId = selectedCategoryFilter?.id
+        if (catId != null) {
+            viewModel.getSubCategories(catId)
+        } else {
+            kotlinx.coroutines.flow.flowOf(emptyList())
+        }
+    }.collectAsState(initial = emptyList())
 
     val coroutineScope = rememberCoroutineScope()
     val now = remember { Date() }
@@ -116,11 +128,21 @@ fun HistoryScreen(
         }
     }
 
+    val subCategorySpendMap = remember(transactions, selectedCategoryFilter) {
+        val catId = selectedCategoryFilter?.id ?: return@remember emptyMap<String, Double>()
+        transactions
+            .filter { it.categoryId == catId && it.type == TransactionType.EXPENSE && !it.subDescription.isNullOrBlank() }
+            .groupBy { it.subDescription!!.trim().lowercase() }
+            .mapValues { (_, txns) -> txns.sumOf { it.amount } }
+    }
+
     val sections = remember(
         transactions,
         selectedPeriod,
         selectedTypeFilter,
         selectedCategoryFilter,
+        selectedSubCategoryFilter,
+        selectedSortOrder,
         periodBounds,
         reimbursedExpenseIds,
         monthMode,
@@ -131,6 +153,8 @@ fun HistoryScreen(
             period = selectedPeriod,
             typeFilter = selectedTypeFilter,
             categoryIdFilter = selectedCategoryFilter?.id,
+            subCategoryFilter = selectedSubCategoryFilter,
+            sortOrder = selectedSortOrder,
             reimbursedExpenseIds = reimbursedExpenseIds,
             monthMode = monthMode,
             salaryPeriods = salaryWalletYearSummary
@@ -149,11 +173,14 @@ fun HistoryScreen(
         TransactionFilterBottomSheet(
             selectedType = selectedTypeFilter,
             selectedPeriod = selectedPeriod,
+            selectedSortOrder = selectedSortOrder,
             onTypeSelected = { selectedTypeFilter = it },
             onPeriodSelected = {
                 selectedPeriod = it
                 selectedCategoryFilter = null
+                selectedSubCategoryFilter = null
             },
+            onSortOrderSelected = { selectedSortOrder = it },
             onDismiss = { showFilterSheet = false }
         )
     }
@@ -319,6 +346,7 @@ fun HistoryScreen(
                             text = { Text(stringResource(R.string.all_categories)) },
                             onClick = {
                                 selectedCategoryFilter = null
+                                selectedSubCategoryFilter = null
                                 categoryMenuExpanded = false
                             }
                         )
@@ -354,9 +382,57 @@ fun HistoryScreen(
                                 },
                                 onClick = {
                                     selectedCategoryFilter = category
+                                    selectedSubCategoryFilter = null
                                     categoryMenuExpanded = false
                                 }
                             )
+                        }
+                    }
+                }
+            }
+
+            // ── 3.1 Subcategory dropdown filter (when selected category has subcategories)
+            if (selectedCategoryFilter != null && currentSubCategories.isNotEmpty()) {
+                item(key = "subcategory-filter") {
+                    ExposedDropdownMenuBox(
+                        expanded = subCategoryMenuExpanded,
+                        onExpandedChange = { subCategoryMenuExpanded = !subCategoryMenuExpanded }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedSubCategoryFilter ?: "All Subcategories",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Subcategory") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = subCategoryMenuExpanded)
+                            },
+                            modifier = Modifier
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                                .fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = subCategoryMenuExpanded,
+                            onDismissRequest = { subCategoryMenuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("All Subcategories") },
+                                onClick = {
+                                    selectedSubCategoryFilter = null
+                                    subCategoryMenuExpanded = false
+                                }
+                            )
+                            currentSubCategories.forEach { subCat ->
+                                val subTotal = subCategorySpendMap[subCat.name.trim().lowercase()] ?: 0.0
+                                DropdownMenuItem(
+                                    text = {
+                                        Text("${subCat.name} — ${CurrencyUtils.formatCurrency(subTotal)}")
+                                    },
+                                    onClick = {
+                                        selectedSubCategoryFilter = subCat.name
+                                        subCategoryMenuExpanded = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -367,7 +443,9 @@ fun HistoryScreen(
         item(key = "active-filters") {
             ActiveFiltersLine(
                 typeFilter = selectedTypeFilter,
-                categoryFilter = selectedCategoryFilter
+                categoryFilter = selectedCategoryFilter,
+                subCategoryFilter = selectedSubCategoryFilter,
+                sortOrder = selectedSortOrder
             )
         }
 
@@ -464,11 +542,15 @@ fun HistoryScreen(
 @Composable
 private fun ActiveFiltersLine(
     typeFilter: TransactionTypeFilter,
-    categoryFilter: Category?
+    categoryFilter: Category?,
+    subCategoryFilter: String? = null,
+    sortOrder: TransactionSortOrder = TransactionSortOrder.DESC
 ) {
     val parts = buildList {
         if (typeFilter != TransactionTypeFilter.ALL) add(typeFilter.label)
         categoryFilter?.let { add("${it.icon} ${it.name}") }
+        subCategoryFilter?.let { add(it) }
+        if (sortOrder == TransactionSortOrder.ASC) add(sortOrder.label)
     }
     if (parts.isEmpty()) return
     Text(

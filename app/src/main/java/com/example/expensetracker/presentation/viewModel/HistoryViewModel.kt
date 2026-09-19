@@ -20,6 +20,7 @@ import com.example.expensetracker.domain.PeriodBounds
 import com.example.expensetracker.domain.PeriodCalculator
 import com.example.expensetracker.domain.SalaryWalletPeriodSummary
 import com.example.expensetracker.domain.WalletCalculator
+import com.example.expensetracker.data.database.entities.SubCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -48,6 +49,10 @@ class HistoryViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allCategories = categoryRepository.getAllCategories()
+
+    fun getSubCategories(categoryId: Long): Flow<List<SubCategory>> {
+        return categoryRepository.getSubCategories(categoryId)
+    }
 
     /**
      * Holds summary data that is ALWAYS scoped to the current salary/calendar month,
