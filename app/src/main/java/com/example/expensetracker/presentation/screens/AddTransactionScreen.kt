@@ -352,7 +352,7 @@ fun AddTransactionScreen(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("Type", style = MaterialTheme.typography.labelMedium)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TransactionType.entries.filter { it != TransactionType.TRANSFER }.forEach { type ->
+                    listOf(TransactionType.EXPENSE, TransactionType.INCOME).forEach { type ->
                         FilterChip(
                             selected = uiState.transactionType == type,
                             onClick = { viewModel.updateTransactionType(type) },

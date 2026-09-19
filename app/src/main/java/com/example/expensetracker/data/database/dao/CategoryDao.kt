@@ -11,8 +11,27 @@ interface CategoryDao {
     @Query("SELECT * FROM categories ORDER BY name ASC")
     fun getAllCategories(): Flow<List<Category>>
 
+    @Query("""
+        SELECT c.* FROM categories c
+        LEFT JOIN (
+            SELECT categoryId, COUNT(*) as txn_count FROM transactions GROUP BY categoryId
+        ) t ON c.id = t.categoryId
+        ORDER BY COALESCE(t.txn_count, 0) DESC, c.name ASC
+    """)
+    fun getCategoriesSortedByUsage(): Flow<List<Category>>
+
     @Query("SELECT * FROM categories WHERE type = :type ORDER BY name ASC")
     fun getCategoriesByType(type: TransactionType): Flow<List<Category>>
+
+    @Query("""
+        SELECT c.* FROM categories c
+        LEFT JOIN (
+            SELECT categoryId, COUNT(*) as txn_count FROM transactions GROUP BY categoryId
+        ) t ON c.id = t.categoryId
+        WHERE c.type = :type
+        ORDER BY COALESCE(t.txn_count, 0) DESC, c.name ASC
+    """)
+    fun getCategoriesByTypeSortedByUsage(type: TransactionType): Flow<List<Category>>
 
     @Query("SELECT * FROM categories WHERE id = :id")
     suspend fun getCategoryById(id: Long): Category?

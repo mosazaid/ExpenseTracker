@@ -29,7 +29,10 @@ data class HistorySection(
     val transactions: List<Transaction>
 )
 
+const val SUBCATEGORY_OTHER = "Other"
+
 object HistoryGrouping {
+    const val SUBCATEGORY_OTHER = "Other"
 
     fun group(
         transactions: List<Transaction>,
@@ -59,7 +62,11 @@ object HistoryGrouping {
         }
 
         if (!subCategoryFilter.isNullOrBlank()) {
-            filtered = filtered.filter { it.subDescription.equals(subCategoryFilter, ignoreCase = true) }
+            filtered = if (subCategoryFilter.equals(SUBCATEGORY_OTHER, ignoreCase = true)) {
+                filtered.filter { it.subDescription.isNullOrBlank() || it.subDescription.equals(SUBCATEGORY_OTHER, ignoreCase = true) }
+            } else {
+                filtered.filter { it.subDescription.equals(subCategoryFilter, ignoreCase = true) }
+            }
         }
 
         if (filtered.isEmpty()) return emptyList()

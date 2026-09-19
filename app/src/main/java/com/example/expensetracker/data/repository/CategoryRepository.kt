@@ -20,12 +20,20 @@ class CategoryRepository @Inject constructor(
         return categoryDao.getAllCategories()
     }
 
+    fun getCategoriesSortedByUsage(): Flow<List<Category>> {
+        return categoryDao.getCategoriesSortedByUsage()
+    }
+
     suspend fun getAllCategoriesSnapshot(): List<Category> {
         return getAllCategories().first()
     }
 
     fun getCategoriesByType(type: TransactionType): Flow<List<Category>> {
         return categoryDao.getCategoriesByType(type)
+    }
+
+    fun getCategoriesByTypeSortedByUsage(type: TransactionType): Flow<List<Category>> {
+        return categoryDao.getCategoriesByTypeSortedByUsage(type)
     }
 
     suspend fun getCategoryById(id: Long): Category? {

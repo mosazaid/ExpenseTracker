@@ -48,7 +48,7 @@ class HistoryViewModel @Inject constructor(
     val allTransactions = transactionRepository.getAllTransactions()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val allCategories = categoryRepository.getAllCategories()
+    val allCategories = categoryRepository.getCategoriesSortedByUsage()
 
     fun getSubCategories(categoryId: Long): Flow<List<SubCategory>> {
         return categoryRepository.getSubCategories(categoryId)
@@ -67,7 +67,9 @@ class HistoryViewModel @Inject constructor(
         val monthExpense: Double = 0.0,
         val monthNet: Double = 0.0,
         val broughtForward: Double = 0.0,
+        val previousMonthRemaining: Double = 0.0,
         val monthRemaining: Double = 0.0,
+        val totalRemaining: Double = 0.0,
         val periodChangeByAccount: AccountBalances = AccountBalances(0.0, 0.0),
         val incomeExpenseByAccount: AccountBalances = AccountBalances(0.0, 0.0),
         val transferImpact: AccountBalances = AccountBalances(0.0, 0.0),
@@ -75,7 +77,8 @@ class HistoryViewModel @Inject constructor(
         val walletBalance: Double = 0.0,
         val dueReminders: List<RecurringTransaction> = emptyList()
     ) {
-        val hasBroughtForward: Boolean get() = broughtForward != 0.0
+        val hasBroughtForward: Boolean get() = previousMonthRemaining != 0.0 || broughtForward != 0.0
+        val remainingIncome: Double get() = monthNet - walletBalance
         val hasWallet: Boolean get() = walletBalance != 0.0
         val hasTransfers: Boolean get() =
             transferImpact.cash != 0.0 || transferImpact.bank != 0.0
@@ -115,14 +118,19 @@ class HistoryViewModel @Inject constructor(
             0.0
         }
         val dueReminders = recurringRepository.getDueReminders()
-        val remaining = broughtForward + financials.periodNet - walletBalance
+        val currentRemainingIncome = financials.periodNet - walletBalance
+        val totalRemaining = financials.currentBalances.total
+        val previousMonthRemaining = totalRemaining - currentRemainingIncome
+
         return MonthSummaryUiState(
             monthBounds = bounds,
             monthIncome = financials.periodIncome,
             monthExpense = financials.periodExpense,
             monthNet = financials.periodNet,
             broughtForward = broughtForward,
-            monthRemaining = remaining,
+            previousMonthRemaining = previousMonthRemaining,
+            monthRemaining = currentRemainingIncome,
+            totalRemaining = totalRemaining,
             periodChangeByAccount = financials.periodChangeByAccount,
             incomeExpenseByAccount = financials.incomeExpenseByAccount,
             transferImpact = financials.transferImpact,

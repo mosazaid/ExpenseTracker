@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -168,7 +169,7 @@ fun OverviewScreen(
                                 }
                             }
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(horizontalAlignment = Alignment.End) {
@@ -177,15 +178,25 @@ fun OverviewScreen(
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.outline
                                     )
-                                    val displayAmount = if (monthSummary.hasBroughtForward) {
-                                        monthSummary.monthRemaining
-                                    } else {
-                                        monthSummary.monthNet - monthSummary.walletBalance
-                                    }
                                     Text(
-                                        formatSigned(displayAmount),
+                                        formatSigned(monthSummary.remainingIncome),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (monthSummary.remainingIncome >= 0) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.error
+                                    )
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        "Total Remaining",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                    Text(
+                                        CurrencyUtils.formatCurrency(monthSummary.totalRemaining),
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = if (displayAmount >= 0) MaterialTheme.colorScheme.primary
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (monthSummary.totalRemaining >= 0) MaterialTheme.colorScheme.primary
                                         else MaterialTheme.colorScheme.error
                                     )
                                 }
@@ -208,42 +219,76 @@ fun OverviewScreen(
                             ) {
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-                                // Detailed Brought Forward section if previous month balance exists
-                                if (monthSummary.hasBroughtForward) {
-                                    Surface(
-                                        shape = MaterialTheme.shapes.small,
-                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                                        modifier = Modifier.fillMaxWidth()
+                                // Remaining Balance Breakdown: Last Month + Current Remaining = Total Remaining
+                                Surface(
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        Column(
-                                            modifier = Modifier.padding(12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        Text(
+                                            "Remaining Balance Breakdown",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
                                             Text(
-                                                "Added from Previous Month",
-                                                style = MaterialTheme.typography.titleSmall,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                            Text(
-                                                "Leftover balance carried forward from the previous month and added into this month's available balance.",
-                                                style = MaterialTheme.typography.bodySmall,
+                                                "Last month remaining:",
+                                                style = MaterialTheme.typography.bodyMedium,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
-                                            Spacer(modifier = Modifier.height(2.dp))
                                             Text(
-                                                formatSigned(monthSummary.broughtForward),
-                                                style = MaterialTheme.typography.titleLarge,
-                                                color = if (monthSummary.broughtForward >= 0)
-                                                    MaterialTheme.colorScheme.primary
-                                                else
-                                                    MaterialTheme.colorScheme.error
+                                                formatSigned(monthSummary.previousMonthRemaining),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                "Current remaining income:",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                formatSigned(monthSummary.remainingIncome),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = if (monthSummary.remainingIncome >= 0) MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                "Total remaining (Cash + Bank):",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                CurrencyUtils.formatCurrency(monthSummary.totalRemaining),
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (monthSummary.totalRemaining >= 0) MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.error
                                             )
                                         }
                                     }
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 }
 
-                                // Income / Expense / (Wallet) / Remaining
+                                // Income / Expense / (Wallet) / Remaining Income
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -268,33 +313,13 @@ fun OverviewScreen(
                                             modifier = Modifier.weight(1f)
                                         )
                                     }
-                                    val netAfterWallet = monthSummary.monthNet - monthSummary.walletBalance
                                     MetricBox(
                                         label = "Remaining",
-                                        value = formatSigned(netAfterWallet),
-                                        valueColor = if (netAfterWallet >= 0) MaterialTheme.colorScheme.primary
+                                        value = formatSigned(monthSummary.remainingIncome),
+                                        valueColor = if (monthSummary.remainingIncome >= 0) MaterialTheme.colorScheme.primary
                                         else MaterialTheme.colorScheme.error,
                                         modifier = Modifier.weight(1f)
                                     )
-                                }
-
-                                if (monthSummary.hasBroughtForward) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            "Total remaining (including brought forward):",
-                                            style = MaterialTheme.typography.labelMedium
-                                        )
-                                        Text(
-                                            formatSigned(monthSummary.monthRemaining),
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color = if (monthSummary.monthRemaining >= 0) MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.error
-                                        )
-                                    }
                                 }
 
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

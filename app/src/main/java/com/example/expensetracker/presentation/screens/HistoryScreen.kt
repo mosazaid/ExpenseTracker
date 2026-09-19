@@ -130,10 +130,17 @@ fun HistoryScreen(
 
     val subCategorySpendMap = remember(transactions, selectedCategoryFilter) {
         val catId = selectedCategoryFilter?.id ?: return@remember emptyMap<String, Double>()
-        transactions
-            .filter { it.categoryId == catId && it.type == TransactionType.EXPENSE && !it.subDescription.isNullOrBlank() }
+        val catExpenses = transactions.filter { it.categoryId == catId && it.type == TransactionType.EXPENSE }
+        val map = catExpenses
+            .filter { !it.subDescription.isNullOrBlank() && !it.subDescription.equals(HistoryGrouping.SUBCATEGORY_OTHER, ignoreCase = true) }
             .groupBy { it.subDescription!!.trim().lowercase() }
             .mapValues { (_, txns) -> txns.sumOf { it.amount } }
+            .toMutableMap()
+        val otherSum = catExpenses
+            .filter { it.subDescription.isNullOrBlank() || it.subDescription.equals(HistoryGrouping.SUBCATEGORY_OTHER, ignoreCase = true) }
+            .sumOf { it.amount }
+        map[HistoryGrouping.SUBCATEGORY_OTHER.lowercase()] = otherSum
+        map
     }
 
     val sections = remember(
@@ -433,6 +440,16 @@ fun HistoryScreen(
                                     }
                                 )
                             }
+                            val otherTotal = subCategorySpendMap[HistoryGrouping.SUBCATEGORY_OTHER.lowercase()] ?: 0.0
+                            DropdownMenuItem(
+                                text = {
+                                    Text("${HistoryGrouping.SUBCATEGORY_OTHER} — ${CurrencyUtils.formatCurrency(otherTotal)}")
+                                },
+                                onClick = {
+                                    selectedSubCategoryFilter = HistoryGrouping.SUBCATEGORY_OTHER
+                                    subCategoryMenuExpanded = false
+                                }
+                            )
                         }
                     }
                 }
