@@ -9,24 +9,36 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 ## Features (Current)
 
 ### Transactions
-- **Add / edit income and expense** — bottom nav **Add** tab (+ icon)
+- **Add / edit income and expense** — streamlined bottom nav **Add** tab (+ icon) focused purely on Income/Expense
 - **Optional sub-description** — e.g. main “Supermarket X”, sub “coffee, chips…”
-- **Transfer** Cash ↔ Bank — from Add screen
-- **Wallet moves** Wallet ↔ Cash/Bank — salary-month scoped pocket money
-- **Categories** — predefined + custom (Categories tab)
+- **Subcategories** — associate transactions with subcategories; select or add custom subcategories
+- **Usage-based Category Sorting** — categories in dropdowns/pickers dynamically sorted by usage frequency
+- **Transfer** Cash ↔ Bank — dedicated screen accessible from Overview/History
+- **Wallet moves** Wallet ↔ Cash/Bank — dedicated screen for salary-month scoped pocket money
+- **Categories** — predefined + custom + hierarchical subcategories (Categories tab)
 - **Account types** — Cash, Bank; Wallet for monthly allowance moves
 
 ### History
 - **Three tabs**: Overview | Transactions | Filters
-- **Overview**: collapsible month summary, salary reminder, wallet year timeline (salary mode)
-- **Transactions**: grouped list, swipe-left to delete
-- **Filters**: calendar/salary mode, period (Day/Week/Month/Year), type, category + budget progress
-- Tap row to **edit**; account badge (Cash/Bank) on each row
+- **Overview**:
+  - Detailed balance cards: Cash, Bank, and total available
+  - **Remaining Breakdown**: Clarifies **Remaining This Month** vs **Remaining Carried Over from Last Month** totaling **Total Remaining**
+  - Collapsible month summary, salary reminder, wallet year timeline (salary mode)
+- **Transactions**: grouped list, swipe-left to delete, tap to edit
+- **Filters**:
+  - Calendar/salary mode, period (Day/Week/Month/Year), type, category + budget progress
+  - **Subcategory filter**: filter by specific subcategories or choose **"Other"** for transactions without assigned subcategories
+- Account badge (Cash/Bank) and subcategory chip on each row
 
 ### Statistics
 - Period filters: Day, Week, Month, Year
+- **Interactive Multi-Chart (Last 3 Months)**:
+  - Toggle between **Combined (Line + Bar)**, **Line Chart**, and **Bar Chart** views
+  - Side-by-side monthly spending and income trends
+- **3-Month Category Expense Pie Charts**:
+  - Independent interactive donut/pie charts for the last 3 months
+  - Top category spend comparison with percentage labels and legends
 - Totals: Income, Expense, **Wallet**, Balance
-- Bar chart: Income (green), Expense (red), Wallet (purple)
 
 ### Settings
 - **Language**: English / Arabic (RTL)
@@ -41,10 +53,10 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 
 | Bottom tab | Route | Purpose |
 |------------|-------|---------|
-| History | `history` | Transaction list & summaries |
+| History | `history` | Transaction list, overview breakdown & filters |
 | **Add** | `addTransaction?...` | Add/edit income & expense |
-| Stats | `statistics` | Charts |
-| Categories | `categories` | Category & budget management |
+| Stats | `statistics` | Interactive multi-charts & 3-month category pie charts |
+| Categories | `categories` | Category, subcategory & budget management |
 
 Additional routes (from History / Add): `settings`, `databaseBrowser`, `transfer`, `wallet`, `editTransfer/{id}`, `editWallet/{id}`.
 
@@ -61,10 +73,10 @@ After **Save Transaction**, app navigates to **History**.
 ## Architecture
 
 - **MVVM** — Compose UI + ViewModels + StateFlow
-- **Repository pattern** — Room DAOs behind repositories
+- **Repository pattern** — Room DAOs behind repository abstractions
 - **Hilt** — dependency injection
 - **Domain calculators** — `PeriodCalculator`, `BalanceCalculator`, `WalletCalculator`, `BudgetProgressCalculator`
-- **Offline-first** — all data in local Room DB (version **10**)
+- **Offline-first** — all data in local Room DB (version **11**)
 
 ### Project structure
 
@@ -79,7 +91,7 @@ app/src/main/java/com/example/expensetracker/
 │   ├── preferences/UserPreferences.kt
 │   └── repository/
 ├── domain/
-│   ├── BalanceCalculator.kt, WalletCalculator.kt, PeriodCalculator.kt
+│   ├── BalanceCalculator.kt, WalletCalculator.kt, PeriodCalculator.kt, BudgetProgressCalculator.kt
 │   ├── CsvExporter.kt, CsvImporter.kt, CsvImportFormat (in TransactionExportRow.kt)
 │   ├── PdfTransactionExporter.kt, StyledExcelExporter.kt
 │   ├── TransactionExportLoader.kt, DatabaseInspector.kt
@@ -87,16 +99,18 @@ app/src/main/java/com/example/expensetracker/
 ├── presentation/
 │   ├── navigation/AppRoutes.kt
 │   ├── screens/ (History, Add, Stats, Categories, Settings, Wallet, Transfer, DatabaseBrowser)
-│   ├── components/ (TransactionItem, SwipeableTransactionItem, StatisticsBarChart, BiometricGate)
+│   ├── components/ (TransactionItem, MultiTypeChart, CategoryMonthPieChart, BiometricGate)
 │   └── viewModel/
 └── MainActivity.kt, App.kt
 ```
 
-## Database (Room v10)
+## Database (Room v11)
 
 ### Entities
-- `Transaction` — amount, description, **subDescription**, date, type, categoryId, accountType, toAccountType, startsNewPeriod, **carriedForwardBalance**, reimbursement fields, etc.
-- `Category`, `Budget`, `RecurringTransaction`
+- `Transaction` — amount, description, **subDescription**, date, type, categoryId, **subCategoryId**, accountType, toAccountType, startsNewPeriod, **carriedForwardBalance**, reimbursement fields, etc.
+- `Category` — name, icon, color, isExpense, isDefault
+- `SubCategory` — name, categoryId, isDefault
+- `Budget`, `RecurringTransaction`
 
 ### Transaction types
 `INCOME`, `EXPENSE`, `TRANSFER`, `WALLET_MOVE`
@@ -111,6 +125,27 @@ app/src/main/java/com/example/expensetracker/
 | 7→8 | Extra default expense categories |
 | 8→9 | `carriedForwardBalance` |
 | 9→10 | `subDescription` |
+| 10→11 | `SubCategory` table + `subCategoryId` column on `Transaction` + category consolidations |
+
+## Unit Testing
+
+The project includes a test suite covering domain financial calculation logic, transaction grouping, filter edge cases, 3-month statistics aggregation, and overview balance reconciliation.
+
+Run all unit tests via Gradle:
+```bash
+./gradlew testDebugUnitTest
+```
+
+### Test Suites (`app/src/test/java/com/example/expensetracker/`)
+1. **`domain/PeriodCalculatorTest`**: Day, week, calendar month, custom salary day intervals, and boundary roll-overs.
+2. **`domain/BalanceCalculatorTest`**: Total income/expense, internal transfer neutrality, wallet moves, and carried forward balance.
+3. **`domain/WalletCalculatorTest`**: Validates moves between CASH/BANK and WALLET, preventing invalid wallet-to-wallet moves.
+4. **`domain/BudgetProgressCalculatorTest`**: Budget limits, percentage calculation, near-limit flags, and over-budget detection.
+5. **`presentation/HistoryGroupingComprehensiveTest`**: Filter combinations (Income, Expense, Transfer, All), ASC/DESC date sorting, and category filtering.
+6. **`HistoryGroupingOtherSubcategoryTest`**: Subcategory filtering with the dedicated "Other" option for unassigned subcategory transactions.
+7. **`MonthSummaryRemainingTest`**: Overview balance breakdown reconciliation (Remaining This Month vs Carried Over vs Total Remaining).
+8. **`presentation/StatisticsCalculationsTest`**: 3-month stats aggregation, MoM spending change, and category expense share percentages.
+9. **`core/CoreUtilsTest`**: Currency formatting with "JOD" suffix and DateUtils start/end calculations.
 
 ## Import / Export
 
@@ -142,7 +177,7 @@ Full spec shown in Settings → **Accepted CSV import format** (expandable card)
 
 ## Related docs
 
-- **[PROJECT_IMPLEMENTATION_AND_ARCHITECTURE_GUIDE.md](PROJECT_IMPLEMENTATION_AND_ARCHITECTURE_GUIDE.md)** — business rules, flows, file map
+- **[PROJECT_IMPLEMENTATION_AND_ARCHITECTURE_GUIDE.md](PROJECT_IMPLEMENTATION_AND_ARCHITECTURE_GUIDE.md)** — comprehensive architecture evaluation, business rules, test catalog, and file map
 - **[RELEASE_NOTES.md](RELEASE_NOTES.md)** — version changelog
 - **[QA_CHECKLIST.md](QA_CHECKLIST.md)** — manual test checklist
 

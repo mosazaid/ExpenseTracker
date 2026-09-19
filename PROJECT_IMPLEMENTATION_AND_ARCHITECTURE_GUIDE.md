@@ -228,23 +228,88 @@ Import template uses `CsvExporter.exportPlainCsv()` → plain `.csv`.
 1. User picks file → `CsvImporter.importTransactions`
 2. Skip `#` lines; first data line = header
 3. Upsert by `id` if exists, else insert
-4. Categories matched by name + type
+### 3.6 Category Usage-Based Sorting
+- Added `getCategoriesSortedByUsage()` in `CategoryDao` and `CategoryRepository`.
+- Computes transaction counts per category across all history via SQL `LEFT JOIN` and orders by `COALESCE(txn_count, 0) DESC, name ASC`.
+- Used in `AddEditTransactionViewModel` and `HistoryViewModel` so frequently used categories appear at the top of category dropdowns.
 
-### 5.6 Locale
+### 3.7 Subcategory Management & "Other" Filter
+- Hierarchical subcategories stored in Room `sub_categories` table.
+- In `HistoryScreen`, when filtering by a category that has subcategories, an **"Other"** filter item is displayed with its accurate spending total (`Other — $XX.XX`).
+- In `HistoryGrouping`, selecting `SUBCATEGORY_OTHER` filters transactions where `subDescription` is null, blank, or equals `"Other"`.
+- If a category has no subcategories at all, the subcategory dropdown remains hidden.
 
-1. `UserPreferences.setLanguage` → DataStore + SharedPreferences
-2. `App.attachBaseContext` → `LocaleHelper.onAttach`
-3. Settings language chip → `activity.recreate()`
+### 3.8 3-Month Multi-Chart & Category Comparison Pie Charts
+- In `StatisticsViewModel`, `calculateThreeMonthStats()` computes 3-month metrics (`MonthlyBreakdown`, `CategoryExpenseShare`, `ThreeMonthStats`) for both Calendar and Salary month modes.
+- `ThreeMonthMultiChart`: Custom Compose `Canvas` supporting switchable views:
+  - **Bar Chart**: Grouped bars for Income (Green), Expense (Red), and Wallet (Purple) across the 3 months.
+  - **Trend Line**: Smooth cubic Bézier spline with gradient area fill and glowing indicator dots.
+  - **Combined**: Side-by-side grouped bars with trend spline overlay.
+  - Summary metrics: 3-month average monthly spend and Month-over-Month (MoM) spending change badges.
+- `CategoryPieChart`: Interactive Donut / Pie Chart:
+  - Touch-interactive slices displaying category icon, name, percentage, and exact amount in the center hole.
+  - Month selection chips: `[All 3 Months]`, `[Month 1]`, `[Month 2]`, `[Month 3]` with actual month labels.
+  - Detailed category legend below with color swatches, icons, names, percentage badges, and amounts.
 
-### 5.7 Biometric lock
+### 3.9 Overview Remaining Balance Breakdown
+- Overview clearly differentiates between:
+  - **Remaining Income**: Current period net income (`monthIncome - monthExpense - walletBalance`).
+  - **Total Remaining**: Total money across accounts (`currentBalances.cash + currentBalances.bank`).
+  - **Last Month Remaining**: Balance remaining from prior periods (`totalRemaining - remainingIncome`).
+- A dedicated **Remaining Balance Breakdown** card in Overview shows the exact addition:
+  `Last month remaining` + `Current remaining income` = `Total remaining (Cash + Bank)`.
 
-1. App starts → `BiometricGate` in `MainActivity`
-2. If lock enabled and not unlocked → show `BiometricLockScreen` (no `MainScreen`)
-3. `LaunchedEffect` triggers `BiometricPrompt` automatically; **Unlock** button retries
-4. Success → `isUnlocked = true` → `MainScreen` visible
-5. Failed attempt → error on lock screen (e.g. "Not recognized. Try again.")
-6. Error/cancel → error message, data remains hidden
-7. `ON_STOP` → `lock()` → next resume requires auth again
+### 3.10 Add Transaction Simplified Types
+- The transaction type switcher in Add Transaction is restricted to **Expense** and **Income** only.
+- `WALLET_MOVE` is removed from Add Transaction because wallet movements are performed via the dedicated "Move to/from Wallet" button in Overview.
+
+---
+
+## 4. Architecture Evaluation & Recommendations
+
+### 4.1 Architectural Strengths
+1. **Separation of Concerns**: Domain calculators (`PeriodCalculator`, `BalanceCalculator`, `WalletCalculator`, `BudgetProgressCalculator`) encapsulate complex date and balance business rules independently of UI code.
+2. **Single Source of Truth**: Balance calculations in `BalanceCalculator.buildMonthFinancialSummary` derive income, expenses, transfer impact, and available balances in a single pass over identical transaction snapshots, preventing display desynchronization.
+3. **Reactive UI State**: Extensive use of Kotlin `StateFlow` and Compose `produceState`/`collectAsState` ensures that database mutations automatically update UI components without manual polling.
+4. **Hardware-Accelerated Custom Visualizations**: `ThreeMonthMultiChart` and `CategoryPieChart` use native Jetpack Compose `Canvas` drawing with cubic Bézier curves, gradient brushes, and arc trigonometry instead of heavy external dependencies.
+
+### 4.2 Recommended Enhancements
+1. **Extract Domain UseCases**:
+   - Currently, ViewModels call Repositories and Calculators directly.
+   - *Recommendation*: Introduce domain UseCases (e.g. `GetSortedCategoriesUseCase`, `GetThreeMonthStatsUseCase`, `CalculateMonthSummaryUseCase`) using `operator fun invoke()` to reduce ViewModel size and improve reusability.
+2. **Standardize UI State Representation**:
+   - Some screens use multiple discrete `mutableStateOf` variables.
+   - *Recommendation*: Consolidate screen states into immutable data classes (MVI-style `ScreenUiState`) with sealed interfaces for one-shot UI events.
+3. **Module Splitting (Feature Modularization)**:
+   - The app is currently a single `:app` module.
+   - *Recommendation*: In future phases, split into `:core`, `:domain`, `:data`, and `:feature:*` modules to enforce Clean Architecture boundaries at compile time and improve build speeds.
+
+---
+
+## 5. Unit Testing Architecture & Test Catalog
+
+Unit tests execute on the JVM (no emulator required) using JUnit 4, Kotlin Coroutines Test (`runTest`), and Mockito.
+
+### 5.1 Test Execution Command
+```bash
+./gradlew testDebugUnitTest
+```
+
+### 5.2 Test Catalog
+
+| Test Suite | Focus Area | Key Verifications |
+|------------|------------|-------------------|
+| `PeriodCalculatorTest` | Domain Time/Bounds | Day, week, calendar month, year boundaries; salary fallback when salary income anchor is missing. |
+| `BalanceCalculatorTest` | Financial Balances | Income/expense accumulation, transfer neutrality (`transferImpact.cash + bank == 0`), wallet move accounting. |
+| `WalletCalculatorTest` | Pocket Money Rules | Validates allowed moves (`CASH/BANK` ↔ `WALLET`) and rejects invalid moves (`WALLET` ↔ `WALLET`, `CASH` ↔ `BANK`). |
+| `BudgetProgressCalculatorTest` | Budget Monitoring | Spending percentage, `isNearLimit` threshold (>=90%), `isOverBudget` (>100%), missing budget handling. |
+| `HistoryGroupingComprehensiveTest` | Transaction Filtering & Sorting | All `TransactionTypeFilter` modes (`ALL`, `INCOME`, `EXPENSE`, `WALLET`, `OWED`), category filtering, `DESC`/`ASC` sorting. |
+| `HistoryGroupingOtherSubcategoryTest` | Subcategory "Other" Filter | Matches null, blank, and `"Other"` subcategories; excludes non-matching named subcategories. |
+| `MonthSummaryRemainingTest` | Overview Balance Math | Verifies `previousMonthRemaining + remainingIncome == totalRemaining` and matches `currentBalances.total`. |
+| `StatisticsCalculationsTest` | 3-Month Analytics | Monthly breakdown net balance, 3-month total aggregations, MoM spending percentage calculation, category expense shares. |
+| `CoreUtilsTest` | Core Formatting & Time | Currency formatting with `"JOD"` symbol, start/end of day/month date manipulation. |
+
+---
 
 ## 6. Navigation Reference
 
@@ -259,6 +324,8 @@ EDIT_WALLET = "editWallet/{transactionId}"
 ```
 
 **Important**: Bottom nav Add must call `addTransactionRoute()`, not bare `addTransaction`, because NavHost registers `ADD_TRANSACTION_WITH_ARGS`.
+
+---
 
 ## 7. CSV Import Format (Canonical)
 
@@ -276,16 +343,19 @@ id,date,type,category,amount,account,toAccount,description,subDescription,starts
 
 Defined in `domain/TransactionExportRow.kt` → `CsvImportFormat` object.
 
+---
+
 ## 8. File-Level Source of Truth
 
 | Area | Files |
 |------|-------|
 | Navigation | `MainScreen.kt`, `AppRoutes.kt` |
-| History | `HistoryScreen.kt`, `HistoryViewModel.kt`, `TransactionItem.kt`, `SwipeableTransactionItem` |
+| History | `HistoryScreen.kt`, `HistoryViewModel.kt`, `HistoryGrouping.kt`, `TransactionItem.kt`, `SwipeableTransactionItem` |
+| Overview | `OverviewScreen.kt`, `HistoryViewModel.kt`, `AccountBalanceCards.kt` |
 | Add/Edit | `AddTransactionScreen.kt`, `AddEditTransactionViewModel.kt` |
 | Transfer | `TransferScreen.kt`, `TransferViewModel.kt` |
 | Wallet | `WalletScreen.kt`, `WalletViewModel.kt`, `WalletCalculator.kt` |
-| Statistics | `StatisticsScreen.kt`, `StatisticsViewModel.kt`, `StatisticsBarChart.kt` |
+| Statistics | `StatisticsScreen.kt`, `StatisticsViewModel.kt`, `ThreeMonthMultiChart.kt`, `CategoryPieChart.kt`, `StatisticsBarChart.kt` |
 | Settings | `SettingsScreen.kt`, `SettingsViewModel.kt` |
 | Export/Import | `CsvExporter.kt`, `CsvImporter.kt`, `StyledExcelExporter.kt`, `PdfTransactionExporter.kt`, `TransactionExportLoader.kt` |
 | DB browser | `DatabaseBrowserScreen.kt`, `DatabaseBrowserViewModel.kt`, `DatabaseInspector.kt` |
@@ -294,37 +364,18 @@ Defined in `domain/TransactionExportRow.kt` → `CsvImportFormat` object.
 | Period/Balance | `PeriodCalculator.kt`, `BalanceCalculator.kt`, `core/time/DateUtils.kt` |
 | Data | `entities/*`, `dao/*`, `Migrations.kt`, `AppDatabase.kt` |
 
-## 9. Problems Encountered and Resolutions (Selected)
+---
 
-| Issue | Fix |
-|-------|-----|
-| History too cluttered | Tabbed Overview / Transactions / Filters |
-| Add tab blank/wrong route | Navigate with `addTransactionRoute()` |
-| Balance confusion (Add vs History) | Unified `buildMonthFinancialSummary` |
-| Wallet negative balance | Validation + max allowed UI |
-| Closed month wallet edits | `WalletCalculator.isPeriodClosedForDate` guards |
-| CSV re-import with export comments | Importer skips `#` lines |
-| Styled vs importable CSV | Separate plain template export + documented format |
-| Sensitive data visible without auth | `BiometricGate` blocks `MainScreen` until prompt succeeds |
-
-## 10. Business Glossary
+## 9. Business Glossary
 
 - **Salary month**: spending period anchored by salary start event
 - **Wallet**: monthly pocket-money bucket (salary-mode); not the same as “all cash”
 - **Dept income**: reimbursement income from others
 - **Owed expense**: `awaitingReimbursement = true`
 - **Sub-description**: optional item-level detail under main description
-- **Activity this month**: income/expense/saved within period bounds
-- **Your money now**: current Cash + Bank available (matches Add screen)
+- **Remaining income**: net savings generated during the active period (`income - expense - wallet`)
+- **Total remaining**: available cash + bank across all accounts right now
 - **Carry-forward**: previous period net added when starting new salary month
-
-## 11. Remaining Opportunities
-
-1. Localize Transfer, Wallet, Categories screens (partial i18n today)
-2. Persistent category system key column (vs display-name matching)
-3. Automated tests for migrations 7–10 and export/import round-trip
-4. Split large composables (HistoryScreen) further
-5. Optional true `.xlsx` export via library if needed
 
 ---
 
