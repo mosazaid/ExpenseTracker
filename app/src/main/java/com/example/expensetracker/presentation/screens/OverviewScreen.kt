@@ -1,32 +1,56 @@
 package com.example.expensetracker.presentation.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.expensetracker.R
+import com.example.expensetracker.data.database.entities.AccountType
+import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.RecurringTransaction
+import com.example.expensetracker.data.database.entities.Transaction
+import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.presentation.components.AccountBalanceCards
+import com.example.expensetracker.presentation.components.AppTopBar
+import com.example.expensetracker.presentation.components.FinancialInsightsCard
 import com.example.expensetracker.presentation.navigation.AppRoutes
-import com.example.expensetracker.presentation.theme.CurrencyUtils
+import com.example.expensetracker.presentation.theme.*
 import com.example.expensetracker.presentation.viewModel.HistoryViewModel
+import com.example.expensetracker.presentation.viewModel.LoansViewModel
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -35,10 +59,13 @@ import java.util.*
 fun OverviewScreen(
     navController: NavController,
     viewModel: HistoryViewModel = hiltViewModel(),
-    loansViewModel: com.example.expensetracker.presentation.viewModel.LoansViewModel = hiltViewModel()
+    loansViewModel: LoansViewModel = hiltViewModel()
 ) {
     val monthMode by viewModel.monthMode.collectAsState()
     val allTransactions by viewModel.allTransactions.collectAsState(initial = emptyList())
+    val allCategories by viewModel.allCategories.collectAsState(initial = emptyList())
+    val categoryMap = remember(allCategories) { allCategories.associateBy { it.id } }
+
     val preservedAmount by loansViewModel.preservedAmount.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     var monthSummary by remember { mutableStateOf(HistoryViewModel.MonthSummaryUiState()) }
@@ -68,9 +95,14 @@ fun OverviewScreen(
         }
     }
 
+    val cashBal = monthSummary.currentBalances.cash ?: 0.0
+    val bankBal = monthSummary.currentBalances.bank ?: 0.0
+    val totalAvailable = (cashBal + bankBal)
+    val recentTransactions = remember(allTransactions) { allTransactions.take(4) }
+
     Scaffold(
         topBar = {
-            com.example.expensetracker.presentation.components.AppTopBar(
+            AppTopBar(
                 title = stringResource(R.string.app_name),
                 navController = navController
             )
@@ -82,50 +114,48 @@ fun OverviewScreen(
                 .padding(padding)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
+            contentPadding = PaddingValues(top = 10.dp, bottom = 88.dp)
         ) {
-            // 1. Salary reminder box at the very top
+            // 1. Salary reminder banner
             visibleReminder?.let { reminder ->
                 item(key = "salary-reminder-${reminder.id}") {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Salary reminder", style = MaterialTheme.typography.titleSmall)
-                                Text(
-                                    "Tap to record ${CurrencyUtils.formatCurrency(reminder.amount)}",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                            TextButton(onClick = {
-                                navController.navigate(
-                                    AppRoutes.addTransactionRoute(recurringId = reminder.id)
-                                )
-                            }) { Text("Record") }
-                            IconButton(onClick = {
-                                coroutineScope.launch {
-                                    viewModel.dismissRecurringBanner(reminder)
-                                    visibleReminder = null
-                                }
-                            }) {
-                                Icon(Icons.Default.Close, contentDescription = "Dismiss")
+                    SalaryReminderBanner(
+                        reminder = reminder,
+                        onRecord = {
+                            navController.navigate(
+                                AppRoutes.addTransactionRoute(recurringId = reminder.id)
+                            )
+                        },
+                        onDismiss = {
+                            coroutineScope.launch {
+                                viewModel.dismissRecurringBanner(reminder)
+                                visibleReminder = null
                             }
                         }
-                    }
+                    )
                 }
             }
 
-            // 2. Balances Section
+            // 2. Hero Total Available Balance & Asset Distribution
+            item(key = "hero-balance-card") {
+                HeroBalanceCard(
+                    totalBalance = totalAvailable,
+                    cashBalance = cashBal,
+                    bankBalance = bankBal
+                )
+            }
+
+            // 3. Quick Action Pills
+            item(key = "quick-actions-row") {
+                QuickActionsRow(
+                    isSalaryMode = monthMode == MonthMode.SALARY,
+                    onTransfer = { navController.navigate(AppRoutes.TRANSFER) },
+                    onAddTransaction = { navController.navigate(AppRoutes.addTransactionRoute()) },
+                    onWallet = { navController.navigate(AppRoutes.WALLET) }
+                )
+            }
+
+            // 4. Detailed Account Balance Cards (Cash / Bank)
             item(key = "account-balances") {
                 AccountBalanceCards(
                     cashBalance = monthSummary.currentBalances.cash,
@@ -133,380 +163,500 @@ fun OverviewScreen(
                 )
             }
 
+            // 5. Preserved for Loans Banner (if active)
             if (preservedAmount > 0) {
-                val totalLiquid = (monthSummary.currentBalances.cash ?: 0.0) + (monthSummary.currentBalances.bank ?: 0.0)
-                val spendable = (totalLiquid - preservedAmount).coerceAtLeast(0.0)
+                val spendable = (totalAvailable - preservedAmount).coerceAtLeast(0.0)
                 item(key = "preserved-loan-banner") {
-                    Card(
-                        onClick = { navController.navigate(AppRoutes.LOANS) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.preserved_for_loans_label),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                                Text(
-                                    text = CurrencyUtils.formatCurrency(preservedAmount),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                                Text(
-                                    text = stringResource(R.string.spendable_balance_label, CurrencyUtils.formatCurrency(spendable)),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                                )
-                            }
-                            Button(onClick = { navController.navigate(AppRoutes.LOANS) }) {
-                                Text(stringResource(R.string.loans_title))
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 3. Monthly summary card with brought-forward details & transfer button
-            item(key = "month-summary-card") {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    PreservedLoanCard(
+                        preservedAmount = preservedAmount,
+                        spendableAmount = spendable,
+                        onNavigateLoans = { navController.navigate(AppRoutes.LOANS) }
                     )
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { summaryExpanded = !summaryExpanded }
-                                .padding(16.dp)
-                        ) {
-                            // Top Row: Title, Date bounds & Expand/Collapse icon
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        "Monthly Summary",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    monthSummary.monthBounds?.let { bounds ->
-                                        Text(
-                                            bounds.label,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.outline
-                                        )
-                                    }
-                                }
-                                Icon(
-                                    imageVector = if (summaryExpanded) Icons.Default.ExpandLess
-                                    else Icons.Default.ExpandMore,
-                                    contentDescription = if (summaryExpanded) "Collapse" else "Expand",
-                                    tint = MaterialTheme.colorScheme.outline
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // Below Title: Centered Remaining Income & Total Remaining
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Surface(
-                                    modifier = Modifier.weight(1f),
-                                    shape = MaterialTheme.shapes.small,
-                                    color = MaterialTheme.colorScheme.surfaceContainer
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        Text(
-                                            "Remaining Income",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.outline,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        Text(
-                                            formatSigned(monthSummary.remainingIncome),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.SemiBold,
-                                            textAlign = TextAlign.Center,
-                                            color = if (monthSummary.remainingIncome >= 0) MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.error
-                                        )
-                                    }
-                                }
-                                Surface(
-                                    modifier = Modifier.weight(1f),
-                                    shape = MaterialTheme.shapes.small,
-                                    color = MaterialTheme.colorScheme.surfaceContainer
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        Text(
-                                            "Total Remaining",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.outline,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        Text(
-                                            CurrencyUtils.formatCurrency(monthSummary.totalRemaining),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            textAlign = TextAlign.Center,
-                                            color = if (monthSummary.totalRemaining >= 0) MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.error
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        AnimatedVisibility(visible = summaryExpanded) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp)
-                                    .padding(bottom = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(14.dp)
-                            ) {
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                                // Remaining Balance Breakdown: Last Month + Current Remaining = Total Remaining
-                                Surface(
-                                    shape = MaterialTheme.shapes.small,
-                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(12.dp),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            "Remaining Balance Breakdown",
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Text(
-                                                "Last month remaining:",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Text(
-                                                formatSigned(monthSummary.previousMonthRemaining),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.SemiBold
-                                            )
-                                        }
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Text(
-                                                "Current remaining income:",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Text(
-                                                formatSigned(monthSummary.remainingIncome),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = if (monthSummary.remainingIncome >= 0) MaterialTheme.colorScheme.primary
-                                                else MaterialTheme.colorScheme.error
-                                            )
-                                        }
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                "Total remaining (Cash + Bank):",
-                                                style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text(
-                                                CurrencyUtils.formatCurrency(monthSummary.totalRemaining),
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (monthSummary.totalRemaining >= 0) MaterialTheme.colorScheme.primary
-                                                else MaterialTheme.colorScheme.error
-                                            )
-                                        }
-                                    }
-                                }
-
-                                // Income / Expense / (Wallet) / Remaining Income
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    MetricBox(
-                                        label = "Income",
-                                        value = "+${CurrencyUtils.formatCurrency(monthSummary.monthIncome)}",
-                                        valueColor = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    MetricBox(
-                                        label = "Expense",
-                                        value = "-${CurrencyUtils.formatCurrency(monthSummary.monthExpense)}",
-                                        valueColor = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    if (monthSummary.walletBalance != 0.0) {
-                                        MetricBox(
-                                            label = "Wallet",
-                                            value = "-${CurrencyUtils.formatCurrency(monthSummary.walletBalance)}",
-                                            valueColor = MaterialTheme.colorScheme.secondary,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                    }
-                                    MetricBox(
-                                        label = "Remaining",
-                                        value = formatSigned(monthSummary.remainingIncome),
-                                        valueColor = if (monthSummary.remainingIncome >= 0) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                                // Quick Actions: Transfer & Wallet Move
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    OutlinedButton(
-                                        onClick = { navController.navigate(AppRoutes.TRANSFER) },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Text("Transfer Cash ↔ Bank")
-                                    }
-                                    if (monthMode == MonthMode.SALARY) {
-                                        OutlinedButton(
-                                            onClick = { navController.navigate(AppRoutes.WALLET) },
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Text("Move to/from Wallet")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             }
 
-            // 4. Wallet summary card (Categorized by year, collapsed by default)
+            // 6. Monthly Financial Overview (Spending progress, metrics & breakdown)
+            item(key = "month-summary-card") {
+                MonthlyFinancialSummaryCard(
+                    monthSummary = monthSummary,
+                    isExpanded = summaryExpanded,
+                    onToggleExpand = { summaryExpanded = !summaryExpanded }
+                )
+            }
+
+            // 7. Smart Financial Insights Card
+            item(key = "financial-insights-card") {
+                FinancialInsightsCard(
+                    totalIncome = monthSummary.monthIncome,
+                    totalExpense = monthSummary.monthExpense,
+                    totalWallet = monthSummary.walletBalance
+                )
+            }
+
+            // 8. Recent Activity Preview
+            item(key = "recent-activity-preview") {
+                RecentActivityCard(
+                    recentTransactions = recentTransactions,
+                    categoryMap = categoryMap,
+                    onViewAll = { navController.navigate(AppRoutes.HISTORY) },
+                    onTransactionClick = { txn ->
+                        when (txn.type) {
+                            TransactionType.TRANSFER -> {
+                                navController.navigate(AppRoutes.editTransferRoute(txn.id))
+                            }
+                            TransactionType.WALLET_MOVE -> {
+                                navController.navigate(AppRoutes.editWalletRoute(txn.id))
+                            }
+                            else -> {
+                                navController.navigate(AppRoutes.addTransactionRoute(transactionId = txn.id))
+                            }
+                        }
+                    }
+                )
+            }
+
+            // 8. Yearly Wallet Summary (Salary mode only)
             if (salaryWalletYearSummary.isNotEmpty()) {
                 item(key = "wallet-summary-card") {
-                    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    WalletYearSummaryCard(
+                        summaries = salaryWalletYearSummary,
+                        isExpanded = walletListExpanded,
+                        onToggleExpand = { walletListExpanded = !walletListExpanded },
+                        onNavigateWallet = { navController.navigate(AppRoutes.WALLET) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ==========================================
+// Sub-Components
+// ==========================================
+
+@Composable
+private fun HeroBalanceCard(
+    totalBalance: Double,
+    cashBalance: Double,
+    bankBalance: Double,
+    modifier: Modifier = Modifier
+) {
+    val totalSafe = (cashBalance.coerceAtLeast(0.0) + bankBalance.coerceAtLeast(0.0)).coerceAtLeast(0.01)
+    val cashRatio = (cashBalance.coerceAtLeast(0.0) / totalSafe).toFloat().coerceIn(0f, 1f)
+    val bankRatio = (bankBalance.coerceAtLeast(0.0) / totalSafe).toFloat().coerceIn(0f, 1f)
+
+    val animatedCashRatio by animateFloatAsState(
+        targetValue = cashRatio,
+        animationSpec = tween(durationMillis = 350),
+        label = "cashRatio"
+    )
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+        shadowElevation = 1.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.total_available_balance),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = "JOD",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Text(
+                text = CurrencyUtils.formatCurrency(totalBalance),
+                style = MaterialTheme.typography.displaySmall.withTabularNums(),
+                fontWeight = FontWeight.Bold,
+                color = when {
+                    totalBalance < 0 -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
+            )
+
+            // Segmented Asset Distribution Bar
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                ) {
+                    if (animatedCashRatio > 0.01f) {
+                        Box(
+                            modifier = Modifier
+                                .weight(animatedCashRatio)
+                                .fillMaxHeight()
+                                .background(MaterialTheme.colorScheme.primary)
                         )
+                    }
+                    val remainingWeight = (1f - animatedCashRatio).coerceAtLeast(0.001f)
+                    if (bankRatio > 0.01f) {
+                        Box(
+                            modifier = Modifier
+                                .weight(remainingWeight)
+                                .fillMaxHeight()
+                                .background(MaterialTheme.colorScheme.secondary)
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                        Text(
+                            text = "${stringResource(R.string.account_cash)}: ${(cashRatio * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.secondary)
+                        )
+                        Text(
+                            text = "${stringResource(R.string.account_bank)}: ${(bankRatio * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickActionsRow(
+    isSalaryMode: Boolean,
+    onTransfer: () -> Unit,
+    onAddTransaction: () -> Unit,
+    onWallet: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        QuickActionButton(
+            label = stringResource(R.string.action_transfer),
+            icon = Icons.Outlined.SwapHoriz,
+            onClick = onTransfer,
+            modifier = Modifier.weight(1f)
+        )
+        QuickActionButton(
+            label = stringResource(R.string.add_transaction),
+            icon = Icons.Outlined.AddCircleOutline,
+            onClick = onAddTransaction,
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+            contentColor = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f)
+        )
+        if (isSalaryMode) {
+            QuickActionButton(
+                label = stringResource(R.string.action_wallet),
+                icon = Icons.Outlined.AccountBalanceWallet,
+                onClick = onWallet,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun QuickActionButton(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface
+) {
+    Surface(
+        modifier = modifier
+            .defaultMinSize(minHeight = 46.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true),
+                onClick = onClick
+            ),
+        shape = RoundedCornerShape(14.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = contentColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun MonthlyFinancialSummaryCard(
+    monthSummary: HistoryViewModel.MonthSummaryUiState,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val monthIncome = monthSummary.monthIncome
+    val monthExpense = monthSummary.monthExpense
+    val spentRatio = if (monthIncome > 0) (monthExpense / monthIncome).toFloat() else 0f
+    val spentPercentage = (spentRatio * 100).toInt()
+
+    val progressColor = when {
+        spentRatio <= 0.70f -> FinancePositive
+        spentRatio <= 0.90f -> FinanceWarning
+        else -> FinanceNegative
+    }
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Header Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onToggleExpand)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.monthly_summary),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    monthSummary.monthBounds?.let { bounds ->
+                        Text(
+                            text = bounds.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = MaterialTheme.colorScheme.outline
+                )
+            }
+
+            // Spending Progress Indicator (Always visible)
+            if (monthIncome > 0) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.spending_progress_label),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "$spentPercentage%",
+                            style = MaterialTheme.typography.labelSmall.withTabularNums(),
+                            fontWeight = FontWeight.Bold,
+                            color = progressColor
+                        )
+                    }
+
+                    LinearProgressIndicator(
+                        progress = { spentRatio.coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = progressColor,
+                        trackColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    )
+                }
+            }
+
+            // Expanded content: 4-metric row and balance breakdown
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(bottom = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    // Metrics Grid (Income / Expense / Wallet / Remaining)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SummaryMetricBox(
+                            label = stringResource(R.string.income),
+                            value = "+${CurrencyUtils.formatCurrency(monthIncome)}",
+                            valueColor = FinancePositive,
+                            modifier = Modifier.weight(1f)
+                        )
+                        SummaryMetricBox(
+                            label = stringResource(R.string.expense),
+                            value = "-${CurrencyUtils.formatCurrency(monthExpense)}",
+                            valueColor = FinanceNegative,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (monthSummary.walletBalance != 0.0) {
+                            SummaryMetricBox(
+                                label = stringResource(R.string.action_wallet),
+                                value = "-${CurrencyUtils.formatCurrency(monthSummary.walletBalance)}",
+                                valueColor = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        SummaryMetricBox(
+                            label = stringResource(R.string.remaining_income_label),
+                            value = formatSigned(monthSummary.remainingIncome),
+                            valueColor = if (monthSummary.remainingIncome >= 0) FinancePositive else FinanceNegative,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    // Detailed Breakdown surface
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { walletListExpanded = !walletListExpanded }
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Carried from last month:",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = formatSigned(monthSummary.previousMonthRemaining),
+                                    style = MaterialTheme.typography.bodyMedium.withTabularNums(),
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Current month savings:",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = formatSigned(monthSummary.remainingIncome),
+                                    style = MaterialTheme.typography.bodyMedium.withTabularNums(),
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (monthSummary.remainingIncome >= 0) FinancePositive else FinanceNegative
+                                )
+                            }
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
-                                    Text(
-                                        "Wallet Summary ($currentYear)",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                    Text(
-                                        "Remaining in wallet per salary month",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
-                                }
-                                Icon(
-                                    imageVector = if (walletListExpanded) Icons.Default.ExpandLess
-                                    else Icons.Default.ExpandMore,
-                                    contentDescription = if (walletListExpanded) "Collapse" else "Expand",
-                                    tint = MaterialTheme.colorScheme.outline
+                                Text(
+                                    text = "Total Remaining (Cash + Bank):",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
                                 )
-                            }
-
-                            AnimatedVisibility(visible = walletListExpanded) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp)
-                                        .padding(bottom = 16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                                    salaryWalletYearSummary.forEach { period ->
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(period.label, style = MaterialTheme.typography.bodyMedium)
-                                                Text(
-                                                    when {
-                                                        period.isCurrent -> "Open"
-                                                        period.isClosed -> "Closed"
-                                                        else -> ""
-                                                    },
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = if (period.isCurrent) MaterialTheme.colorScheme.primary
-                                                    else MaterialTheme.colorScheme.outline
-                                                )
-                                            }
-                                            Text(
-                                                CurrencyUtils.formatCurrency(period.walletRemaining),
-                                                style = MaterialTheme.typography.titleSmall,
-                                                color = MaterialTheme.colorScheme.secondary
-                                            )
-                                        }
-                                        if (period != salaryWalletYearSummary.last()) {
-                                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Button(
-                                        onClick = { navController.navigate(AppRoutes.WALLET) },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Text("Move to/from Wallet")
-                                    }
-                                }
+                                Text(
+                                    text = CurrencyUtils.formatCurrency(monthSummary.totalRemaining),
+                                    style = MaterialTheme.typography.titleMedium.withTabularNums(),
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (monthSummary.totalRemaining >= 0) FinancePositive else FinanceNegative
+                                )
                             }
                         }
                     }
@@ -517,29 +667,397 @@ fun OverviewScreen(
 }
 
 @Composable
-private fun MetricBox(
+private fun SummaryMetricBox(
     label: String,
     value: String,
-    modifier: Modifier = Modifier,
-    valueColor: Color = MaterialTheme.colorScheme.onSurface
+    valueColor: Color,
+    modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+        modifier = modifier
     ) {
+        Column(
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.labelLarge.withTabularNums(),
+                color = valueColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecentActivityCard(
+    recentTransactions: List<Transaction>,
+    categoryMap: Map<Long, Category>,
+    onViewAll: () -> Unit,
+    onTransactionClick: (Transaction) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.recent_activity),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                TextButton(
+                    onClick = onViewAll,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.view_all_history),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+
+            if (recentTransactions.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No transactions recorded yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    recentTransactions.forEach { txn ->
+                        val cat = categoryMap[txn.categoryId]
+                        RecentTransactionRow(
+                            transaction = txn,
+                            category = cat,
+                            onClick = { onTransactionClick(txn) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentTransactionRow(
+    transaction: Transaction,
+    category: Category?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isIncome = transaction.type == TransactionType.INCOME
+    val isTransfer = transaction.type == TransactionType.TRANSFER
+
+    val amountColor = when {
+        isIncome -> FinancePositive
+        isTransfer -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+
+    val amountPrefix = when {
+        isIncome -> "+"
+        isTransfer -> ""
+        else -> "-"
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp, horizontal = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(
+                        when {
+                            isIncome -> FinancePositiveBg
+                            isTransfer -> MaterialTheme.colorScheme.secondaryContainer
+                            else -> MaterialTheme.colorScheme.surfaceContainerHigh
+                        }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = when {
+                        isIncome -> androidx.compose.material.icons.Icons.AutoMirrored.Filled.TrendingUp
+                        isTransfer -> Icons.Outlined.SwapHoriz
+                        else -> Icons.Outlined.ShoppingBag
+                    },
+                    contentDescription = null,
+                    tint = amountColor,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = transaction.description.ifBlank { category?.name ?: "Transaction" },
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${category?.name ?: ""} • ${DateUtils.format(transaction.date, DateUtils.PATTERN_MONTH_DAY)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+        }
+
         Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
+            text = "$amountPrefix${CurrencyUtils.formatCurrency(transaction.amount)}",
+            style = MaterialTheme.typography.titleSmall.withTabularNums(),
+            fontWeight = FontWeight.SemiBold,
+            color = amountColor
         )
-        Text(
-            value,
-            style = MaterialTheme.typography.titleSmall,
-            color = valueColor,
-            textAlign = TextAlign.Center
-        )
+    }
+}
+
+@Composable
+private fun PreservedLoanCard(
+    preservedAmount: Double,
+    spendableAmount: Double,
+    onNavigateLoans: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onNavigateLoans,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.preserved_for_loans_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    text = CurrencyUtils.formatCurrency(preservedAmount),
+                    style = MaterialTheme.typography.titleLarge.withTabularNums(),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    text = stringResource(
+                        R.string.spendable_balance_label,
+                        CurrencyUtils.formatCurrency(spendableAmount)
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                )
+            }
+            Button(
+                onClick = onNavigateLoans,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                )
+            ) {
+                Text(stringResource(R.string.loans_title))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SalaryReminderBanner(
+    reminder: RecurringTransaction,
+    onRecord: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Salary reminder",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = "Tap to record ${CurrencyUtils.formatCurrency(reminder.amount)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                )
+            }
+            TextButton(onClick = onRecord) {
+                Text("Record", fontWeight = FontWeight.Bold)
+            }
+            IconButton(onClick = onDismiss) {
+                Icon(Icons.Default.Close, contentDescription = "Dismiss")
+            }
+        }
+    }
+}
+
+@Composable
+private fun WalletYearSummaryCard(
+    summaries: List<com.example.expensetracker.domain.SalaryWalletPeriodSummary>,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
+    onNavigateWallet: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onToggleExpand)
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Wallet Summary ($currentYear)",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Remaining in wallet per salary month",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = MaterialTheme.colorScheme.outline
+                )
+            }
+
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    summaries.forEach { period ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(period.label, style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    text = when {
+                                        period.isCurrent -> "Open"
+                                        period.isClosed -> "Closed"
+                                        else -> ""
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (period.isCurrent) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.outline
+                                )
+                            }
+                            Text(
+                                text = CurrencyUtils.formatCurrency(period.walletRemaining),
+                                style = MaterialTheme.typography.titleSmall.withTabularNums(),
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Button(
+                        onClick = onNavigateWallet,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Move to/from Wallet")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -547,3 +1065,4 @@ private fun formatSigned(amount: Double): String {
     val prefix = if (amount >= 0) "+" else ""
     return prefix + CurrencyUtils.formatCurrency(amount)
 }
+

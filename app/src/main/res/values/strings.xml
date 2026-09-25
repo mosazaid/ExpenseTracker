@@ -214,4 +214,31 @@
     <string name="time_optional">Time (optional)</string>
     <string name="notifications_disabled_desc">Notifications are disabled. Enable them to receive daily expense reminders, loan reminders, and budget alerts.</string>
     <string name="enable_notifications_btn">Enable Notifications</string>
+    <string name="your_money_now">Available Accounts</string>
+    <string name="total_available_balance">Total Available Balance</string>
+    <string name="recent_activity">Recent Activity</string>
+    <string name="view_all_history">View All</string>
+    <string name="quick_actions">Quick Actions</string>
+    <string name="action_transfer">Transfer</string>
+    <string name="action_add_expense">Expense</string>
+    <string name="action_add_income">Income</string>
+    <string name="action_wallet">Wallet</string>
+    <string name="monthly_summary">Monthly Summary</string>
+    <string name="remaining_income_label">Remaining Income</string>
+    <string name="total_remaining_label">Total Remaining</string>
+    <string name="spending_progress_label">Spending vs Income</string>
+    <string name="add_transaction">Add</string>
+    <string name="empty_transactions_desc">No transactions found for the selected period or filters. Start tracking by recording an expense or income.</string>
+    <string name="add_new_transaction">Add Transaction</string>
+    <string name="more_screen_hub_title">Financial Hub &amp; Tools</string>
+    <string name="more_screen_hub_desc">Manage loans, debts, categories, and system settings</string>
+    <string name="app_version_label">ExpenseTracker • v1.0.0</string>
+    <string name="offline_storage_secure">Offline &amp; Secure Local Storage</string>
+    <string name="financial_insights_title">Smart Insights</string>
+    <string name="insight_high_spending">High Spending: You have used %1$d%% of your income this month. Consider pacing non-essential expenses.</string>
+    <string name="insight_good_pace">Healthy Pace: You have spent %1$d%% of your income this month. Keep up the good work!</string>
+    <string name="insight_deficit">Deficit Alert: Your expenses and wallet allocations currently exceed your total income.</string>
+    <string name="insight_balanced">Balanced Budget: Your finances are steady. Track each expense to stay in control.</string>
+    <string name="search_transactions_hint">Search notes, categories, amount...</string>
 </resources>
+

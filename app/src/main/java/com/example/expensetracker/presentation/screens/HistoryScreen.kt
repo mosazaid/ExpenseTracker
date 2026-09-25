@@ -1,23 +1,35 @@
 package com.example.expensetracker.presentation.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.expensetracker.presentation.theme.withTabularNums
 import com.example.expensetracker.R
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.Transaction
@@ -40,6 +52,7 @@ fun HistoryScreen(
     navController: NavController,
     viewModel: HistoryViewModel = hiltViewModel()
 ) {
+    var searchQuery by remember { mutableStateOf("") }
     var selectedPeriod by remember { mutableStateOf(HistoryPeriod.MONTH) }
     var selectedTypeFilter by remember { mutableStateOf(TransactionTypeFilter.ALL) }
     var selectedCategoryFilter by remember { mutableStateOf<Category?>(null) }
@@ -143,8 +156,22 @@ fun HistoryScreen(
         map
     }
 
+    val filteredTransactions = remember(transactions, searchQuery, categoryMap) {
+        if (searchQuery.isBlank()) {
+            transactions
+        } else {
+            val q = searchQuery.trim().lowercase()
+            transactions.filter { txn ->
+                txn.description.lowercase().contains(q) ||
+                (txn.subDescription?.lowercase()?.contains(q) == true) ||
+                (categoryMap[txn.categoryId]?.name?.lowercase()?.contains(q) == true) ||
+                txn.amount.toString().contains(q)
+            }
+        }
+    }
+
     val sections = remember(
-        transactions,
+        filteredTransactions,
         selectedPeriod,
         selectedTypeFilter,
         selectedCategoryFilter,
@@ -156,7 +183,7 @@ fun HistoryScreen(
         salaryWalletYearSummary
     ) {
         HistoryGrouping.group(
-            transactions = transactions,
+            transactions = filteredTransactions,
             period = selectedPeriod,
             typeFilter = selectedTypeFilter,
             categoryIdFilter = selectedCategoryFilter?.id,
@@ -269,6 +296,48 @@ fun HistoryScreen(
                     }
                 }
             }
+        }
+
+        // ── Search Bar
+        item(key = "search-bar") {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
+                    Text(
+                        stringResource(R.string.search_transactions_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = "Search",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                )
+            )
         }
 
         // ── 2. Compact toggle for Salary/Calendar month + Filter icon button
@@ -459,17 +528,69 @@ fun HistoryScreen(
         // ── Transactions list
         if (sections.isEmpty()) {
             item(key = "empty-transactions") {
-                Box(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 32.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(vertical = 24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 ) {
-                    Text(
-                        stringResource(R.string.no_transactions),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(56.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.ReceiptLong,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(R.string.no_transactions),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.empty_transactions_desc),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Button(
+                            onClick = { navController.navigate(AppRoutes.ADD_TRANSACTION) },
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.add_new_transaction),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
                 }
             }
         } else {
@@ -580,43 +701,67 @@ private fun HistorySectionHeader(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onToggle),
-        shape = MaterialTheme.shapes.small,
-        tonalElevation = 1.dp
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = if (isExpanded) androidx.compose.material.icons.Icons.Default.ExpandLess
-                        else androidx.compose.material.icons.Icons.Default.ExpandMore,
-                        contentDescription = if (isExpanded) "Collapse" else "Expand",
-                        tint = MaterialTheme.colorScheme.primary
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .height(28.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ) {
                         Text(
-                            title,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            "$transactionCount transaction${if (transactionCount == 1) "" else "s"}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
+                            text = "$transactionCount",
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                            style = MaterialTheme.typography.labelSmall.withTabularNums(),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-                Text(
-                    CurrencyUtils.formatCurrency(expenseTotal),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.error
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (expenseTotal > 0.0) {
+                    Text(
+                        CurrencyUtils.formatCurrency(expenseTotal),
+                        style = MaterialTheme.typography.labelLarge.withTabularNums(),
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                Icon(
+                    imageVector = if (isExpanded) androidx.compose.material.icons.Icons.Default.ExpandLess
+                    else androidx.compose.material.icons.Icons.Default.ExpandMore,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

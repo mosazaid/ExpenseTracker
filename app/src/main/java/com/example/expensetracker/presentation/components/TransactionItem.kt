@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.SwapHoriz
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.Transaction
@@ -21,8 +23,12 @@ import com.example.expensetracker.domain.CategorySystemKey
 import com.example.expensetracker.domain.matchesSystemKey
 import com.example.expensetracker.presentation.theme.CurrencyUtils
 import com.example.expensetracker.presentation.theme.DateUtils
+import com.example.expensetracker.presentation.theme.FinanceNegative
+import com.example.expensetracker.presentation.theme.FinancePositive
+import com.example.expensetracker.presentation.theme.FinanceWarning
+import com.example.expensetracker.presentation.theme.withTabularNums
 
-private val OwedAccent = Color(0xFFFF9800)
+private val OwedAccent = FinanceWarning
 private val WalletAccent = Color(0xFF7E57C2)
 
 private fun formatAccountLabel(account: AccountType): String {
@@ -86,7 +92,12 @@ private fun TransferItem(
                 modifier = Modifier.size(44.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text("🔄", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                    Icon(
+                        imageVector = Icons.Outlined.SwapHoriz,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))
@@ -167,7 +178,7 @@ private fun TransferItem(
                     }
                     Text(
                         text = CurrencyUtils.formatCurrency(transaction.amount),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.withTabularNums(),
                         color = MaterialTheme.colorScheme.tertiary
                     )
                 }
@@ -205,7 +216,12 @@ private fun WalletMoveItem(
                 modifier = Modifier.size(44.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text("👛", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                    Icon(
+                        imageVector = Icons.Outlined.AccountBalanceWallet,
+                        contentDescription = null,
+                        tint = WalletAccent,
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))
@@ -307,9 +323,9 @@ private fun StandardTransactionItem(
 ) {
     val amountColor = when {
         isOwed -> OwedAccent
-        transaction.type == TransactionType.INCOME -> Color(0xFF4CAF50)
-        transaction.type == TransactionType.EXPENSE -> Color(0xFFF44336)
-        else -> Color.Gray
+        transaction.type == TransactionType.INCOME -> FinancePositive
+        transaction.type == TransactionType.EXPENSE -> FinanceNegative
+        else -> MaterialTheme.colorScheme.outline
     }
 
     val amountPrefix = when {
@@ -323,9 +339,9 @@ private fun StandardTransactionItem(
         transaction.type == TransactionType.INCOME
 
     val accountLabel = when (transaction.accountType) {
-        AccountType.CASH -> "💵 Cash"
-        AccountType.BANK -> "🏦 Bank"
-        AccountType.WALLET -> "👛 Wallet"
+        AccountType.CASH -> "Cash"
+        AccountType.BANK -> "Bank"
+        AccountType.WALLET -> "Wallet"
     }
 
     Surface(
@@ -485,7 +501,7 @@ private fun StandardTransactionItem(
                     }
                     Text(
                         text = "$amountPrefix${CurrencyUtils.formatCurrency(transaction.amount)}",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.withTabularNums(),
                         color = amountColor
                     )
                 }

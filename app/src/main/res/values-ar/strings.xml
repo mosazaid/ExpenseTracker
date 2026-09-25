@@ -214,4 +214,31 @@
     <string name="time_optional">الوقت (اختياري)</string>
     <string name="notifications_disabled_desc">الإشعارات معطّلة. قم بتفعيلها لاستلام تذكيرات المصروفات اليومية وأقساط القروض وتنبيهات الميزانية.</string>
     <string name="enable_notifications_btn">تفعيل الإشعارات</string>
+    <string name="your_money_now">الحسابات المتاحة</string>
+    <string name="total_available_balance">إجمالي الرصيد المتاح</string>
+    <string name="recent_activity">النشاط الأخير</string>
+    <string name="view_all_history">عرض الكل</string>
+    <string name="quick_actions">إجراءات سريعة</string>
+    <string name="action_transfer">تحويل</string>
+    <string name="action_add_expense">مصروف</string>
+    <string name="action_add_income">دخل</string>
+    <string name="action_wallet">المحفظة</string>
+    <string name="monthly_summary">ملخص الشهر</string>
+    <string name="remaining_income_label">المتبقي من الدخل</string>
+    <string name="total_remaining_label">إجمالي المتبقي</string>
+    <string name="spending_progress_label">المصروف مقارنة بالدخل</string>
+    <string name="add_transaction">إضافة</string>
+    <string name="empty_transactions_desc">لم يتم العثور على أي معاملات للفترة أو الفلاتر المحددة. ابدأ بتسجيل مصروف أو دخل جديد.</string>
+    <string name="add_new_transaction">إضافة معاملة</string>
+    <string name="more_screen_hub_title">مركز المال والأدوات</string>
+    <string name="more_screen_hub_desc">إدارة القروض، الديون، الفئات، وإعدادات النظام</string>
+    <string name="app_version_label">ExpenseTracker • الإصدار 1.0.0</string>
+    <string name="offline_storage_secure">تخزين محلي آمن وبدون إنترنت</string>
+    <string name="financial_insights_title">رؤى مالية ذكية</string>
+    <string name="insight_high_spending">إنفاق مرتفع: لقد استخدمت %1$d%% من دخلك هذا الشهر. يُنصح بترشيد المصاريف غير الضرورية.</string>
+    <string name="insight_good_pace">وتيرة ممتازة: أنفقت %1$d%% فقط من دخلك هذا الشهر. استمر بهذا الأداء المتوازن!</string>
+    <string name="insight_deficit">تنبيه عجز: نفقاتك الحالية وتخصيصات المحفظة تتجاوز إجمالي دخلك.</string>
+    <string name="insight_balanced">ميزانية متوازنة: وضعك المالي مستقر. استمر بتسجيل كل معاملة لتحافظ على التحكم.</string>
+    <string name="search_transactions_hint">ابحث في الملاحظات، الفئات، أو المبلغ...</string>
 </resources>
+

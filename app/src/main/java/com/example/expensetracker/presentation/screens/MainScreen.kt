@@ -1,17 +1,28 @@
 package com.example.expensetracker.presentation.screens
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -19,18 +30,41 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.compose.ui.res.stringResource
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.expensetracker.R
 import com.example.expensetracker.presentation.components.LoanReminderBottomSheet
 import com.example.expensetracker.presentation.navigation.AppRoutes
 import com.example.expensetracker.presentation.viewModel.LoansViewModel
 
-sealed class BottomNavItem(val route: String, val icon: ImageVector, val labelRes: Int) {
-    object Overview : BottomNavItem(AppRoutes.OVERVIEW, Icons.Default.Dashboard, R.string.nav_overview)
-    object History : BottomNavItem(AppRoutes.HISTORY, Icons.AutoMirrored.Filled.List, R.string.nav_history)
-    object Stats : BottomNavItem(AppRoutes.STATISTICS, Icons.Default.BarChart, R.string.nav_stats)
-    object More : BottomNavItem(AppRoutes.MORE, Icons.Default.MoreHoriz, R.string.nav_more)
+sealed class BottomNavItem(
+    val route: String,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector,
+    val labelRes: Int
+) {
+    object Overview : BottomNavItem(
+        AppRoutes.OVERVIEW,
+        Icons.Filled.Dashboard,
+        Icons.Outlined.Dashboard,
+        R.string.nav_overview
+    )
+    object History : BottomNavItem(
+        AppRoutes.HISTORY,
+        Icons.AutoMirrored.Filled.List,
+        Icons.AutoMirrored.Outlined.List,
+        R.string.nav_history
+    )
+    object Stats : BottomNavItem(
+        AppRoutes.STATISTICS,
+        Icons.Filled.BarChart,
+        Icons.Outlined.BarChart,
+        R.string.nav_stats
+    )
+    object More : BottomNavItem(
+        AppRoutes.MORE,
+        Icons.Filled.MoreHoriz,
+        Icons.Outlined.MoreHoriz,
+        R.string.nav_more
+    )
 }
 
 @Composable
@@ -87,26 +121,53 @@ fun MainScreen(
             if (isDashboardTab) {
                 FloatingActionButton(
                     onClick = { navController.navigate(AppRoutes.addTransactionRoute()) },
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    shape = RoundedCornerShape(16.dp),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 4.dp,
+                        pressedElevation = 8.dp
+                    )
                 ) {
                     Icon(
-                        Icons.Default.Add,
-                        contentDescription = stringResource(R.string.nav_add)
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.nav_add),
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
         },
         bottomBar = {
             if (isDashboardTab) {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    tonalElevation = 3.dp
+                ) {
                     val currentDestination =
                         navController.currentBackStackEntryAsState().value?.destination
                     items.forEach { item ->
+                        val isSelected = currentDestination?.route == item.route
                         NavigationBarItem(
-                            icon = { Icon(item.icon, contentDescription = stringResource(item.labelRes)) },
-                            label = { Text(stringResource(item.labelRes)) },
-                            selected = currentDestination?.route == item.route,
+                            icon = {
+                                Icon(
+                                    imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = stringResource(item.labelRes)
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = stringResource(item.labelRes),
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            },
+                            selected = isSelected,
+                            colors = NavigationBarItemDefaults.colors(
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
                             onClick = {
                                 if (currentDestination?.route != item.route) {
                                     navController.navigate(item.route) {
@@ -127,7 +188,11 @@ fun MainScreen(
         NavHost(
             navController = navController,
             startDestination = AppRoutes.OVERVIEW,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            enterTransition = { fadeIn(animationSpec = tween(220)) },
+            exitTransition = { fadeOut(animationSpec = tween(180)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(220)) },
+            popExitTransition = { fadeOut(animationSpec = tween(180)) }
         ) {
             composable(AppRoutes.OVERVIEW) { OverviewScreen(navController) }
             composable(AppRoutes.HISTORY) { HistoryScreen(navController) }
