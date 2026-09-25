@@ -244,6 +244,7 @@ fun MainScreen(
             }
             composable(AppRoutes.CATEGORIES) { CategoriesScreen(navController) }
             composable(AppRoutes.SETTINGS) { SettingsScreen(navController) }
+            composable(AppRoutes.RECURRING) { RecurringScreen(navController) }
             composable(AppRoutes.DATABASE_BROWSER) { DatabaseBrowserScreen(navController) }
         }
     }

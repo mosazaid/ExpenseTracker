@@ -37,12 +37,16 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val themeMode by userPreferences.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
+            val themePalette by userPreferences.themePalette.collectAsState(initial = com.example.expensetracker.data.preferences.ThemePalette.EMERALD)
             val isDark = when (themeMode) {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
-            ExpenseTrackerTheme(darkTheme = isDark) {
+            ExpenseTrackerTheme(
+                darkTheme = isDark,
+                palette = themePalette
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {

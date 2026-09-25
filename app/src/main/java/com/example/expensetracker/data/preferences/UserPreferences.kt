@@ -39,6 +39,7 @@ class UserPreferences @Inject constructor(
 ) {
     private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
     private val themeModeKey = stringPreferencesKey("theme_mode")
+    private val themePaletteKey = stringPreferencesKey("theme_palette")
     private val languageKey = stringPreferencesKey("app_language")
     private val monthModeKey = stringPreferencesKey("month_mode")
     private val openingCashKey = stringPreferencesKey("opening_cash_balance")
@@ -56,6 +57,14 @@ class UserPreferences @Inject constructor(
             ThemeMode.LIGHT.name -> ThemeMode.LIGHT
             ThemeMode.DARK.name -> ThemeMode.DARK
             else -> ThemeMode.SYSTEM
+        }
+    }
+
+    val themePalette: Flow<ThemePalette> = context.dataStore.data.map { prefs ->
+        try {
+            ThemePalette.valueOf(prefs[themePaletteKey] ?: ThemePalette.EMERALD.name)
+        } catch (_: Exception) {
+            ThemePalette.EMERALD
         }
     }
 
@@ -91,6 +100,12 @@ class UserPreferences @Inject constructor(
     suspend fun setThemeMode(mode: ThemeMode) {
         context.dataStore.edit { prefs ->
             prefs[themeModeKey] = mode.name
+        }
+    }
+
+    suspend fun setThemePalette(palette: ThemePalette) {
+        context.dataStore.edit { prefs ->
+            prefs[themePaletteKey] = palette.name
         }
     }
 

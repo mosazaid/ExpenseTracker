@@ -240,5 +240,19 @@
     <string name="insight_deficit">تنبيه عجز: نفقاتك الحالية وتخصيصات المحفظة تتجاوز إجمالي دخلك.</string>
     <string name="insight_balanced">ميزانية متوازنة: وضعك المالي مستقر. استمر بتسجيل كل معاملة لتحافظ على التحكم.</string>
     <string name="search_transactions_hint">ابحث في الملاحظات، الفئات، أو المبلغ...</string>
+    <string name="theme_palette_label">لوحة الألوان</string>
+    <string name="theme_emerald">الزمرد الأخضر</string>
+    <string name="theme_blue_gold">أزرق وذهبي ملكي</string>
+    <string name="theme_warm_earth">ألوان الأرض الدافئة</string>
+    <string name="theme_slate_teal">رمادي وتركواز بارد</string>
+    <string name="recurring_screen_title">المعاملات المتكررة والاشتراكات</string>
+    <string name="recurring_screen_subtitle">إدارة تذكيرات الراتب، الفواتير والاشتراكات الدورية</string>
+    <string name="recurring_empty_title">لا توجد معاملات متكررة</string>
+    <string name="recurring_empty_desc">قم بإعداد تذكيرات الراتب أو الاشتراكات المتكررة لتتبع مصاريفك بسهولة وبشكل دوري.</string>
+    <string name="recurring_status_active">نشط</string>
+    <string name="recurring_status_paused">متوقف</string>
+    <string name="recurring_next_due">الموعد القادم: %1$s</string>
+    <string name="delete_recurring_confirm_title">حذف المعاملة المتكررة؟</string>
+    <string name="delete_recurring_confirm_desc">هل أنت متأكد من حذف هذه المعاملة المتكررة؟ المعاملات المسجلة سابقاً في السجل لن تتأثر.</string>
 </resources>
 

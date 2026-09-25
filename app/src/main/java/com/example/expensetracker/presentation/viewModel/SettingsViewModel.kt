@@ -76,6 +76,15 @@ class SettingsViewModel @Inject constructor(
     val themeMode: StateFlow<com.example.expensetracker.data.preferences.ThemeMode> = userPreferences.themeMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.example.expensetracker.data.preferences.ThemeMode.SYSTEM)
 
+    val themePalette: StateFlow<com.example.expensetracker.data.preferences.ThemePalette> = userPreferences.themePalette
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.example.expensetracker.data.preferences.ThemePalette.EMERALD)
+
+    fun setThemePalette(palette: com.example.expensetracker.data.preferences.ThemePalette) {
+        viewModelScope.launch {
+            userPreferences.setThemePalette(palette)
+        }
+    }
+
     val biometricLockEnabled: StateFlow<Boolean> = userPreferences.biometricLockEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 

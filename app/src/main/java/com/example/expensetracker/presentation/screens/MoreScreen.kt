@@ -133,6 +133,16 @@ fun MoreScreen(navController: NavController) {
 
             item {
                 MoreMenuCard(
+                    title = stringResource(R.string.recurring_screen_title),
+                    subtitle = stringResource(R.string.recurring_screen_subtitle),
+                    icon = Icons.Outlined.Autorenew,
+                    accentColor = MaterialTheme.colorScheme.primary,
+                    onClick = { navController.navigate(AppRoutes.RECURRING) }
+                )
+            }
+
+            item {
+                MoreMenuCard(
                     title = stringResource(R.string.categories_budgets_title),
                     subtitle = stringResource(R.string.categories_budgets_subtitle),
                     icon = Icons.Default.Category,

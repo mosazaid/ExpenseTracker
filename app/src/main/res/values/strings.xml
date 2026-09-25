@@ -240,5 +240,19 @@
     <string name="insight_deficit">Deficit Alert: Your expenses and wallet allocations currently exceed your total income.</string>
     <string name="insight_balanced">Balanced Budget: Your finances are steady. Track each expense to stay in control.</string>
     <string name="search_transactions_hint">Search notes, categories, amount...</string>
+    <string name="theme_palette_label">Color Palette</string>
+    <string name="theme_emerald">Emerald Green</string>
+    <string name="theme_blue_gold">Blue &amp; Gold Luxury</string>
+    <string name="theme_warm_earth">Warm Earth Tones</string>
+    <string name="theme_slate_teal">Cool Slate &amp; Teal</string>
+    <string name="recurring_screen_title">Recurring &amp; Subscriptions</string>
+    <string name="recurring_screen_subtitle">Manage salary reminders, recurring bills and subscriptions</string>
+    <string name="recurring_empty_title">No Recurring Transactions</string>
+    <string name="recurring_empty_desc">Set up automatic salary reminders or recurring subscriptions to automate your expense tracking.</string>
+    <string name="recurring_status_active">Active</string>
+    <string name="recurring_status_paused">Paused</string>
+    <string name="recurring_next_due">Next due: %1$s</string>
+    <string name="delete_recurring_confirm_title">Delete Recurring Item?</string>
+    <string name="delete_recurring_confirm_desc">Are you sure you want to delete this recurring transaction? Past logged transactions will remain untouched.</string>
 </resources>
 

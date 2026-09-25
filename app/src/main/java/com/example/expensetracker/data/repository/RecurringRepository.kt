@@ -58,8 +58,20 @@ class RecurringRepository @Inject constructor(
         )
     }
 
+    fun getAllRecurringTransactions(): Flow<List<RecurringTransaction>> {
+        return recurringTransactionDao.getAllRecurringTransactions()
+    }
+
     suspend fun deactivateRecurring(id: Long) {
         recurringTransactionDao.deactivateRecurringTransaction(id)
+    }
+
+    suspend fun setRecurringActive(id: Long, isActive: Boolean) {
+        recurringTransactionDao.setRecurringActive(id, isActive)
+    }
+
+    suspend fun deleteRecurringById(id: Long) {
+        recurringTransactionDao.deleteRecurringTransactionById(id)
     }
 
     suspend fun updateRecurring(recurring: RecurringTransaction) {
