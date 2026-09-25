@@ -20,7 +20,7 @@ import com.example.expensetracker.data.preferences.MonthMode
 import androidx.compose.ui.res.stringResource
 import com.example.expensetracker.R
 import com.example.expensetracker.presentation.components.AppTopBar
-import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.navigation.Overview
 import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.presentation.viewModel.LIQUID_ACCOUNTS
@@ -117,8 +117,8 @@ fun WalletScreen(
                 canNavigateBack = true,
                 onBackClick = {
                     if (!navController.popBackStack()) {
-                        navController.navigate(AppRoutes.OVERVIEW) {
-                            popUpTo(AppRoutes.OVERVIEW) { inclusive = true }
+                        navController.navigate(Overview) {
+                            popUpTo<Overview> { inclusive = true }
                         }
                     }
                 },

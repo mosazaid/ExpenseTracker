@@ -25,7 +25,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.example.expensetracker.R
 import com.example.expensetracker.data.repository.AlertRepository
-import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.navigation.Alerts
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -81,7 +81,7 @@ fun AppTopBar(
         },
         actions = {
             if (showNotificationsBadge) {
-                IconButton(onClick = { navController.navigate(AppRoutes.ALERTS) }) {
+                IconButton(onClick = { navController.navigate(Alerts) }) {
                     BadgedBox(
                         badge = {
                             if (alertCount > 0) {

@@ -23,49 +23,69 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import androidx.navigation.toRoute
 import com.example.expensetracker.R
 import com.example.expensetracker.presentation.components.LoanReminderBottomSheet
-import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.navigation.AddTransaction
+import com.example.expensetracker.presentation.navigation.Alerts
+import com.example.expensetracker.presentation.navigation.Categories
+import com.example.expensetracker.presentation.navigation.DatabaseBrowser
+import com.example.expensetracker.presentation.navigation.Debts
+import com.example.expensetracker.presentation.navigation.EditTransfer
+import com.example.expensetracker.presentation.navigation.EditWallet
+import com.example.expensetracker.presentation.navigation.History
+import com.example.expensetracker.presentation.navigation.Loans
+import com.example.expensetracker.presentation.navigation.More
+import com.example.expensetracker.presentation.navigation.Onboarding
+import com.example.expensetracker.presentation.navigation.Overview
+import com.example.expensetracker.presentation.navigation.Recurring
+import com.example.expensetracker.presentation.navigation.Settings
+import com.example.expensetracker.presentation.navigation.Statistics
+import com.example.expensetracker.presentation.navigation.Transfer
+import com.example.expensetracker.presentation.navigation.Wallet
 import com.example.expensetracker.presentation.viewModel.LoansViewModel
+import java.time.LocalDate
 
 sealed class BottomNavItem(
-    val route: String,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
     val labelRes: Int
 ) {
     object Overview : BottomNavItem(
-        AppRoutes.OVERVIEW,
         Icons.Filled.Dashboard,
         Icons.Outlined.Dashboard,
         R.string.nav_overview
     )
     object History : BottomNavItem(
-        AppRoutes.HISTORY,
         Icons.AutoMirrored.Filled.List,
         Icons.AutoMirrored.Outlined.List,
         R.string.nav_history
     )
     object Stats : BottomNavItem(
-        AppRoutes.STATISTICS,
         Icons.Filled.BarChart,
         Icons.Outlined.BarChart,
         R.string.nav_stats
     )
     object More : BottomNavItem(
-        AppRoutes.MORE,
         Icons.Filled.MoreHoriz,
         Icons.Outlined.MoreHoriz,
         R.string.nav_more
     )
 }
+
+// Maps each BottomNavItem to its type-safe destination object
+private val bottomNavDestinations = listOf(
+    BottomNavItem.Overview to com.example.expensetracker.presentation.navigation.Overview,
+    BottomNavItem.History  to com.example.expensetracker.presentation.navigation.History,
+    BottomNavItem.Stats    to Statistics,
+    BottomNavItem.More     to com.example.expensetracker.presentation.navigation.More
+)
 
 @Composable
 fun MainScreen(
@@ -76,38 +96,35 @@ fun MainScreen(
 
     LaunchedEffect(initialRecurringId) {
         if (initialRecurringId != null) {
-            navController.navigate(AppRoutes.addTransactionRoute(recurringId = initialRecurringId))
+            navController.navigate(AddTransaction(recurringId = initialRecurringId))
         }
     }
 
-    val items = listOf(
-        BottomNavItem.Overview,
-        BottomNavItem.History,
-        BottomNavItem.Stats,
-        BottomNavItem.More
-    )
+    val currentBackStack by navController.currentBackStackEntryAsState()
+    val isDashboardTab = currentBackStack?.destination?.let { dest ->
+        dest.hasRoute<Overview>() ||
+            dest.hasRoute<History>() ||
+            dest.hasRoute<Statistics>() ||
+            dest.hasRoute<More>()
+    } ?: false
 
-    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-    val isDashboardTab = currentRoute == AppRoutes.OVERVIEW ||
-        currentRoute == AppRoutes.HISTORY ||
-        currentRoute == AppRoutes.STATISTICS ||
-        currentRoute == AppRoutes.MORE
-
-    // Loan reminder bottom sheet on app open if there are unpaid loans (shown once per day)
+    // Loan reminder bottom sheet — shown once per day for unpaid loans
     val monthlyLoanItems by loansViewModel.monthlyItems.collectAsState()
     val unpaidLoans = remember(monthlyLoanItems) { monthlyLoanItems.filter { !it.payment.isPaid } }
     var hasDismissedLoanSheetSession by rememberSaveable { mutableStateOf(false) }
     val lastShownDate by loansViewModel.lastLoanSheetDate.collectAsState()
-    val todayDateStr = remember { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date()) }
+    // remember { } is correct here: we capture today once per composition lifetime
+    val todayDateStr = remember { LocalDate.now().toString() }
     val shouldShowToday = lastShownDate != todayDateStr
+    val isOnOverview = currentBackStack?.destination?.hasRoute<Overview>() == true
 
-    if (unpaidLoans.isNotEmpty() && shouldShowToday && !hasDismissedLoanSheetSession && currentRoute == AppRoutes.OVERVIEW) {
+    if (unpaidLoans.isNotEmpty() && shouldShowToday && !hasDismissedLoanSheetSession && isOnOverview) {
         LoanReminderBottomSheet(
             unpaidLoans = unpaidLoans,
             onPayLoansClick = {
                 loansViewModel.markLoanSheetShownToday()
                 hasDismissedLoanSheetSession = true
-                navController.navigate(AppRoutes.LOANS)
+                navController.navigate(Loans)
             },
             onDismissRequest = {
                 loansViewModel.markLoanSheetShownToday()
@@ -120,7 +137,7 @@ fun MainScreen(
         floatingActionButton = {
             if (isDashboardTab) {
                 FloatingActionButton(
-                    onClick = { navController.navigate(AppRoutes.addTransactionRoute()) },
+                    onClick = { navController.navigate(AddTransaction()) },
                     shape = RoundedCornerShape(16.dp),
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -143,10 +160,9 @@ fun MainScreen(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     tonalElevation = 3.dp
                 ) {
-                    val currentDestination =
-                        navController.currentBackStackEntryAsState().value?.destination
-                    items.forEach { item ->
-                        val isSelected = currentDestination?.route == item.route
+                    val currentDestination = currentBackStack?.destination
+                    bottomNavDestinations.forEach { (item, destination) ->
+                        val isSelected = currentDestination?.hasRoute(destination::class) == true
                         NavigationBarItem(
                             icon = {
                                 Icon(
@@ -169,11 +185,11 @@ fun MainScreen(
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                             ),
                             onClick = {
-                                if (currentDestination?.route != item.route) {
-                                    if (item.route == AppRoutes.OVERVIEW) {
-                                        val popped = navController.popBackStack(AppRoutes.OVERVIEW, inclusive = false)
+                                if (!isSelected) {
+                                    if (destination is com.example.expensetracker.presentation.navigation.Overview) {
+                                        val popped = navController.popBackStack<Overview>(inclusive = false)
                                         if (!popped) {
-                                            navController.navigate(AppRoutes.OVERVIEW) {
+                                            navController.navigate(Overview) {
                                                 popUpTo(navController.graph.findStartDestination().id) {
                                                     saveState = true
                                                 }
@@ -182,7 +198,7 @@ fun MainScreen(
                                             }
                                         }
                                     } else {
-                                        navController.navigate(item.route) {
+                                        navController.navigate(destination) {
                                             popUpTo(navController.graph.findStartDestination().id) {
                                                 saveState = true
                                             }
@@ -200,66 +216,48 @@ fun MainScreen(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = AppRoutes.OVERVIEW,
+            startDestination = Overview,
             modifier = Modifier.padding(innerPadding),
             enterTransition = { fadeIn(animationSpec = tween(220)) },
             exitTransition = { fadeOut(animationSpec = tween(180)) },
             popEnterTransition = { fadeIn(animationSpec = tween(220)) },
             popExitTransition = { fadeOut(animationSpec = tween(180)) }
         ) {
-            composable(AppRoutes.OVERVIEW) { OverviewScreen(navController) }
-            composable(AppRoutes.HISTORY) { HistoryScreen(navController) }
-            composable(AppRoutes.STATISTICS) { StatisticsScreen(navController) }
-            composable(AppRoutes.MORE) { MoreScreen(navController) }
-            composable(AppRoutes.LOANS) { LoansScreen(navController) }
-            composable(AppRoutes.ALERTS) { AlertsScreen(navController) }
-            composable(AppRoutes.DEBTS) { DebtsScreen(navController) }
-            composable(
-                route = AppRoutes.ADD_TRANSACTION_WITH_ARGS,
-                arguments = listOf(
-                    navArgument(AppRoutes.ADD_TRANSACTION_ARG_TRANSACTION_ID) {
-                        type = NavType.LongType
-                        defaultValue = -1L
-                    },
-                    navArgument(AppRoutes.ADD_TRANSACTION_ARG_RECURRING_ID) {
-                        type = NavType.LongType
-                        defaultValue = -1L
-                    }
-                )
-            ) { backStackEntry ->
-                val transactionId = backStackEntry.arguments
-                    ?.getLong(AppRoutes.ADD_TRANSACTION_ARG_TRANSACTION_ID) ?: -1L
-                val recurringId = backStackEntry.arguments
-                    ?.getLong(AppRoutes.ADD_TRANSACTION_ARG_RECURRING_ID) ?: -1L
+            // ── Bottom-tab screens ──────────────────────────────────────────
+            composable<Overview>    { OverviewScreen(navController) }
+            composable<History>     { HistoryScreen(navController) }
+            composable<Statistics>  { StatisticsScreen(navController) }
+            composable<More>        { MoreScreen(navController) }
+
+            // ── Secondary screens ───────────────────────────────────────────
+            composable<Loans>          { LoansScreen(navController) }
+            composable<Alerts>         { AlertsScreen(navController) }
+            composable<Debts>          { DebtsScreen(navController) }
+            composable<Transfer>       { TransferScreen(navController) }
+            composable<Wallet>         { WalletScreen(navController) }
+            composable<Categories>     { CategoriesScreen(navController) }
+            composable<Settings>       { SettingsScreen(navController) }
+            composable<Recurring>      { RecurringScreen(navController) }
+            composable<DatabaseBrowser> { DatabaseBrowserScreen(navController) }
+            composable<Onboarding>     { OnboardingScreen(onFinish = { navController.popBackStack() }) }
+
+            // ── Parameterised screens ───────────────────────────────────────
+            composable<AddTransaction> { backStackEntry ->
+                val route = backStackEntry.toRoute<AddTransaction>()
                 AddTransactionScreen(
                     navController = navController,
-                    transactionId = if (transactionId == -1L) null else transactionId,
-                    recurringId = if (recurringId == -1L) null else recurringId
+                    transactionId = route.transactionId.takeIf { it != -1L },
+                    recurringId = route.recurringId.takeIf { it != -1L }
                 )
             }
-            composable(AppRoutes.TRANSFER) { TransferScreen(navController) }
-            composable(AppRoutes.WALLET) { WalletScreen(navController) }
-            composable(
-                route = AppRoutes.EDIT_TRANSFER,
-                arguments = listOf(navArgument(AppRoutes.EDIT_TRANSFER_ARG) { type = NavType.LongType })
-            ) { backStackEntry ->
-                val transactionId = backStackEntry.arguments
-                    ?.getLong(AppRoutes.EDIT_TRANSFER_ARG) ?: return@composable
-                TransferScreen(navController, transactionId = transactionId)
+            composable<EditTransfer> { backStackEntry ->
+                val route = backStackEntry.toRoute<EditTransfer>()
+                TransferScreen(navController, transactionId = route.transactionId)
             }
-            composable(
-                route = AppRoutes.EDIT_WALLET,
-                arguments = listOf(navArgument(AppRoutes.EDIT_WALLET_ARG) { type = NavType.LongType })
-            ) { backStackEntry ->
-                val transactionId = backStackEntry.arguments
-                    ?.getLong(AppRoutes.EDIT_WALLET_ARG) ?: return@composable
-                WalletScreen(navController, transactionId = transactionId)
+            composable<EditWallet> { backStackEntry ->
+                val route = backStackEntry.toRoute<EditWallet>()
+                WalletScreen(navController, transactionId = route.transactionId)
             }
-            composable(AppRoutes.CATEGORIES) { CategoriesScreen(navController) }
-            composable(AppRoutes.SETTINGS) { SettingsScreen(navController) }
-            composable(AppRoutes.RECURRING) { RecurringScreen(navController) }
-            composable(AppRoutes.ONBOARDING) { OnboardingScreen(onFinish = { navController.popBackStack() }) }
-            composable(AppRoutes.DATABASE_BROWSER) { DatabaseBrowserScreen(navController) }
         }
     }
 }

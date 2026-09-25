@@ -41,7 +41,8 @@ import com.example.expensetracker.core.export.CsvImportFormat
 import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.presentation.components.AppTopBar
-import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.navigation.Categories
+import com.example.expensetracker.presentation.navigation.DatabaseBrowser
 import com.example.expensetracker.presentation.viewModel.ExportFormat
 import com.example.expensetracker.presentation.viewModel.ExportScope
 import com.example.expensetracker.presentation.viewModel.ExportShareRequest
@@ -351,7 +352,7 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.outline
             )
             Button(
-                onClick = { navController.navigate(AppRoutes.CATEGORIES) },
+                onClick = { navController.navigate(Categories) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Category Management")
@@ -367,7 +368,7 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.outline
             )
             Button(
-                onClick = { navController.navigate(AppRoutes.DATABASE_BROWSER) },
+                onClick = { navController.navigate(DatabaseBrowser) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.database_browser))

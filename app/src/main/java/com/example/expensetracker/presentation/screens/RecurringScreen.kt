@@ -29,7 +29,7 @@ import com.example.expensetracker.R
 import com.example.expensetracker.data.database.entities.RecurringTransaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.presentation.components.AppTopBar
-import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.navigation.AddTransaction
 import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.presentation.theme.FinanceNegative
@@ -57,7 +57,7 @@ fun RecurringScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate(AppRoutes.addTransactionRoute()) },
+                onClick = { navController.navigate(AddTransaction()) },
                 shape = RoundedCornerShape(16.dp),
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
@@ -186,7 +186,7 @@ fun RecurringScreen(
                         onDeleteClick = { deleteConfirmTarget = item },
                         onClick = {
                             navController.navigate(
-                                AppRoutes.addTransactionRoute(recurringId = item.id)
+                                AddTransaction(recurringId = item.id)
                             )
                         }
                     )

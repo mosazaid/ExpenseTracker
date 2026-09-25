@@ -31,7 +31,13 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.expensetracker.R
 import com.example.expensetracker.presentation.components.AppTopBar
-import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.navigation.Categories
+import com.example.expensetracker.presentation.navigation.DatabaseBrowser
+import com.example.expensetracker.presentation.navigation.Debts
+import com.example.expensetracker.presentation.navigation.Loans
+import com.example.expensetracker.presentation.navigation.Onboarding
+import com.example.expensetracker.presentation.navigation.Recurring
+import com.example.expensetracker.presentation.navigation.Settings
 
 @Composable
 fun MoreScreen(navController: NavController) {
@@ -118,7 +124,7 @@ fun MoreScreen(navController: NavController) {
                     subtitle = stringResource(R.string.loans_subtitle),
                     icon = Icons.Default.AccountBalance,
                     accentColor = MaterialTheme.colorScheme.primary,
-                    onClick = { navController.navigate(AppRoutes.LOANS) }
+                    onClick = { navController.navigate(Loans) }
                 )
             }
 
@@ -128,7 +134,7 @@ fun MoreScreen(navController: NavController) {
                     subtitle = stringResource(R.string.debts_subtitle),
                     icon = Icons.Default.Handshake,
                     accentColor = MaterialTheme.colorScheme.tertiary,
-                    onClick = { navController.navigate(AppRoutes.DEBTS) }
+                    onClick = { navController.navigate(Debts) }
                 )
             }
 
@@ -138,7 +144,7 @@ fun MoreScreen(navController: NavController) {
                     subtitle = stringResource(R.string.recurring_screen_subtitle),
                     icon = Icons.Outlined.Autorenew,
                     accentColor = MaterialTheme.colorScheme.primary,
-                    onClick = { navController.navigate(AppRoutes.RECURRING) }
+                    onClick = { navController.navigate(Recurring) }
                 )
             }
 
@@ -148,7 +154,7 @@ fun MoreScreen(navController: NavController) {
                     subtitle = stringResource(R.string.categories_budgets_subtitle),
                     icon = Icons.Default.Category,
                     accentColor = MaterialTheme.colorScheme.secondary,
-                    onClick = { navController.navigate(AppRoutes.CATEGORIES) }
+                    onClick = { navController.navigate(Categories) }
                 )
             }
 
@@ -169,7 +175,7 @@ fun MoreScreen(navController: NavController) {
                     subtitle = stringResource(R.string.database_browser_desc),
                     icon = Icons.Default.Storage,
                     accentColor = MaterialTheme.colorScheme.secondary,
-                    onClick = { navController.navigate(AppRoutes.DATABASE_BROWSER) }
+                    onClick = { navController.navigate(DatabaseBrowser) }
                 )
             }
 
@@ -179,7 +185,7 @@ fun MoreScreen(navController: NavController) {
                     subtitle = stringResource(R.string.settings_desc),
                     icon = Icons.Default.Settings,
                     accentColor = MaterialTheme.colorScheme.outline,
-                    onClick = { navController.navigate(AppRoutes.SETTINGS) }
+                    onClick = { navController.navigate(Settings) }
                 )
             }
 
@@ -189,7 +195,7 @@ fun MoreScreen(navController: NavController) {
                     subtitle = stringResource(R.string.onboarding_title_1) + " • " + stringResource(R.string.onboarding_title_2),
                     icon = Icons.Outlined.HelpOutline,
                     accentColor = MaterialTheme.colorScheme.secondary,
-                    onClick = { navController.navigate(AppRoutes.ONBOARDING) }
+                    onClick = { navController.navigate(Onboarding) }
                 )
             }
 

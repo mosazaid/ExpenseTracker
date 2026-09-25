@@ -41,7 +41,7 @@ import com.example.expensetracker.presentation.viewModel.LIQUID_ACCOUNTS
 import kotlinx.coroutines.launch
 import java.util.*
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.navigation.Overview
 import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.core.time.DateUtils
 
@@ -94,8 +94,8 @@ fun AddTransactionScreen(
             when (event) {
                 com.example.expensetracker.presentation.viewModel.AddEditUiEvent.NavigateHistory -> {
                     if (!navController.popBackStack()) {
-                        navController.navigate(AppRoutes.OVERVIEW) {
-                            popUpTo(AppRoutes.OVERVIEW) { inclusive = true }
+                        navController.navigate(Overview) {
+                            popUpTo<Overview> { inclusive = true }
                         }
                     }
                 }
@@ -350,8 +350,8 @@ fun AddTransactionScreen(
                 canNavigateBack = true,
                 onBackClick = {
                     if (!navController.popBackStack()) {
-                        navController.navigate(AppRoutes.OVERVIEW) {
-                            popUpTo(AppRoutes.OVERVIEW) { inclusive = true }
+                        navController.navigate(Overview) {
+                            popUpTo<Overview> { inclusive = true }
                         }
                     }
                 },

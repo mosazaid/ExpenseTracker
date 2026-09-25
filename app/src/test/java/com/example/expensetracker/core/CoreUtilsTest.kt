@@ -118,4 +118,50 @@ class CoreUtilsTest {
         )
         org.junit.Assert.assertNull(invalidParsed)
     }
+
+    @Test
+    fun testDateUtils_monthAndYearBoundaries() {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.YEAR, 2026)
+            set(Calendar.MONTH, Calendar.FEBRUARY)
+            set(Calendar.DAY_OF_MONTH, 15)
+        }
+        val date = cal.time
+
+        val startOfMonth = DateUtils.getStartOfMonth(date)
+        val startMonthCal = Calendar.getInstance().apply { time = startOfMonth }
+        assertEquals(1, startMonthCal.get(Calendar.DAY_OF_MONTH))
+        assertEquals(Calendar.FEBRUARY, startMonthCal.get(Calendar.MONTH))
+
+        val endOfMonth = DateUtils.getEndOfMonth(date)
+        val endMonthCal = Calendar.getInstance().apply { time = endOfMonth }
+        assertEquals(28, endMonthCal.get(Calendar.DAY_OF_MONTH)) // 2026 is non-leap year
+
+        val startOfYear = DateUtils.getStartOfYear(date)
+        val startYearCal = Calendar.getInstance().apply { time = startOfYear }
+        assertEquals(1, startYearCal.get(Calendar.DAY_OF_YEAR))
+
+        val endOfYear = DateUtils.getEndOfYear(date)
+        val endYearCal = Calendar.getInstance().apply { time = endOfYear }
+        assertEquals(365, endYearCal.get(Calendar.DAY_OF_YEAR))
+    }
+
+    @Test
+    fun testDateUtils_monthKeyConversions() {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.YEAR, 2026)
+            set(Calendar.MONTH, Calendar.SEPTEMBER)
+            set(Calendar.DAY_OF_MONTH, 25)
+        }
+        val date = cal.time
+
+        val monthKey = DateUtils.getMonthKey(date)
+        assertEquals(202608, monthKey) // 0-based month September = 8
+
+        val reconstructedDate = DateUtils.dateFromMonthKey(monthKey)
+        val reconCal = Calendar.getInstance().apply { time = reconstructedDate }
+        assertEquals(2026, reconCal.get(Calendar.YEAR))
+        assertEquals(Calendar.SEPTEMBER, reconCal.get(Calendar.MONTH))
+        assertEquals(1, reconCal.get(Calendar.DAY_OF_MONTH))
+    }
 }

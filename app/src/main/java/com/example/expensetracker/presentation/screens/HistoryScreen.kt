@@ -39,7 +39,9 @@ import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.PeriodBounds
 import com.example.expensetracker.presentation.components.SwipeableTransactionItem
 import com.example.expensetracker.presentation.components.TransactionFilterBottomSheet
-import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.navigation.AddTransaction
+import com.example.expensetracker.presentation.navigation.EditTransfer
+import com.example.expensetracker.presentation.navigation.EditWallet
 import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.presentation.viewModel.HistoryViewModel
@@ -575,7 +577,7 @@ fun HistoryScreen(
                         )
                         Spacer(modifier = Modifier.height(20.dp))
                         Button(
-                            onClick = { navController.navigate(AppRoutes.ADD_TRANSACTION) },
+                            onClick = { navController.navigate(AddTransaction()) },
                             shape = RoundedCornerShape(12.dp),
                             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
                         ) {
@@ -631,13 +633,13 @@ fun HistoryScreen(
                                     when (transaction.type) {
                                         TransactionType.TRANSFER -> {
                                             navController.navigate(
-                                                AppRoutes.editTransferRoute(transaction.id)
+                                                EditTransfer(transaction.id)
                                             )
                                         }
                                         TransactionType.WALLET_MOVE -> {
                                             if (viewModel.canModifyTransaction(transaction)) {
                                                 navController.navigate(
-                                                    AppRoutes.editWalletRoute(transaction.id)
+                                                    EditWallet(transaction.id)
                                                 )
                                             } else {
                                                 blockedActionMessage =
@@ -646,7 +648,7 @@ fun HistoryScreen(
                                         }
                                         else -> {
                                             navController.navigate(
-                                                AppRoutes.addTransactionRoute(
+                                                AddTransaction(
                                                     transactionId = transaction.id
                                                 )
                                             )

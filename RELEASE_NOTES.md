@@ -1,5 +1,28 @@
 # Release Notes
 
+## Version: Feature Expansion Phase 7 - Type-Safe Navigation, Performance Architecture & Test Hardening (September 2026)
+
+### Highlights
+- **Type-Safe Compose Navigation via `kotlinx.serialization`**:
+  - Replaced legacy string-based route constants with strongly typed `@Serializable` destinations in `AppDestinations.kt`.
+  - Type-safe bottom tab destinations: `Overview`, `History`, `Statistics`, `More`.
+  - Type-safe push destinations: `Transfer`, `Wallet`, `Loans`, `Alerts`, `Debts`, `Recurring`, `Categories`, `Settings`, `DatabaseBrowser`, `Onboarding`.
+  - Parameterized destination data classes: `AddTransaction(transactionId, recurringId)`, `EditTransfer(transactionId)`, and `EditWallet(transactionId)`.
+  - Full compile-time argument verification; zero string parsing or bundle casting errors.
+- **Thread-Safe & Concurrency-Safe Date Engine (`DateUtils`)**:
+  - Completely migrated internal formatting and parsing from legacy `SimpleDateFormat` (which is not thread-safe across coroutines) to modern `java.time.format.DateTimeFormatter`, `LocalDate`, and `LocalDateTime`.
+  - Enhanced ISO date-time parsing with hierarchical fallback ensuring exact hour/minute/second preservation.
+  - Corrected Saturday start-of-week calculation with calendar alignment.
+- **Overview Recomposition & Performance Optimization**:
+  - Converted `monthSummary` in `OverviewViewModel` into a hot, reactive `StateFlow` leveraging `combine` and `flatMapLatest`.
+  - Removed UI-layer synchronous data calculation inside `LaunchedEffect(allTransactions)`, preventing frame drops and redundant background recomputations.
+- **Comprehensive Test Suite & CI Hardening**:
+  - **Unit Tests (`app/src/test`)**: Added `AppDestinationsTest` validating JSON serialization and deserialization of all route contracts and parameter defaults. Extended `CoreUtilsTest` to thoroughly cover monthly/yearly boundary calculations, month keys, and thread-safe date parsing.
+  - **Instrumented Tests (`app/src/androidTest`)**: Added `AppDatabaseInstrumentedTest` testing in-memory Room database lifecycle, entity persistence, and `CategoryDao` queries. Added `ComposeUiInstrumentedTest` testing Compose theme rendering and UI node display.
+  - All unit tests verified passing (`./gradlew testDebugUnitTest`).
+
+---
+
 ## Version: Feature Expansion Phase 6 - UI/UX Pro Max, Stretch Features & Resilience (September 2026)
 
 ### Highlights

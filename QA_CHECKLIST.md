@@ -11,12 +11,11 @@
 - [ ] App re-locks after going to background and returning.
 - [ ] Settings toggle disables lock (no prompt on next launch).
 
-## Navigation
-- [ ] Bottom **Add** tab opens Add Transaction screen (Income/Expense switcher only).
-- [ ] After save, navigates to History.
-- [ ] History row tap opens edit on Add screen (income/expense).
-- [ ] Transfer / Wallet buttons on Overview navigate correctly.
-- [ ] Settings and Database browser open from History / Settings and back works.
+## Navigation (Type-Safe Routes)
+- [ ] Bottom tabs (`Overview`, `History`, `Statistics`, `More`) switch instantly with state restoration and single-top launch.
+- [ ] Floating Action Button (+) navigates to `AddTransaction()` type-safe destination with default parameters.
+- [ ] Edit actions pass typed parameters: `AddTransaction(transactionId)`, `EditTransfer(transactionId)`, `EditWallet(transactionId)` correctly load target records.
+- [ ] Push screens (`Loans`, `Alerts`, `Debts`, `Transfer`, `Wallet`, `Categories`, `Settings`, `DatabaseBrowser`, `Onboarding`) open smoothly and back navigation pops correctly.
 
 ## History and Period Logic
 - [ ] Month mode toggle works (Calendar ↔ Salary).

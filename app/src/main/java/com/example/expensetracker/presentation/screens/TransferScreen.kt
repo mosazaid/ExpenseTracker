@@ -18,7 +18,7 @@ import com.example.expensetracker.data.database.entities.AccountType
 import androidx.compose.ui.res.stringResource
 import com.example.expensetracker.R
 import com.example.expensetracker.presentation.components.AppTopBar
-import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.navigation.Overview
 import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.presentation.viewModel.TransferUiState
@@ -107,8 +107,8 @@ fun TransferScreen(
                 canNavigateBack = true,
                 onBackClick = {
                     if (!navController.popBackStack()) {
-                        navController.navigate(AppRoutes.OVERVIEW) {
-                            popUpTo(AppRoutes.OVERVIEW) { inclusive = true }
+                        navController.navigate(Overview) {
+                            popUpTo<Overview> { inclusive = true }
                         }
                     }
                 },

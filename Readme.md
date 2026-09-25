@@ -69,17 +69,30 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 - **Import CSV**: documented format + download import template
 - **Database browser**: inspect Room tables with column filters
 
-## Navigation
+## Navigation (Type-Safe Compose Navigation)
 
-| Bottom tab | Route | Purpose |
-|------------|-------|---------|
-| Overview | `overview` | Balance cards, monthly overview, and quick actions |
-| History | `history` | Transaction list, overview breakdown & filters |
-| **Add** (FAB) | `addTransaction?...` | Add/edit income & expense with optional time picker |
-| Stats | `statistics` | Interactive multi-charts & 3-month category pie charts |
-| More | `more` | Hub for Debts, Loans, Categories, Database Browser, Settings |
+The app utilizes **Type-Safe Jetpack Compose Navigation** powered by `kotlinx.serialization` (no error-prone raw route strings or bundle arguments):
 
-Additional routes: `debts`, `loans`, `alerts`, `settings`, `databaseBrowser`, `transfer`, `wallet`, `editTransfer/{id}`, `editWallet/{id}`.
+| Bottom tab | Destination Type | Purpose |
+|------------|------------------|---------|
+| Overview | `Overview` | Balance cards, monthly overview, and quick actions |
+| History | `History` | Transaction list, overview breakdown & filters |
+| **Add** (FAB) | `AddTransaction(...)` | Add/edit income & expense with optional params (`transactionId`, `recurringId`) |
+| Stats | `Statistics` | Interactive multi-charts & 3-month category pie charts |
+| More | `More` | Hub for Debts, Loans, Categories, Database Browser, Settings |
+
+Secondary & Push Destinations:
+- `Transfer`: Cash ↔ Bank transfer screen
+- `Wallet`: Wallet pocket money screen
+- `Loans`: Configured recurring loans & payment schedules
+- `Alerts`: In-app notification center
+- `Debts`: Debt tracking & settlements
+- `Recurring`: Recurring transaction templates
+- `Categories`: Category and subcategory management
+- `Settings`: Preferences, themes, exports, and security lock
+- `DatabaseBrowser`: In-app Room database inspector
+- `Onboarding`: Multi-step onboarding carousel
+- Parameterized edit screens: `EditTransfer(transactionId)`, `EditWallet(transactionId)`
 
 Universal `AppTopBar` present across screens with live unread alert badge count.
 
@@ -174,7 +187,16 @@ Run all unit tests via Gradle:
 6. **`HistoryGroupingOtherSubcategoryTest`**: Subcategory filtering with the dedicated "Other" option for unassigned subcategory transactions.
 7. **`MonthSummaryRemainingTest`**: Overview balance breakdown reconciliation (Remaining This Month vs Carried Over vs Total Remaining).
 8. **`presentation/StatisticsCalculationsTest`**: 3-month stats aggregation, MoM spending change, and category expense share percentages.
-9. **`core/CoreUtilsTest`**: Currency formatting with 3 decimals and thousands grouping (`#,##0.000 JOD`), DateUtils custom pattern formatting (`PATTERN_FULL_DATE`, `PATTERN_ISO`), safe parsing, invalid rejection, and start/end bounds.
+9. **`core/CoreUtilsTest`**: Currency formatting with 3 decimals and thousands grouping (`#,##0.000 JOD`), DateUtils custom pattern formatting (`PATTERN_FULL_DATE`, `PATTERN_ISO`), safe parsing, invalid rejection, month/year boundaries, and keys.
+10. **`presentation/navigation/AppDestinationsTest`**: Validates `kotlinx.serialization` contract, default parameters, and round-trip encode/decode of all Compose destinations.
+
+### Instrumented Tests (`app/src/androidTest/java/com/example/expensetracker/`)
+Run instrumented tests on an emulator/device:
+```bash
+./gradlew connectedDebugAndroidTest
+```
+- **`AppDatabaseInstrumentedTest`**: In-memory Room database initialization, entity lifecycle, and DAO query verification.
+- **`ComposeUiInstrumentedTest`**: Compose UI test rule testing `ExpenseTrackerTheme` and component tree hierarchy.
 
 ## Import / Export
 

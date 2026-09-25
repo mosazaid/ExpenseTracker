@@ -51,7 +51,13 @@ import com.example.expensetracker.presentation.components.AppTopBar
 import com.example.expensetracker.presentation.components.FinancialInsightsCard
 import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.core.time.DateUtils
-import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.navigation.AddTransaction
+import com.example.expensetracker.presentation.navigation.EditTransfer
+import com.example.expensetracker.presentation.navigation.EditWallet
+import com.example.expensetracker.presentation.navigation.History
+import com.example.expensetracker.presentation.navigation.Loans
+import com.example.expensetracker.presentation.navigation.Transfer
+import com.example.expensetracker.presentation.navigation.Wallet
 import com.example.expensetracker.presentation.model.MonthSummaryUiState
 import com.example.expensetracker.presentation.theme.*
 import com.example.expensetracker.presentation.viewModel.LoansViewModel
@@ -73,7 +79,12 @@ fun OverviewScreen(
 
     val preservedAmount by loansViewModel.preservedAmount.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-    var monthSummary by remember { mutableStateOf(MonthSummaryUiState()) }
+
+    // monthSummary is now a StateFlow computed in the ViewModel background scope.
+    // This eliminates the LaunchedEffect(allTransactions) anti-pattern that re-ran
+    // expensive DB work on every single transaction change.
+    val monthSummary by viewModel.monthSummary.collectAsState()
+
     var visibleReminder by remember { mutableStateOf<RecurringTransaction?>(null) }
     var summaryExpanded by remember { mutableStateOf(true) }
     var walletListExpanded by remember { mutableStateOf(false) }
@@ -82,15 +93,14 @@ fun OverviewScreen(
         mutableStateOf<List<com.example.expensetracker.domain.SalaryWalletPeriodSummary>>(emptyList())
     }
 
-    LaunchedEffect(monthMode, allTransactions) {
-        val currentNow = Date()
+    // Update reminders and salary summary when monthSummary changes
+    LaunchedEffect(monthSummary) {
         try {
-            monthSummary = viewModel.buildMonthSummary(monthMode, currentNow)
             visibleReminder = monthSummary.dueReminders.firstOrNull { reminder ->
                 !viewModel.isRecurringBannerDismissed(reminder)
             }
             if (monthMode == MonthMode.SALARY) {
-                val year = Calendar.getInstance().get(Calendar.YEAR)
+                val year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
                 salaryWalletYearSummary = viewModel.buildSalaryWalletYearSummary(year)
             } else {
                 salaryWalletYearSummary = emptyList()
@@ -128,7 +138,7 @@ fun OverviewScreen(
                         reminder = reminder,
                         onRecord = {
                             navController.navigate(
-                                AppRoutes.addTransactionRoute(recurringId = reminder.id)
+                                AddTransaction(recurringId = reminder.id)
                             )
                         },
                         onDismiss = {
@@ -154,9 +164,9 @@ fun OverviewScreen(
             item(key = "quick-actions-row") {
                 QuickActionsRow(
                     isSalaryMode = monthMode == MonthMode.SALARY,
-                    onTransfer = { navController.navigate(AppRoutes.TRANSFER) },
-                    onAddTransaction = { navController.navigate(AppRoutes.addTransactionRoute()) },
-                    onWallet = { navController.navigate(AppRoutes.WALLET) }
+                    onTransfer = { navController.navigate(Transfer) },
+                    onAddTransaction = { navController.navigate(AddTransaction()) },
+                    onWallet = { navController.navigate(Wallet) }
                 )
             }
 
@@ -175,7 +185,7 @@ fun OverviewScreen(
                     PreservedLoanCard(
                         preservedAmount = preservedAmount,
                         spendableAmount = spendable,
-                        onNavigateLoans = { navController.navigate(AppRoutes.LOANS) }
+                        onNavigateLoans = { navController.navigate(Loans) }
                     )
                 }
             }
@@ -204,7 +214,7 @@ fun OverviewScreen(
                     recentTransactions = recentTransactions,
                     categoryMap = categoryMap,
                     onViewAll = {
-                        navController.navigate(AppRoutes.HISTORY) {
+                        navController.navigate(History) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
@@ -215,13 +225,13 @@ fun OverviewScreen(
                     onTransactionClick = { txn ->
                         when (txn.type) {
                             TransactionType.TRANSFER -> {
-                                navController.navigate(AppRoutes.editTransferRoute(txn.id))
+                                navController.navigate(EditTransfer(txn.id))
                             }
                             TransactionType.WALLET_MOVE -> {
-                                navController.navigate(AppRoutes.editWalletRoute(txn.id))
+                                navController.navigate(EditWallet(txn.id))
                             }
                             else -> {
-                                navController.navigate(AppRoutes.addTransactionRoute(transactionId = txn.id))
+                                navController.navigate(AddTransaction(transactionId = txn.id))
                             }
                         }
                     }
@@ -235,7 +245,7 @@ fun OverviewScreen(
                         summaries = salaryWalletYearSummary,
                         isExpanded = walletListExpanded,
                         onToggleExpand = { walletListExpanded = !walletListExpanded },
-                        onNavigateWallet = { navController.navigate(AppRoutes.WALLET) }
+                        onNavigateWallet = { navController.navigate(Wallet) }
                     )
                 }
             }

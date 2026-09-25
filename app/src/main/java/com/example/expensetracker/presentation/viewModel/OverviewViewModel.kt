@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.RecurringTransaction
-import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.data.preferences.UserPreferences
 import com.example.expensetracker.domain.BalanceCalculator
@@ -17,9 +16,13 @@ import com.example.expensetracker.domain.repository.IRecurringRepository
 import com.example.expensetracker.domain.repository.ITransactionRepository
 import com.example.expensetracker.presentation.model.MonthSummaryUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import java.util.Date
 import javax.inject.Inject
@@ -38,14 +41,36 @@ class OverviewViewModel @Inject constructor(
     val monthMode: StateFlow<MonthMode> = userPreferences.monthMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MonthMode.CALENDAR)
 
-    val allTransactions: StateFlow<List<Transaction>> = transactionRepository.getAllTransactions()
+    val allTransactions = transactionRepository.getAllTransactions()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allCategories: Flow<List<Category>> = categoryRepository.getCategoriesSortedByUsage()
 
     /**
+     * Derives a [MonthSummaryUiState] reactively from [monthMode] + [allTransactions].
+     *
+     * Using [combine] + [flatMapLatest] ensures:
+     * - The computation runs on the ViewModel scope (background thread).
+     * - A new computation is started only when month-mode or the transaction
+     *   list actually changes — NOT on every recomposition.
+     * - Only the **latest** emission is kept; stale computations are cancelled.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val monthSummary: StateFlow<MonthSummaryUiState> =
+        combine(monthMode, allTransactions) { mode, _ -> mode }
+            .flatMapLatest { mode ->
+                flow { emit(buildMonthSummary(mode, Date())) }
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                MonthSummaryUiState()
+            )
+
+    /**
      * Computes the month-scoped summary (income, expense, per-account breakdown, reminders).
      * Always uses the salary month (or calendar month) bounds regardless of list period.
+     * Kept internal/suspend for backward-compatible one-off calls (e.g., tests).
      */
     suspend fun buildMonthSummary(
         mode: MonthMode,

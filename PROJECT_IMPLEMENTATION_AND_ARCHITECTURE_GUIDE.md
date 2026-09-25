@@ -405,28 +405,49 @@ Understanding how `AlarmManager` behaves across Android versions and device stat
 
 ---
 
-## 9. Navigation Reference
+## 9. Navigation Reference (Type-Safe Compose Navigation)
 
 ```kotlin
-// AppRoutes.kt
-OVERVIEW = "overview"
-HISTORY = "history"
-STATISTICS = "statistics"
-MORE = "more"                        // 4th bottom nav tab: hub for settings & tools
-ADD_TRANSACTION = "addTransaction"  // use addTransactionRoute() for navigation
-DEBTS = "debts"
-LOANS = "loans"
-ALERTS = "alerts"
-CATEGORIES = "categories"
-SETTINGS = "settings"
-DATABASE_BROWSER = "database_browser"
-TRANSFER = "transfer"
-WALLET = "wallet"
-EDIT_TRANSFER = "editTransfer/{transactionId}"
-EDIT_WALLET = "editWallet/{transactionId}"
+// presentation/navigation/AppDestinations.kt
+// Bottom-tab destinations (singletons)
+@Serializable object Overview
+@Serializable object History
+@Serializable object Statistics
+@Serializable object More                        // 4th bottom nav tab: hub for settings & tools
+
+// Secondary / push destinations (singletons)
+@Serializable object Transfer
+@Serializable object Wallet
+@Serializable object Loans
+@Serializable object Alerts
+@Serializable object Debts
+@Serializable object Recurring
+@Serializable object Categories
+@Serializable object Settings
+@Serializable object DatabaseBrowser
+@Serializable object Onboarding
+
+// Parameterized destinations (data classes)
+@Serializable
+data class AddTransaction(
+    val transactionId: Long = -1L,
+    val recurringId: Long = -1L
+)
+
+@Serializable
+data class EditTransfer(val transactionId: Long)
+
+@Serializable
+data class EditWallet(val transactionId: Long)
 ```
 
-**Important**: Bottom nav Add must call `addTransactionRoute()`, not bare `addTransaction`, because NavHost registers `ADD_TRANSACTION_WITH_ARGS`.
+**Architecture**:
+- Powered by `kotlinx.serialization` with `androidx.navigation:navigation-compose:2.8.8`.
+- In `NavHost`: `composable<T> { ... }`.
+- Extracting route arguments: `val route = backStackEntry.toRoute<AddTransaction>()`.
+- Navigation: `navController.navigate(AddTransaction(transactionId = 5L))` or `navController.navigate(Overview)`.
+- Tab state check: `currentBackStack?.destination?.hasRoute<Overview>()`.
+- Compile-time safety guarantees zero routing typos or missing argument bundle crashes.
 
 ---
 
@@ -452,7 +473,7 @@ Defined in `domain/TransactionExportRow.kt` → `CsvImportFormat` object.
 
 | Area | Files |
 |------|-------|
-| Navigation | `MainScreen.kt`, `AppRoutes.kt`, `MoreScreen.kt` |
+| Navigation | `MainScreen.kt`, `presentation/navigation/AppDestinations.kt`, `MoreScreen.kt` |
 | Top Bar & Alerts | `AppTopBar.kt`, `AlertsScreen.kt`, `AlertsViewModel.kt`, `AppAlert.kt`, `AppAlertDao.kt`, `AlertRepository.kt` |
 | History | `HistoryScreen.kt`, `HistoryViewModel.kt`, `HistoryGrouping.kt`, `TransactionItem.kt`, `SwipeableTransactionItem` |
 | Overview | `OverviewScreen.kt`, `HistoryViewModel.kt`, `AccountBalanceCards.kt` |

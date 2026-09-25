@@ -26,7 +26,10 @@ import androidx.navigation.NavController
 import com.example.expensetracker.R
 import com.example.expensetracker.data.database.entities.AppAlert
 import com.example.expensetracker.presentation.components.AppTopBar
-import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.navigation.AddTransaction
+import com.example.expensetracker.presentation.navigation.Categories
+import com.example.expensetracker.presentation.navigation.Debts
+import com.example.expensetracker.presentation.navigation.Loans
 import com.example.expensetracker.presentation.viewModel.AlertsViewModel
 
 @Composable
@@ -95,10 +98,10 @@ fun AlertsScreen(
                         onDismiss = { viewModel.dismissAlert(alert.id) },
                         onClick = {
                             when (alert.type) {
-                                AppAlert.TYPE_LOAN -> navController.navigate(AppRoutes.LOANS)
-                                AppAlert.TYPE_BUDGET -> navController.navigate(AppRoutes.CATEGORIES)
-                                AppAlert.TYPE_DEBT -> navController.navigate(AppRoutes.DEBTS)
-                                AppAlert.TYPE_DAILY -> navController.navigate(AppRoutes.addTransactionRoute())
+                                AppAlert.TYPE_LOAN -> navController.navigate(Loans)
+                                AppAlert.TYPE_BUDGET -> navController.navigate(Categories)
+                                AppAlert.TYPE_DEBT -> navController.navigate(Debts)
+                                AppAlert.TYPE_DAILY -> navController.navigate(AddTransaction())
                             }
                         }
                     )

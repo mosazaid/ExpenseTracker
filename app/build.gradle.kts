@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.dagger.hilt.android)
+    alias(libs.plugins.kotlin.serialization)
     id("kotlin-parcelize")
     id("org.jetbrains.kotlin.kapt")
     id("com.google.devtools.ksp") version "2.0.21-1.0.28"
@@ -75,8 +76,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    // Navigation
+    // Navigation (type-safe routes via kotlinx-serialization)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlin.serialization.json)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
