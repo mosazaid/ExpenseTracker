@@ -99,29 +99,37 @@ Universal `AppTopBar` present across screens with live unread alert badge count.
 - **Domain calculators** — `PeriodCalculator`, `BalanceCalculator`, `WalletCalculator`, `BudgetProgressCalculator`
 - **Offline-first** — all data in local Room DB (version **11**)
 
-### Project structure
+### Clean Architecture & Project Structure
+
+The project strictly follows Clean Architecture principles with decoupled layers and dependency inversion:
 
 ```
 app/src/main/java/com/example/expensetracker/
 ├── core/
-│   ├── locale/LocaleHelper.kt
-│   ├── security/BiometricAuthManager.kt
-│   └── time/DateUtils.kt
+│   ├── export/ (CsvExporter, CsvImporter, PdfTransactionExporter, StyledExcelExporter, TransactionExportLoader)
+│   ├── format/ (CurrencyUtils)
+│   ├── locale/ (LocaleHelper)
+│   ├── security/ (BiometricAuthManager)
+│   └── time/ (DateUtils)
 ├── data/
 │   ├── database/ (entities, dao, Migrations.kt, AppDatabase.kt)
-│   ├── preferences/UserPreferences.kt
-│   └── repository/
+│   ├── debug/ (DatabaseInspector)
+│   ├── di/ (DatabaseModule, RepositoryModule)
+│   ├── preferences/ (UserPreferences, MonthMode)
+│   ├── receiver/ (DailyExpenseReminderReceiver)
+│   ├── repository/ (*Impl repositories implementing domain interfaces)
+│   └── worker/ (DailyExpenseReminderWorker, LoanReminderWorker, SalaryReminderWorker)
 ├── domain/
-│   ├── BalanceCalculator.kt, WalletCalculator.kt, PeriodCalculator.kt, BudgetProgressCalculator.kt
-│   ├── CsvExporter.kt, CsvImporter.kt, CsvImportFormat (in TransactionExportRow.kt)
-│   ├── PdfTransactionExporter.kt, StyledExcelExporter.kt
-│   ├── TransactionExportLoader.kt, DatabaseInspector.kt
-│   └── ...
+│   ├── model/ (MonthlyLoanItem)
+│   ├── repository/ (ITransactionRepository, ICategoryRepository, IBudgetRepository, etc.)
+│   └── (Pure calculators: BalanceCalculator, WalletCalculator, PeriodCalculator, BudgetProgressCalculator)
 ├── presentation/
-│   ├── navigation/AppRoutes.kt
-│   ├── screens/ (History, Add, Stats, Categories, Settings, Wallet, Transfer, DatabaseBrowser)
-│   ├── components/ (TransactionItem, MultiTypeChart, CategoryMonthPieChart, BiometricGate)
-│   └── viewModel/
+│   ├── components/ (TransactionItem, MultiTypeChart, CategoryMonthPieChart, BiometricGate, etc.)
+│   ├── model/ (MonthSummaryUiState)
+│   ├── navigation/ (AppRoutes.kt, AppNavigation.kt)
+│   ├── screens/ (Overview, History, AddTransaction, Stats, Categories, Settings, Transfer, etc.)
+│   ├── theme/ (Color, Theme, Type, ThemePalette)
+│   └── viewModel/ (Dedicated OverviewViewModel, HistoryViewModel, LoansViewModel, etc.)
 └── MainActivity.kt, App.kt
 ```
 
