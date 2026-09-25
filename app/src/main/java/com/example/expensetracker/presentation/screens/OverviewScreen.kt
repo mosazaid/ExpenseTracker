@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.filled.Close
@@ -566,7 +567,7 @@ private fun MonthlyFinancialSummaryCard(
                 ) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-                    // Metrics Grid (Income / Expense / Wallet / Remaining)
+                    // Metrics Row (Inflows & Outflows: Income, Expense, Wallet)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -591,12 +592,67 @@ private fun MonthlyFinancialSummaryCard(
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                        SummaryMetricBox(
-                            label = stringResource(R.string.remaining_income_label),
-                            value = formatSigned(monthSummary.remainingIncome),
-                            valueColor = if (monthSummary.remainingIncome >= 0) FinancePositive else FinanceNegative,
-                            modifier = Modifier.weight(1f)
-                        )
+                    }
+
+                    // Prominent Net Remaining Income Card (Bottom line)
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (monthSummary.remainingIncome >= 0) {
+                            FinancePositive.copy(alpha = 0.12f)
+                        } else {
+                            FinanceNegative.copy(alpha = 0.12f)
+                        },
+                        border = BorderStroke(
+                            1.dp,
+                            if (monthSummary.remainingIncome >= 0) FinancePositive.copy(alpha = 0.35f)
+                            else FinanceNegative.copy(alpha = 0.35f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (monthSummary.remainingIncome >= 0)
+                                        Icons.AutoMirrored.Filled.TrendingUp
+                                    else
+                                        Icons.AutoMirrored.Filled.TrendingDown,
+                                    contentDescription = null,
+                                    tint = if (monthSummary.remainingIncome >= 0) FinancePositive else FinanceNegative,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.remaining_income_label),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = if (monthSummary.remainingIncome >= 0)
+                                            stringResource(R.string.net_surplus_label)
+                                        else
+                                            stringResource(R.string.net_deficit_label),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            Text(
+                                text = formatSigned(monthSummary.remainingIncome),
+                                style = MaterialTheme.typography.titleMedium.withTabularNums(),
+                                fontWeight = FontWeight.Bold,
+                                color = if (monthSummary.remainingIncome >= 0) FinancePositive else FinanceNegative
+                            )
+                        }
                     }
 
                     // Detailed Breakdown surface
@@ -674,26 +730,27 @@ private fun SummaryMetricBox(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.55f),
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                maxLines = 2,
+                softWrap = true,
                 textAlign = TextAlign.Center
             )
             Text(
                 text = value,
-                style = MaterialTheme.typography.labelLarge.withTabularNums(),
+                style = MaterialTheme.typography.titleSmall.withTabularNums(),
+                fontWeight = FontWeight.Bold,
                 color = valueColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

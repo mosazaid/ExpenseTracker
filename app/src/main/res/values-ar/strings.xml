@@ -254,5 +254,21 @@
     <string name="recurring_next_due">الموعد القادم: %1$s</string>
     <string name="delete_recurring_confirm_title">حذف المعاملة المتكررة؟</string>
     <string name="delete_recurring_confirm_desc">هل أنت متأكد من حذف هذه المعاملة المتكررة؟ المعاملات المسجلة سابقاً في السجل لن تتأثر.</string>
+    <string name="net_surplus_label">فائض شهري صافي</string>
+    <string name="net_deficit_label">عجز شهري صافي</string>
+    <string name="onboarding_title_1">تتبع النقد والحسابات البنكية</string>
+    <string name="onboarding_desc_1">حافظ على دقة أرصدتك النقدية والبنكية في مكان واحد وبشكل فوري بكل سهولة.</string>
+    <string name="onboarding_title_2">رؤى مالية ذكية</string>
+    <string name="onboarding_desc_2">احصل على تنبيهات عجز مسبقة، حدود الميزانيات، وإرشادات إنفاق ذكية.</string>
+    <string name="onboarding_title_3">خاص ومحلي بنسبة 100%</string>
+    <string name="onboarding_desc_3">لا توجد خوادم سحابية. بياناتك مشفرة ومحمية بالبصمة على جهازك فقط.</string>
+    <string name="onboarding_skip">تخطي</string>
+    <string name="onboarding_next">التالي</string>
+    <string name="onboarding_get_started">ابدأ الآن</string>
+    <string name="onboarding_app_guide">دليل التطبيق والترحيب</string>
+    <string name="monthly_comparison_title">مقارنة شهرية</string>
+    <string name="comparison_this_month">هذا الشهر</string>
+    <string name="comparison_last_month">الشهر الماضي</string>
+    <string name="comparison_change">التغير: %1$s</string>
 </resources>
 

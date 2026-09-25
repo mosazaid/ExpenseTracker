@@ -129,11 +129,13 @@ fun LoansScreen(
                     Text(
                         text = stringResource(R.string.no_loans_configured_yet),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
+                        color = MaterialTheme.colorScheme.outline,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
                     )
                 }
             } else {
-                items(monthlyItems, key = { it.payment.id }) { item ->
+                items(monthlyItems, key = { "monthly_${it.payment.id}" }) { item ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
@@ -223,11 +225,13 @@ fun LoansScreen(
                     Text(
                         text = stringResource(R.string.no_configured_loans_desc),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
+                        color = MaterialTheme.colorScheme.outline,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
                     )
                 }
             } else {
-                items(configuredLoans, key = { it.id }) { loan ->
+                items(configuredLoans, key = { "configured_${it.id}" }) { loan ->
                     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
                         Row(
                             modifier = Modifier

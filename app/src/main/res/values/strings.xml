@@ -254,5 +254,21 @@
     <string name="recurring_next_due">Next due: %1$s</string>
     <string name="delete_recurring_confirm_title">Delete Recurring Item?</string>
     <string name="delete_recurring_confirm_desc">Are you sure you want to delete this recurring transaction? Past logged transactions will remain untouched.</string>
+    <string name="net_surplus_label">Net monthly surplus</string>
+    <string name="net_deficit_label">Net monthly deficit</string>
+    <string name="onboarding_title_1">Track Cash &amp; Bank</string>
+    <string name="onboarding_desc_1">Keep cash in hand and multiple bank balances accurate in real time with ease.</string>
+    <string name="onboarding_title_2">Smart Financial Insights</string>
+    <string name="onboarding_desc_2">Get proactive deficit warnings, budget limits, and intelligent pacing guidance.</string>
+    <string name="onboarding_title_3">100% Offline &amp; Private</string>
+    <string name="onboarding_desc_3">No cloud servers or accounts. Your records are protected with Biometric lock on your phone.</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_get_started">Get Started</string>
+    <string name="onboarding_app_guide">App Guide &amp; Walkthrough</string>
+    <string name="monthly_comparison_title">Monthly Comparison</string>
+    <string name="comparison_this_month">This Month</string>
+    <string name="comparison_last_month">Last Month</string>
+    <string name="comparison_change">Change: %1$s</string>
 </resources>
 

@@ -174,7 +174,7 @@ fun DebtsScreen(
 
     // ── Dialog: Select Debts to Carry Forward
     if (showRolloverDialog) {
-        val allDebts = remember(lentDebts, borrowedDebts) { lentDebts + borrowedDebts }
+        val allDebts = remember(lentDebts, borrowedDebts) { (lentDebts + borrowedDebts).distinctBy { it.id } }
         val selectedIds = remember { mutableStateListOf<Long>().apply { addAll(allDebts.map { it.id }) } }
 
         AlertDialog(
@@ -208,7 +208,7 @@ fun DebtsScreen(
                         modifier = Modifier.heightIn(max = 240.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        items(allDebts, key = { it.id }) { item ->
+                        items(allDebts, key = { "debt_rollover_${it.id}" }) { item ->
                             val isLent = item.awaitingReimbursement
                             val typeLabel = if (isLent) {
                                 stringResource(R.string.debt_type_lent_short)

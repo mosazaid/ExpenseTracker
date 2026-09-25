@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -211,10 +213,203 @@ fun StatisticsScreen(
             // ── 3-Month Multi-Chart (Grouped Bar + Trend Line)
             ThreeMonthMultiChart(stats = state.threeMonthStats)
 
+            // ── Monthly Comparison Card (This Month vs Last Month)
+            MonthlyComparisonCard(stats = state.threeMonthStats)
+
             // ── 3-Month Category Expense Comparison Donut/Pie Chart
             CategoryPieChart(stats = state.threeMonthStats)
 
             Spacer(modifier = Modifier.height(72.dp))
+        }
+    }
+}
+
+@Composable
+private fun MonthlyComparisonCard(
+    stats: com.example.expensetracker.presentation.viewModel.ThreeMonthStats,
+    modifier: Modifier = Modifier
+) {
+    if (stats.months.size < 2) return
+
+    val currentMonth = stats.months.last()
+    val prevMonth = stats.months[stats.months.size - 2]
+
+    val expenseDelta = currentMonth.expense - prevMonth.expense
+    val expenseDeltaPercent = if (prevMonth.expense > 0) {
+        ((expenseDelta / prevMonth.expense) * 100).toInt()
+    } else 0
+
+    val incomeDelta = currentMonth.income - prevMonth.income
+    val incomeDeltaPercent = if (prevMonth.income > 0) {
+        ((incomeDelta / prevMonth.income) * 100).toInt()
+    } else 0
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.monthly_comparison_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Text(
+                    text = "${currentMonth.monthLabel} vs ${prevMonth.monthLabel}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+            // Expenses Comparison Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.expense),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "${stringResource(R.string.comparison_this_month)}: ${CurrencyUtils.formatCurrency(currentMonth.expense)}",
+                        style = MaterialTheme.typography.bodySmall.withTabularNums(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${stringResource(R.string.comparison_last_month)}: ${CurrencyUtils.formatCurrency(prevMonth.expense)}",
+                        style = MaterialTheme.typography.bodySmall.withTabularNums(),
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = when {
+                        expenseDelta < 0 -> FinancePositive.copy(alpha = 0.15f)
+                        expenseDelta > 0 -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
+                        else -> MaterialTheme.colorScheme.surfaceContainerHigh
+                    }
+                ) {
+                    val sign = if (expenseDelta > 0) "+" else ""
+                    Text(
+                        text = "$sign${CurrencyUtils.formatCurrency(expenseDelta)} ($sign$expenseDeltaPercent%)",
+                        style = MaterialTheme.typography.labelMedium.withTabularNums(),
+                        fontWeight = FontWeight.Bold,
+                        color = when {
+                            expenseDelta < 0 -> FinancePositive
+                            expenseDelta > 0 -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            // Income Comparison Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.income),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "${stringResource(R.string.comparison_this_month)}: ${CurrencyUtils.formatCurrency(currentMonth.income)}",
+                        style = MaterialTheme.typography.bodySmall.withTabularNums(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${stringResource(R.string.comparison_last_month)}: ${CurrencyUtils.formatCurrency(prevMonth.income)}",
+                        style = MaterialTheme.typography.bodySmall.withTabularNums(),
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = when {
+                        incomeDelta > 0 -> FinancePositive.copy(alpha = 0.15f)
+                        incomeDelta < 0 -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
+                        else -> MaterialTheme.colorScheme.surfaceContainerHigh
+                    }
+                ) {
+                    val sign = if (incomeDelta > 0) "+" else ""
+                    Text(
+                        text = "$sign${CurrencyUtils.formatCurrency(incomeDelta)} ($sign$incomeDeltaPercent%)",
+                        style = MaterialTheme.typography.labelMedium.withTabularNums(),
+                        fontWeight = FontWeight.Bold,
+                        color = when {
+                            incomeDelta > 0 -> FinancePositive
+                            incomeDelta < 0 -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            // 3-Month Average Note
+            if (stats.averageMonthlyExpense > 0) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "3-Month Avg Expense:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = CurrencyUtils.formatCurrency(stats.averageMonthlyExpense),
+                            style = MaterialTheme.typography.labelMedium.withTabularNums(),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
         }
     }
 }

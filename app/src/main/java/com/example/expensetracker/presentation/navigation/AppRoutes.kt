@@ -15,6 +15,7 @@ object AppRoutes {
     const val ALERTS = "alerts"
     const val DEBTS = "debts"
     const val RECURRING = "recurring"
+    const val ONBOARDING = "onboarding"
 
     const val EDIT_TRANSFER = "editTransfer/{transactionId}"
     const val EDIT_TRANSFER_ARG = "transactionId"

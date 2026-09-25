@@ -1,5 +1,37 @@
 # Release Notes
 
+## Version: Feature Expansion Phase 6 - UI/UX Pro Max, Stretch Features & Resilience (September 2026)
+
+### Highlights
+- **Crash Resolution & Key Uniqueness in Lists**:
+  - Fixed `java.lang.IllegalArgumentException: Key was already used` in `LoansScreen` and `DebtsScreen` by introducing distinct string key namespaces (`"monthly_$id"` vs `"configured_$id"`, `"debt_rollover_$id"`).
+  - Enforced `.distinctBy { it.id }` safety guards against duplicate database keys in combined lazy lists.
+- **Overview Financial Summary Restructuring (Zero Truncation)**:
+  - Redesigned `MonthlyFinancialSummaryCard` to eliminate text clipping on compact screens.
+  - Divided metrics into a spacious top 3-column row for **Income**, **Expense**, and **Wallet** (dynamically hidden when 0.000).
+  - Promoted **Net Remaining Income** into a dedicated full-width card with dynamic surplus/deficit subtitle (`net_surplus_label` / `net_deficit_label`), trending vector indicators, and high visual contrast.
+  - Formatted all financial labels with soft wrapping and tabular numeric values (`font-variant-numeric: tabular-nums`).
+- **Categories & Budgets Cleanup**:
+  - Purged internal system types (`TRANSFER` and `WALLET_MOVE`) from category management; categories are strictly scoped to `EXPENSE` and `INCOME`.
+  - Redesigned `CategoryRow` to UI/UX Pro Max standards with rounded surface elevation, circular colored iconography, clear typography hierarchy, and explicit accessible action buttons (`Savings` for budget, `Edit`, and `Delete`).
+- **Notifications & Empty State Centering**:
+  - Centered empty state titles and descriptive copy in `AlertsScreen` and `LoansScreen` with `TextAlign.Center` and proper horizontal padding for consistent visual rhythm.
+- **Full Stretch Features Implementation**:
+  - **Interactive 3-Step Onboarding Walkthrough**:
+    - `OnboardingScreen` featuring a responsive `HorizontalPager`, vector illustrations, animated indicator pills, tactile feedback, and direct persistence via `UserPreferences.onboardingCompleted`.
+    - Integrated into initial app launch and launchable on-demand via the *App Guide & Walkthrough* tile in `MoreScreen`.
+  - **Tactile Haptic Feedback**:
+    - Integrated `HapticFeedbackType.LongPress` feedback into swipe-to-delete in transaction lists and successful transaction creation.
+  - **Monthly Comparison & Delta Analytics**:
+    - Added `MonthlyComparisonCard` in `StatisticsScreen` comparing Current Month vs Previous Month with absolute difference, percentage badge, and 3-month average benchmark.
+- **Export & Import Automated Testing**:
+  - Added unit test suite `StyledExcelExporterTest` validating HTML table and styling structure.
+  - Added unit test suite `CsvImporterTest` testing validation, header checks, and empty dataset edge cases.
+- **Full Localization Parity**:
+  - Updated English and Arabic resource strings for onboarding, comparison analytics, and net summary labels.
+
+---
+
 ## Version: Feature Expansion Phase 5 (September 2026)
 
 ### Highlights

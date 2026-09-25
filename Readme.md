@@ -57,7 +57,11 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 - **Configured Recurring Loans**: Track car, mortgage, and personal loans in `LoansScreen`; once-per-day prompt bottom sheet (`LoanReminderBottomSheet`) on salary month rollover with salary balance preservation.
 
 ### Settings & More Hub
-- **"More" Hub**: 4th bottom nav tab grouping Debts, Loans, Categories, Database Browser, and Settings.
+- **"More" Hub**: 4th bottom nav tab grouping Debts, Loans, Categories, Database Browser, Settings, and **App Guide & Walkthrough**.
+- **Interactive Onboarding Walkthrough**: 3-step carousel guide on first app launch and accessible anytime from More tab.
+- **Color Themes**: Dynamic switching between Emerald Green, Luxury Blue/Gold, Warm Earth tones, and Cool Slate/Teal palettes.
+- **Tactile Haptic Feedback**: Subtle vibration feedback on transaction deletion and recording.
+- **Monthly Spending Comparison**: Benchmarks current month vs previous month with deltas and 3-month average in Statistics.
 - **Language**: English / Arabic (RTL)
 - **App lock**: Biometric / device PIN required on open (toggle in Settings)
 - **Balances**: recalibrate current cash/bank to match reality

@@ -116,7 +116,7 @@ fun CategoriesScreen(
 
         item(key = "type-filter") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TransactionType.entries.forEach { type ->
+                listOf(TransactionType.EXPENSE, TransactionType.INCOME).forEach { type ->
                     FilterChip(
                         selected = selectedType == type,
                         onClick = {
@@ -126,7 +126,12 @@ fun CategoriesScreen(
                             selectedColor = Color.Gray
                             selectedIcon = "📋"
                         },
-                        label = { Text(type.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                        label = {
+                            Text(
+                                if (type == TransactionType.EXPENSE) stringResource(R.string.expense)
+                                else stringResource(R.string.income)
+                            )
+                        }
                     )
                 }
             }
@@ -255,7 +260,7 @@ fun CategoriesScreen(
             Text("Your categories", style = MaterialTheme.typography.labelMedium)
         }
 
-        items(categories, key = { it.id }) { category ->
+        items(categories, key = { "cat_${it.id}" }) { category ->
             CategoryRow(
                 category = category,
                 onEdit = {

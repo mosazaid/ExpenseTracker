@@ -245,6 +245,7 @@ fun MainScreen(
             composable(AppRoutes.CATEGORIES) { CategoriesScreen(navController) }
             composable(AppRoutes.SETTINGS) { SettingsScreen(navController) }
             composable(AppRoutes.RECURRING) { RecurringScreen(navController) }
+            composable(AppRoutes.ONBOARDING) { OnboardingScreen(onFinish = { navController.popBackStack() }) }
             composable(AppRoutes.DATABASE_BROWSER) { DatabaseBrowserScreen(navController) }
         }
     }

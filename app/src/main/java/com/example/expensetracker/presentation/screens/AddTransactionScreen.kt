@@ -22,6 +22,8 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.R
@@ -54,6 +56,7 @@ fun AddTransactionScreen(
     val monthMode by viewModel.monthMode.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     val calendar = Calendar.getInstance()
     val isEditMode = uiState.editingTransactionId != null
 
@@ -854,6 +857,7 @@ fun AddTransactionScreen(
                         pendingTransaction = transaction
                         showSalaryMonthDialog = true
                     } else {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         saveAndNavigate(viewModel, transaction, navController)
                     }
                 }

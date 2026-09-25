@@ -24,6 +24,9 @@ import com.example.expensetracker.data.preferences.UserPreferences
 import com.example.expensetracker.presentation.components.BiometricGate
 import com.example.expensetracker.presentation.screens.MainScreen
 import com.example.expensetracker.presentation.theme.ExpenseTrackerTheme
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.example.expensetracker.presentation.screens.OnboardingScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -38,6 +41,7 @@ class MainActivity : FragmentActivity() {
         setContent {
             val themeMode by userPreferences.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
             val themePalette by userPreferences.themePalette.collectAsState(initial = com.example.expensetracker.data.preferences.ThemePalette.EMERALD)
+            val onboardingCompleted by userPreferences.onboardingCompleted.collectAsState(initial = true)
             val isDark = when (themeMode) {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
@@ -52,11 +56,21 @@ class MainActivity : FragmentActivity() {
                 ) {
                     NotificationPermissionRequester()
 
-                    BiometricGate {
-                        MainScreen(
-                            initialRecurringId = intent?.getLongExtra("recurringId", -1L)
-                                ?.takeIf { it != -1L }
+                    if (!onboardingCompleted) {
+                        OnboardingScreen(
+                            onFinish = {
+                                lifecycleScope.launch {
+                                    userPreferences.setOnboardingCompleted(true)
+                                }
+                            }
                         )
+                    } else {
+                        BiometricGate {
+                            MainScreen(
+                                initialRecurringId = intent?.getLongExtra("recurringId", -1L)
+                                    ?.takeIf { it != -1L }
+                            )
+                        }
                     }
                 }
             }

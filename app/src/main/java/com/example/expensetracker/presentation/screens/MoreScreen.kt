@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.*
@@ -179,6 +180,16 @@ fun MoreScreen(navController: NavController) {
                     icon = Icons.Default.Settings,
                     accentColor = MaterialTheme.colorScheme.outline,
                     onClick = { navController.navigate(AppRoutes.SETTINGS) }
+                )
+            }
+
+            item {
+                MoreMenuCard(
+                    title = stringResource(R.string.onboarding_app_guide),
+                    subtitle = stringResource(R.string.onboarding_title_1) + " • " + stringResource(R.string.onboarding_title_2),
+                    icon = Icons.Outlined.HelpOutline,
+                    accentColor = MaterialTheme.colorScheme.secondary,
+                    onClick = { navController.navigate(AppRoutes.ONBOARDING) }
                 )
             }
 

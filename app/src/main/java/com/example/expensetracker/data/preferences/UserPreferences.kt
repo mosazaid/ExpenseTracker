@@ -47,6 +47,17 @@ class UserPreferences @Inject constructor(
     private val dismissedRecurringKey = stringSetPreferencesKey("dismissed_recurring_until")
     private val lastLoanSheetDateKey = stringPreferencesKey("last_loan_sheet_date")
     private val lastDebtRolloverMonthKey = stringPreferencesKey("last_debt_rollover_month")
+    private val onboardingCompletedKey = booleanPreferencesKey("onboarding_completed")
+
+    val onboardingCompleted: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[onboardingCompletedKey] ?: false
+    }
+
+    suspend fun setOnboardingCompleted(completed: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[onboardingCompletedKey] = completed
+        }
+    }
 
     val biometricLockEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[biometricLockKey] ?: false
