@@ -1,4 +1,4 @@
-package com.example.expensetracker.domain
+package com.example.expensetracker.data.debug
 
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.expensetracker.data.database.AppDatabase

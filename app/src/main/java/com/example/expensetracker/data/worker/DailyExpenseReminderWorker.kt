@@ -1,4 +1,4 @@
-package com.example.expensetracker.worker
+package com.example.expensetracker.data.worker
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker

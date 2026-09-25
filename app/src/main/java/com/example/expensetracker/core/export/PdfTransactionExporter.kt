@@ -1,4 +1,4 @@
-package com.example.expensetracker.domain
+package com.example.expensetracker.core.export
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -10,13 +10,14 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import com.example.expensetracker.R
+import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.TransactionType
-import com.example.expensetracker.presentation.theme.CurrencyUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -132,7 +133,7 @@ class PdfTransactionExporter @Inject constructor(
             textSize = 9.5f
         }
         val periodText = if (filterLabel.isBlank()) "All Transactions" else filterLabel
-        canvas.drawText("$periodText  •  Generated: ${generatedFormat.format(java.util.Date())}", leftX, 48f, subtitlePaint)
+        canvas.drawText("$periodText  •  Generated: ${generatedFormat.format(Date())}", leftX, 48f, subtitlePaint)
 
         val pagePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.parseColor("#94A3B8")
@@ -322,4 +323,3 @@ class PdfTransactionExporter @Inject constructor(
     private data class ColumnSpec(val title: String, val width: Float)
     private data class KpiCardSpec(val label: String, val value: String, val bgColor: String, val labelColor: String, val valColor: String)
 }
-

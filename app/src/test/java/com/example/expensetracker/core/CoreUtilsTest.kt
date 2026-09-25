@@ -1,13 +1,14 @@
 package com.example.expensetracker.core
 
+import com.example.expensetracker.core.format.CurrencyUtils
+import com.example.expensetracker.core.format.formatAmount
+import com.example.expensetracker.core.format.formatCurrency
 import com.example.expensetracker.core.time.DateUtils
-import com.example.expensetracker.presentation.theme.CurrencyUtils
-import com.example.expensetracker.presentation.theme.formatCurrency
-import com.example.expensetracker.presentation.theme.formatAmount
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Calendar
+import java.util.Locale
 
 class CoreUtilsTest {
 
@@ -24,88 +25,97 @@ class CoreUtilsTest {
         assertEquals("1,250.500", 1250.5.formatAmount(includeCurrency = false))
     }
 
-
     @Test
     fun testDateUtils_startAndEndOfDay() {
         val cal = Calendar.getInstance().apply {
-            set(2026, Calendar.SEPTEMBER, 19, 15, 45, 30)
+            set(Calendar.YEAR, 2026)
+            set(Calendar.MONTH, Calendar.SEPTEMBER)
+            set(Calendar.DAY_OF_MONTH, 19)
+            set(Calendar.HOUR_OF_DAY, 14)
+            set(Calendar.MINUTE, 30)
+            set(Calendar.SECOND, 45)
             set(Calendar.MILLISECOND, 500)
         }
         val date = cal.time
 
-        val startOfDay = DateUtils.getStartOfDay(date)
-        val endOfDay = DateUtils.getEndOfDay(date)
+        val start = DateUtils.getStartOfDay(date)
+        val startCal = Calendar.getInstance().apply { time = start }
+        assertEquals(0, startCal.get(Calendar.HOUR_OF_DAY))
+        assertEquals(0, startCal.get(Calendar.MINUTE))
+        assertEquals(0, startCal.get(Calendar.SECOND))
+        assertEquals(0, startCal.get(Calendar.MILLISECOND))
 
-        val calStart = Calendar.getInstance().apply { time = startOfDay }
-        assertEquals(0, calStart.get(Calendar.HOUR_OF_DAY))
-        assertEquals(0, calStart.get(Calendar.MINUTE))
-        assertEquals(0, calStart.get(Calendar.SECOND))
-        assertEquals(0, calStart.get(Calendar.MILLISECOND))
-
-        val calEnd = Calendar.getInstance().apply { time = endOfDay }
-        assertEquals(23, calEnd.get(Calendar.HOUR_OF_DAY))
-        assertEquals(59, calEnd.get(Calendar.MINUTE))
-        assertEquals(59, calEnd.get(Calendar.SECOND))
-        assertEquals(999, calEnd.get(Calendar.MILLISECOND))
-
-        assertTrue(endOfDay.after(startOfDay))
+        val end = DateUtils.getEndOfDay(date)
+        val endCal = Calendar.getInstance().apply { time = end }
+        assertEquals(23, endCal.get(Calendar.HOUR_OF_DAY))
+        assertEquals(59, endCal.get(Calendar.MINUTE))
+        assertEquals(59, endCal.get(Calendar.SECOND))
+        assertEquals(999, endCal.get(Calendar.MILLISECOND))
     }
 
     @Test
-    fun testDateUtils_startAndEndOfMonth() {
+    fun testDateUtils_startAndEndOfWeek() {
+        // Sep 19, 2026 is a Saturday (in our app Saturday is start of week)
         val cal = Calendar.getInstance().apply {
-            set(2026, Calendar.FEBRUARY, 15)
+            set(Calendar.YEAR, 2026)
+            set(Calendar.MONTH, Calendar.SEPTEMBER)
+            set(Calendar.DAY_OF_MONTH, 21) // Monday
         }
         val date = cal.time
 
-        val startOfMonth = DateUtils.getStartOfMonth(date)
-        val endOfMonth = DateUtils.getEndOfMonth(date)
+        val startOfWeek = DateUtils.getStartOfWeek(date)
+        val startCal = Calendar.getInstance().apply { time = startOfWeek }
+        assertEquals(Calendar.SATURDAY, startCal.get(Calendar.DAY_OF_WEEK))
+        assertEquals(19, startCal.get(Calendar.DAY_OF_MONTH))
 
-        val calStart = Calendar.getInstance().apply { time = startOfMonth }
-        assertEquals(1, calStart.get(Calendar.DAY_OF_MONTH))
-
-        val calEnd = Calendar.getInstance().apply { time = endOfMonth }
-        assertEquals(28, calEnd.get(Calendar.DAY_OF_MONTH)) // 2026 is not a leap year
+        val endOfWeek = DateUtils.getEndOfWeek(date)
+        val endCal = Calendar.getInstance().apply { time = endOfWeek }
+        assertEquals(Calendar.FRIDAY, endCal.get(Calendar.DAY_OF_WEEK))
+        assertEquals(25, endCal.get(Calendar.DAY_OF_MONTH))
     }
 
     @Test
-    fun testDateUtils_formatAndParse() {
+    fun testDateUtils_formattingAndParsing() {
         val cal = Calendar.getInstance().apply {
-            set(2026, Calendar.SEPTEMBER, 19, 14, 30, 0)
+            set(Calendar.YEAR, 2026)
+            set(Calendar.MONTH, Calendar.SEPTEMBER)
+            set(Calendar.DAY_OF_MONTH, 19)
+            set(Calendar.HOUR_OF_DAY, 14)
+            set(Calendar.MINUTE, 30)
+            set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
         val date = cal.time
 
         // Test custom format pattern with US locale for deterministic assertions
-        val formattedFull = com.example.expensetracker.presentation.theme.DateUtils.format(
+        val formattedFull = DateUtils.format(
             date,
-            com.example.expensetracker.presentation.theme.DateUtils.PATTERN_FULL_DATE,
-            java.util.Locale.US
+            DateUtils.PATTERN_FULL_DATE,
+            Locale.US
         )
         assertEquals("19 September 2026", formattedFull)
 
-        val formattedIso = com.example.expensetracker.presentation.theme.DateUtils.format(
+        val formattedIso = DateUtils.format(
             date,
-            com.example.expensetracker.presentation.theme.DateUtils.PATTERN_ISO,
-            java.util.Locale.US
+            DateUtils.PATTERN_ISO,
+            Locale.US
         )
         assertEquals("2026-09-19 14:30:00", formattedIso)
 
         // Test parse
-        val parsed = com.example.expensetracker.presentation.theme.DateUtils.parse(
+        val parsed = DateUtils.parse(
             "2026-09-19 14:30:00",
-            com.example.expensetracker.presentation.theme.DateUtils.PATTERN_ISO,
-            java.util.Locale.US
+            DateUtils.PATTERN_ISO,
+            Locale.US
         )
         assertEquals(date.time, parsed?.time)
 
         // Test invalid parse returns null safely
-        val invalidParsed = com.example.expensetracker.presentation.theme.DateUtils.parse(
+        val invalidParsed = DateUtils.parse(
             "invalid-date",
-            com.example.expensetracker.presentation.theme.DateUtils.PATTERN_ISO,
-            java.util.Locale.US
+            DateUtils.PATTERN_ISO,
+            Locale.US
         )
         org.junit.Assert.assertNull(invalidParsed)
     }
 }
-

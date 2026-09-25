@@ -23,7 +23,7 @@ import com.example.expensetracker.presentation.components.AppTopBar
 import com.example.expensetracker.presentation.components.CategoryPieChart
 import com.example.expensetracker.presentation.components.StatisticsBarChart
 import com.example.expensetracker.presentation.components.ThreeMonthMultiChart
-import com.example.expensetracker.presentation.theme.CurrencyUtils
+import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.presentation.theme.FinanceNegative
 import com.example.expensetracker.presentation.theme.FinancePositive
 import com.example.expensetracker.presentation.theme.withTabularNums

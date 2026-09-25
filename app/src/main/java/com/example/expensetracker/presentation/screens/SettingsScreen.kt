@@ -37,10 +37,11 @@ import androidx.navigation.NavController
 import com.example.expensetracker.R
 import com.example.expensetracker.core.export.ExportFileHelper
 import com.example.expensetracker.core.locale.AppLanguage
-import com.example.expensetracker.domain.CsvImportFormat
+import com.example.expensetracker.core.export.CsvImportFormat
+import com.example.expensetracker.core.format.CurrencyUtils
+import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.presentation.components.AppTopBar
 import com.example.expensetracker.presentation.navigation.AppRoutes
-import com.example.expensetracker.presentation.theme.CurrencyUtils
 import com.example.expensetracker.presentation.viewModel.ExportFormat
 import com.example.expensetracker.presentation.viewModel.ExportScope
 import com.example.expensetracker.presentation.viewModel.ExportShareRequest
@@ -491,7 +492,7 @@ fun SettingsScreen(
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                "Next: ${com.example.expensetracker.presentation.theme.DateUtils.formatDate(reminder.nextDueDate)}",
+                                "Next: ${DateUtils.formatDate(reminder.nextDueDate)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.outline
                             )

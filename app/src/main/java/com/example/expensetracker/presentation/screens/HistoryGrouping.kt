@@ -6,7 +6,7 @@ import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.SalaryWalletPeriodSummary
-import com.example.expensetracker.presentation.theme.DateUtils
+import com.example.expensetracker.core.time.DateUtils
 import java.util.Date
 
 enum class TransactionTypeFilter(val label: String) {

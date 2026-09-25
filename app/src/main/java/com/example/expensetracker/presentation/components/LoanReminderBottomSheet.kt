@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.R
 import com.example.expensetracker.data.repository.MonthlyLoanItem
-import com.example.expensetracker.presentation.theme.CurrencyUtils
+import com.example.expensetracker.core.format.CurrencyUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

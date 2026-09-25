@@ -50,7 +50,7 @@
         </provider>
 
         <receiver
-            android:name=".receiver.DailyExpenseReminderReceiver"
+            android:name=".data.receiver.DailyExpenseReminderReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

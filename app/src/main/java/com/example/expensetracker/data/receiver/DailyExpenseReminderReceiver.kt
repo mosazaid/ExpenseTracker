@@ -1,10 +1,10 @@
-package com.example.expensetracker.receiver
+package com.example.expensetracker.data.receiver
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.data.database.dao.TransactionDao
-import com.example.expensetracker.presentation.theme.DateUtils
 import com.example.expensetracker.util.AlarmScheduler
 import com.example.expensetracker.util.NotificationHelper
 import dagger.hilt.android.AndroidEntryPoint

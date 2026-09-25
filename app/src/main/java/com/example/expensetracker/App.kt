@@ -8,8 +8,12 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.expensetracker.core.locale.LocaleHelper
-import com.example.expensetracker.worker.SalaryReminderWorker
+import com.example.expensetracker.data.worker.DailyExpenseReminderWorker
+import com.example.expensetracker.data.worker.LoanReminderWorker
+import com.example.expensetracker.data.worker.SalaryReminderWorker
+import com.example.expensetracker.util.AlarmScheduler
 import dagger.hilt.android.HiltAndroidApp
+import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -20,7 +24,7 @@ class App : Application(), Configuration.Provider {
     lateinit var workerFactory: HiltWorkerFactory
 
     @Inject
-    lateinit var alarmScheduler: com.example.expensetracker.util.AlarmScheduler
+    lateinit var alarmScheduler: AlarmScheduler
 
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(LocaleHelper.onAttach(base))
@@ -50,18 +54,18 @@ class App : Application(), Configuration.Provider {
     }
 
     private fun scheduleDailyExpenseReminderWorker() {
-        val now = java.util.Calendar.getInstance()
-        val target = java.util.Calendar.getInstance().apply {
-            set(java.util.Calendar.HOUR_OF_DAY, 21)
-            set(java.util.Calendar.MINUTE, 0)
-            set(java.util.Calendar.SECOND, 0)
-            set(java.util.Calendar.MILLISECOND, 0)
+        val now = Calendar.getInstance()
+        val target = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 21)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
             if (before(now)) {
-                add(java.util.Calendar.DAY_OF_YEAR, 1)
+                add(Calendar.DAY_OF_YEAR, 1)
             }
         }
         val initialDelay = target.timeInMillis - now.timeInMillis
-        val request = PeriodicWorkRequestBuilder<com.example.expensetracker.worker.DailyExpenseReminderWorker>(24, TimeUnit.HOURS)
+        val request = PeriodicWorkRequestBuilder<DailyExpenseReminderWorker>(24, TimeUnit.HOURS)
             .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
             .build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
@@ -72,7 +76,7 @@ class App : Application(), Configuration.Provider {
     }
 
     private fun scheduleLoanReminderWorker() {
-        val request = PeriodicWorkRequestBuilder<com.example.expensetracker.worker.LoanReminderWorker>(1, TimeUnit.DAYS)
+        val request = PeriodicWorkRequestBuilder<LoanReminderWorker>(1, TimeUnit.DAYS)
             .build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "loan_reminder_check",

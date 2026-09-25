@@ -2,6 +2,8 @@ package com.example.expensetracker.domain
 
 import android.content.Context
 import com.example.expensetracker.R
+import com.example.expensetracker.core.export.StyledExcelExporter
+import com.example.expensetracker.core.export.TransactionExportRow
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.TransactionType
 import org.junit.Assert.assertTrue

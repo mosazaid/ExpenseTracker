@@ -21,7 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.R
-import com.example.expensetracker.presentation.theme.CurrencyUtils
+import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.presentation.theme.FinanceNegative
 import com.example.expensetracker.presentation.theme.FinancePositive
 import com.example.expensetracker.presentation.theme.withTabularNums

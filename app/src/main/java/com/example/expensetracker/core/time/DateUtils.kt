@@ -17,8 +17,12 @@ object DateUtils {
     const val PATTERN_ISO = "yyyy-MM-dd HH:mm:ss"
 
     private val dateFormat = SimpleDateFormat(PATTERN_DEFAULT, Locale.getDefault())
+    private val timeFormat = SimpleDateFormat(PATTERN_TIME_24H, Locale.getDefault())
+    private val dateTimeFormat = SimpleDateFormat(PATTERN_DATE_TIME, Locale.getDefault())
 
     fun formatDate(date: Date): String = dateFormat.format(date)
+    fun formatTime(date: Date): String = timeFormat.format(date)
+    fun formatDateTime(date: Date): String = dateTimeFormat.format(date)
 
     /**
      * Formats a [Date] with any custom [pattern] and optional [locale].
@@ -51,6 +55,23 @@ object DateUtils {
     fun formatMonthYear(date: Date): String {
         val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
         return monthFormat.format(date)
+    }
+
+    fun getDayKey(date: Date): Long = getStartOfDay(date).time
+
+    fun getWeekKey(date: Date): Long = getStartOfWeek(date).time
+
+    fun getMonthKey(date: Date): Int {
+        val calendar = Calendar.getInstance()
+        calendar.time = date
+        return calendar.get(Calendar.YEAR) * 100 + calendar.get(Calendar.MONTH)
+    }
+
+    fun dateFromMonthKey(key: Int): Date {
+        val calendar = Calendar.getInstance()
+        calendar.set(key / 100, key % 100, 1, 0, 0, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        return calendar.time
     }
 
     fun getStartOfDay(date: Date): Date {
@@ -128,4 +149,5 @@ fun Date.format(pattern: String = DateUtils.PATTERN_DEFAULT, locale: Locale = Lo
 
 fun Date.formatDate(): String = DateUtils.formatDate(this)
 fun Date.formatMonthYear(): String = DateUtils.formatMonthYear(this)
-
+fun Date.formatTime(): String = DateUtils.formatTime(this)
+fun Date.formatDateTime(): String = DateUtils.formatDateTime(this)

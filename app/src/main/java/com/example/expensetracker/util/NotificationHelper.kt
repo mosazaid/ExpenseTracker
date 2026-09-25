@@ -11,7 +11,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.example.expensetracker.MainActivity
 import com.example.expensetracker.R
 import com.example.expensetracker.data.database.entities.RecurringTransaction
-import com.example.expensetracker.presentation.theme.CurrencyUtils
+import com.example.expensetracker.core.format.CurrencyUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton

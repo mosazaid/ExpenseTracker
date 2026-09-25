@@ -1,15 +1,16 @@
-package com.example.expensetracker.domain
+package com.example.expensetracker.core.export
 
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.util.Base64
 import com.example.expensetracker.R
+import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.data.database.entities.TransactionType
-import com.example.expensetracker.presentation.theme.CurrencyUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -215,7 +216,7 @@ class StyledExcelExporter @Inject constructor(
         sb.append("</div></div>")
         sb.append("<div class=\"meta-right\">")
         sb.append("<div>Exported Statement</div>")
-        sb.append("<div>Generated: ${escapeHtml(generatedFormat.format(java.util.Date()))}</div>")
+        sb.append("<div>Generated: ${escapeHtml(generatedFormat.format(Date()))}</div>")
         sb.append("</div></div>")
 
         // ── Executive KPI Cards
@@ -312,4 +313,3 @@ class StyledExcelExporter @Inject constructor(
             .replace(">", "&gt;")
             .replace("\"", "&quot;")
 }
-

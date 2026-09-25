@@ -20,8 +20,8 @@ import androidx.navigation.NavController
 import com.example.expensetracker.R
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.presentation.components.AppTopBar
-import com.example.expensetracker.presentation.theme.CurrencyUtils
-import com.example.expensetracker.presentation.theme.DateUtils
+import com.example.expensetracker.core.format.CurrencyUtils
+import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.presentation.viewModel.DebtsViewModel
 
 @Composable

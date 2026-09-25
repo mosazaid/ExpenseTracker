@@ -27,7 +27,7 @@ import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.ConfiguredLoan
 import com.example.expensetracker.data.repository.MonthlyLoanItem
 import com.example.expensetracker.presentation.components.AppTopBar
-import com.example.expensetracker.presentation.theme.CurrencyUtils
+import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.presentation.viewModel.LIQUID_ACCOUNTS
 import com.example.expensetracker.presentation.viewModel.LoansViewModel
 

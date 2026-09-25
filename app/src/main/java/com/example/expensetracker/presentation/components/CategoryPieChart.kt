@@ -31,7 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.presentation.theme.CurrencyUtils
+import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.presentation.viewModel.CategoryExpenseShare
 import com.example.expensetracker.presentation.viewModel.ThreeMonthStats
 import kotlin.math.atan2

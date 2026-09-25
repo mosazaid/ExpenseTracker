@@ -1,6 +1,7 @@
-package com.example.expensetracker.domain
+package com.example.expensetracker.core.export
 
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,7 +18,7 @@ class CsvExporter @Inject constructor(
         val headerComments = listOf(
             "# Expense Tracker — transaction export",
             "# Filter: $filterLabel",
-            "# Generated: ${dateFormat.format(java.util.Date())}",
+            "# Generated: ${dateFormat.format(Date())}",
             "# Import: use the header row below (lines starting with # are ignored)",
             "#"
         )

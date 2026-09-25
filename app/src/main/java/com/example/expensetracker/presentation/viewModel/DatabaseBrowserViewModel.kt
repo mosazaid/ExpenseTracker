@@ -2,8 +2,8 @@ package com.example.expensetracker.presentation.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.expensetracker.domain.DatabaseInspector
-import com.example.expensetracker.domain.DbTableData
+import com.example.expensetracker.data.debug.DatabaseInspector
+import com.example.expensetracker.data.debug.DbTableData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

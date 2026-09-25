@@ -42,8 +42,8 @@ import kotlinx.coroutines.launch
 import java.util.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.expensetracker.presentation.navigation.AppRoutes
-import com.example.expensetracker.presentation.theme.CurrencyUtils
-import com.example.expensetracker.presentation.theme.DateUtils
+import com.example.expensetracker.core.format.CurrencyUtils
+import com.example.expensetracker.core.time.DateUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

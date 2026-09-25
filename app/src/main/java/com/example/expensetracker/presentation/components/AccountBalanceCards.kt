@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.R
 import com.example.expensetracker.data.database.entities.AccountType
-import com.example.expensetracker.presentation.theme.CurrencyUtils
+import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.presentation.theme.withTabularNums
 import com.example.expensetracker.presentation.viewModel.LIQUID_ACCOUNTS
 

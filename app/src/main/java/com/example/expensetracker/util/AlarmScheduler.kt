@@ -5,7 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import com.example.expensetracker.receiver.DailyExpenseReminderReceiver
+import com.example.expensetracker.data.receiver.DailyExpenseReminderReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Calendar
 import javax.inject.Inject

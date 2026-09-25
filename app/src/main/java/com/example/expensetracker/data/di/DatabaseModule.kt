@@ -2,9 +2,13 @@ package com.example.expensetracker.data.di
 
 import android.content.Context
 import com.example.expensetracker.data.database.AppDatabase
+import com.example.expensetracker.data.database.dao.AppAlertDao
 import com.example.expensetracker.data.database.dao.BudgetDao
 import com.example.expensetracker.data.database.dao.CategoryDao
+import com.example.expensetracker.data.database.dao.ConfiguredLoanDao
+import com.example.expensetracker.data.database.dao.MonthlyLoanPaymentDao
 import com.example.expensetracker.data.database.dao.RecurringTransactionDao
+import com.example.expensetracker.data.database.dao.SubCategoryDao
 import com.example.expensetracker.data.database.dao.TransactionDao
 import dagger.Module
 import dagger.Provides
@@ -43,22 +47,22 @@ object DatabaseModule {
     }
 
     @Provides
-    fun provideSubCategoryDao(database: AppDatabase): com.example.expensetracker.data.database.dao.SubCategoryDao {
+    fun provideSubCategoryDao(database: AppDatabase): SubCategoryDao {
         return database.subCategoryDao()
     }
 
     @Provides
-    fun provideConfiguredLoanDao(database: AppDatabase): com.example.expensetracker.data.database.dao.ConfiguredLoanDao {
+    fun provideConfiguredLoanDao(database: AppDatabase): ConfiguredLoanDao {
         return database.configuredLoanDao()
     }
 
     @Provides
-    fun provideMonthlyLoanPaymentDao(database: AppDatabase): com.example.expensetracker.data.database.dao.MonthlyLoanPaymentDao {
+    fun provideMonthlyLoanPaymentDao(database: AppDatabase): MonthlyLoanPaymentDao {
         return database.monthlyLoanPaymentDao()
     }
 
     @Provides
-    fun provideAppAlertDao(database: AppDatabase): com.example.expensetracker.data.database.dao.AppAlertDao {
+    fun provideAppAlertDao(database: AppDatabase): AppAlertDao {
         return database.appAlertDao()
     }
 }
