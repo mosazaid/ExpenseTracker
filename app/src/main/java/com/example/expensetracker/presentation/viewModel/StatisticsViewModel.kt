@@ -6,8 +6,8 @@ import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.data.preferences.UserPreferences
-import com.example.expensetracker.data.repository.CategoryRepository
-import com.example.expensetracker.data.repository.TransactionRepository
+import com.example.expensetracker.domain.repository.ICategoryRepository
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.PeriodBounds
 import com.example.expensetracker.domain.PeriodCalculator
@@ -60,8 +60,8 @@ data class StatisticsState(
 
 @HiltViewModel
 class StatisticsViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository,
+    private val transactionRepository: ITransactionRepository,
+    private val categoryRepository: ICategoryRepository,
     private val periodCalculator: PeriodCalculator,
     private val walletCalculator: WalletCalculator,
     private val userPreferences: UserPreferences

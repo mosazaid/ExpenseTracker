@@ -1,14 +1,14 @@
 package com.example.expensetracker.core.export
 
-import com.example.expensetracker.data.repository.CategoryRepository
-import com.example.expensetracker.data.repository.TransactionRepository
+import com.example.expensetracker.domain.repository.ICategoryRepository
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class TransactionExportLoader @Inject constructor(
-    private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository
+    private val transactionRepository: ITransactionRepository,
+    private val categoryRepository: ICategoryRepository
 ) {
     suspend fun loadRows(filter: TransactionExportFilter? = null): List<TransactionExportRow> {
         val allTransactions = transactionRepository.getAllTransactionsSnapshot()

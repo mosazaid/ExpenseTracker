@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.expensetracker.data.repository.RecurringRepository
+import com.example.expensetracker.domain.repository.IRecurringRepository
 import com.example.expensetracker.util.NotificationHelper
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -14,7 +14,7 @@ import java.util.Date
 class SalaryReminderWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val recurringRepository: RecurringRepository,
+    private val recurringRepository: IRecurringRepository,
     private val notificationHelper: NotificationHelper
 ) : CoroutineWorker(context, params) {
 

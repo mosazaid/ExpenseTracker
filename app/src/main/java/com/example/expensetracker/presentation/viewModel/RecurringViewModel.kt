@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.RecurringTransaction
-import com.example.expensetracker.data.repository.CategoryRepository
-import com.example.expensetracker.data.repository.RecurringRepository
+import com.example.expensetracker.domain.repository.ICategoryRepository
+import com.example.expensetracker.domain.repository.IRecurringRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,8 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RecurringViewModel @Inject constructor(
-    private val recurringRepository: RecurringRepository,
-    private val categoryRepository: CategoryRepository
+    private val recurringRepository: IRecurringRepository,
+    private val categoryRepository: ICategoryRepository
 ) : ViewModel() {
 
     val recurringList: StateFlow<List<RecurringTransaction>> = recurringRepository

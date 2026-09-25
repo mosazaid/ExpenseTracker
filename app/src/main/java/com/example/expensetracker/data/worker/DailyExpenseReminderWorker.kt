@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.expensetracker.data.repository.AlertRepository
-import com.example.expensetracker.data.repository.TransactionRepository
+import com.example.expensetracker.domain.repository.IAlertRepository
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import com.example.expensetracker.util.NotificationHelper
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -17,8 +17,8 @@ import java.util.Locale
 class DailyExpenseReminderWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val transactionRepository: TransactionRepository,
-    private val alertRepository: AlertRepository,
+    private val transactionRepository: ITransactionRepository,
+    private val alertRepository: IAlertRepository,
     private val notificationHelper: NotificationHelper
 ) : CoroutineWorker(context, params) {
 

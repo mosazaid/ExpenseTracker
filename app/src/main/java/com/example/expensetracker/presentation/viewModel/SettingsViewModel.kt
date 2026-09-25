@@ -10,7 +10,7 @@ import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.RecurringTransaction
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.data.preferences.UserPreferences
-import com.example.expensetracker.data.repository.RecurringRepository
+import com.example.expensetracker.domain.repository.IRecurringRepository
 import com.example.expensetracker.core.export.CsvExporter
 import com.example.expensetracker.core.export.CsvImportResult
 import com.example.expensetracker.core.export.CsvImporter
@@ -58,7 +58,7 @@ class SettingsViewModel @Inject constructor(
     private val exportLoader: TransactionExportLoader,
     private val styledExcelExporter: StyledExcelExporter,
     private val pdfTransactionExporter: PdfTransactionExporter,
-    private val recurringRepository: RecurringRepository,
+    private val recurringRepository: IRecurringRepository,
     private val balanceCalculator: BalanceCalculator,
     private val periodCalculator: PeriodCalculator,
     private val notificationHelper: com.example.expensetracker.util.NotificationHelper

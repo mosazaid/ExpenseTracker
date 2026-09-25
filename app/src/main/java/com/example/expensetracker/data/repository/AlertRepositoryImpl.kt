@@ -2,34 +2,35 @@ package com.example.expensetracker.data.repository
 
 import com.example.expensetracker.data.database.dao.AppAlertDao
 import com.example.expensetracker.data.database.entities.AppAlert
+import com.example.expensetracker.domain.repository.IAlertRepository
 import kotlinx.coroutines.flow.Flow
-import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class AlertRepository @Inject constructor(
+class AlertRepositoryImpl @Inject constructor(
     private val appAlertDao: AppAlertDao
-) {
+) : IAlertRepository {
 
-    fun getActiveAlertsFlow(): Flow<List<AppAlert>> =
+    override fun getActiveAlertsFlow(): Flow<List<AppAlert>> =
         appAlertDao.getActiveAlertsFlow()
 
-    suspend fun getActiveAlerts(): List<AppAlert> =
+    override suspend fun getActiveAlerts(): List<AppAlert> =
         appAlertDao.getActiveAlerts()
 
-    fun getActiveAlertsCountFlow(): Flow<Int> =
+    override fun getActiveAlertsCountFlow(): Flow<Int> =
         appAlertDao.getActiveAlertsCountFlow()
 
-    suspend fun dismissAlert(id: Long) {
+    override suspend fun dismissAlert(id: Long) {
         appAlertDao.dismissAlert(id)
     }
 
-    suspend fun dismissAlertsByTypeAndRelatedId(type: String, relatedId: Long) {
+    override suspend fun dismissAlertsByTypeAndRelatedId(type: String, relatedId: Long) {
         appAlertDao.dismissAlertsByTypeAndRelatedId(type, relatedId)
     }
 
-    suspend fun postBudgetAlert(
+    override suspend fun postBudgetAlert(
         categoryId: Long,
         categoryName: String,
         spent: Double,
@@ -58,7 +59,7 @@ class AlertRepository @Inject constructor(
         )
     }
 
-    suspend fun postLoanAlert(
+    override suspend fun postLoanAlert(
         paymentId: Long,
         loanName: String,
         amount: Double,
@@ -79,7 +80,7 @@ class AlertRepository @Inject constructor(
         )
     }
 
-    suspend fun postDebtAlert(
+    override suspend fun postDebtAlert(
         transactionId: Long,
         personName: String,
         amount: Double,
@@ -107,7 +108,7 @@ class AlertRepository @Inject constructor(
         )
     }
 
-    suspend fun postDailyExpenseAlert(periodKey: String): Long {
+    override suspend fun postDailyExpenseAlert(periodKey: String): Long {
         val existing = appAlertDao.findActiveAlert(AppAlert.TYPE_DAILY, 0L, periodKey)
         if (existing != null) {
             return existing.id
@@ -123,14 +124,14 @@ class AlertRepository @Inject constructor(
         )
     }
 
-    suspend fun dismissDailyAlertIfExpenseRecorded(periodKey: String) {
+    override suspend fun dismissDailyAlertIfExpenseRecorded(periodKey: String) {
         val alert = appAlertDao.findActiveAlert(AppAlert.TYPE_DAILY, 0L, periodKey)
         if (alert != null) {
             appAlertDao.dismissAlert(alert.id)
         }
     }
 
-    suspend fun postDebtRolloverAlert(
+    override suspend fun postDebtRolloverAlert(
         monthKey: String,
         openDebtCount: Int
     ): Long {
@@ -150,6 +151,8 @@ class AlertRepository @Inject constructor(
     }
 
     private fun formatAmount(amount: Double): String {
-        return String.format(java.util.Locale.US, "%.3f JOD", amount)
+        return String.format(Locale.US, "%.3f JOD", amount)
     }
 }
+
+typealias AlertRepository = AlertRepositoryImpl

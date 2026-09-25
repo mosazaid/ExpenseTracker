@@ -5,6 +5,7 @@ import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.RecurrenceFrequency
 import com.example.expensetracker.data.database.entities.RecurringTransaction
 import com.example.expensetracker.data.database.entities.TransactionType
+import com.example.expensetracker.domain.repository.IRecurringRepository
 import kotlinx.coroutines.flow.Flow
 import java.util.Calendar
 import java.util.Date
@@ -12,28 +13,28 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class RecurringRepository @Inject constructor(
+class RecurringRepositoryImpl @Inject constructor(
     private val recurringTransactionDao: RecurringTransactionDao
-) {
+) : IRecurringRepository {
 
-    fun getActiveRecurringTransactions(): Flow<List<RecurringTransaction>> {
+    override fun getActiveRecurringTransactions(): Flow<List<RecurringTransaction>> {
         return recurringTransactionDao.getActiveRecurringTransactions()
     }
 
-    suspend fun getDueReminders(date: Date = Date()): List<RecurringTransaction> {
+    override suspend fun getDueReminders(date: Date): List<RecurringTransaction> {
         return recurringTransactionDao.getDueRecurringTransactions(date)
     }
 
-    suspend fun getRecurringById(id: Long): RecurringTransaction? {
+    override suspend fun getRecurringById(id: Long): RecurringTransaction? {
         return recurringTransactionDao.getRecurringTransactionById(id)
     }
 
-    suspend fun createSalaryReminder(
+    override suspend fun createSalaryReminder(
         amount: Double,
         accountType: AccountType,
         salaryCategoryId: Long,
         dayOfMonth: Int,
-        description: String = "Salary"
+        description: String
     ): Long {
         val nextDue = computeNextDueDate(dayOfMonth)
         return recurringTransactionDao.insertRecurringTransaction(
@@ -49,7 +50,7 @@ class RecurringRepository @Inject constructor(
         )
     }
 
-    suspend fun advanceRecurringDueDate(recurring: RecurringTransaction) {
+    override suspend fun advanceRecurringDueDate(recurring: RecurringTransaction) {
         val calendar = Calendar.getInstance()
         calendar.time = recurring.nextDueDate
         calendar.add(Calendar.MONTH, 1)
@@ -58,23 +59,23 @@ class RecurringRepository @Inject constructor(
         )
     }
 
-    fun getAllRecurringTransactions(): Flow<List<RecurringTransaction>> {
+    override fun getAllRecurringTransactions(): Flow<List<RecurringTransaction>> {
         return recurringTransactionDao.getAllRecurringTransactions()
     }
 
-    suspend fun deactivateRecurring(id: Long) {
+    override suspend fun deactivateRecurring(id: Long) {
         recurringTransactionDao.deactivateRecurringTransaction(id)
     }
 
-    suspend fun setRecurringActive(id: Long, isActive: Boolean) {
+    override suspend fun setRecurringActive(id: Long, isActive: Boolean) {
         recurringTransactionDao.setRecurringActive(id, isActive)
     }
 
-    suspend fun deleteRecurringById(id: Long) {
+    override suspend fun deleteRecurringById(id: Long) {
         recurringTransactionDao.deleteRecurringTransactionById(id)
     }
 
-    suspend fun updateRecurring(recurring: RecurringTransaction) {
+    override suspend fun updateRecurring(recurring: RecurringTransaction) {
         recurringTransactionDao.updateRecurringTransaction(recurring)
     }
 
@@ -92,3 +93,5 @@ class RecurringRepository @Inject constructor(
         return calendar.time
     }
 }
+
+typealias RecurringRepository = RecurringRepositoryImpl

@@ -3,8 +3,8 @@ package com.example.expensetracker.core.export
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
-import com.example.expensetracker.data.repository.CategoryRepository
-import com.example.expensetracker.data.repository.TransactionRepository
+import com.example.expensetracker.domain.repository.ICategoryRepository
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -20,8 +20,8 @@ data class CsvImportResult(
 
 @Singleton
 class CsvImporter @Inject constructor(
-    private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository
+    private val transactionRepository: ITransactionRepository,
+    private val categoryRepository: ICategoryRepository
 ) {
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 

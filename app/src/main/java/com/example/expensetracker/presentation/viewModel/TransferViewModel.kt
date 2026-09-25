@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
-import com.example.expensetracker.data.repository.TransactionRepository
 import com.example.expensetracker.domain.BalanceCalculator
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +17,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TransferViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
+    private val transactionRepository: ITransactionRepository,
     private val balanceCalculator: BalanceCalculator
 ) : ViewModel() {
 

@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.preferences.UserPreferences
-import com.example.expensetracker.data.repository.AlertRepository
-import com.example.expensetracker.data.repository.TransactionRepository
+import com.example.expensetracker.domain.repository.IAlertRepository
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,8 +20,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DebtsViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
-    private val alertRepository: AlertRepository,
+    private val transactionRepository: ITransactionRepository,
+    private val alertRepository: IAlertRepository,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 

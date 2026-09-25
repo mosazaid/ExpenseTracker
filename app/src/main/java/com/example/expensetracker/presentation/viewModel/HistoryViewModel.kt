@@ -8,9 +8,6 @@ import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.data.preferences.UserPreferences
-import com.example.expensetracker.data.repository.CategoryRepository
-import com.example.expensetracker.data.repository.RecurringRepository
-import com.example.expensetracker.data.repository.TransactionRepository
 import com.example.expensetracker.domain.AccountBalances
 import com.example.expensetracker.domain.BalanceCalculator
 import com.example.expensetracker.domain.BudgetProgressCalculator
@@ -20,6 +17,9 @@ import com.example.expensetracker.domain.PeriodBounds
 import com.example.expensetracker.domain.PeriodCalculator
 import com.example.expensetracker.domain.SalaryWalletPeriodSummary
 import com.example.expensetracker.domain.WalletCalculator
+import com.example.expensetracker.domain.repository.ICategoryRepository
+import com.example.expensetracker.domain.repository.IRecurringRepository
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import com.example.expensetracker.data.database.entities.SubCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -32,9 +32,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository,
-    private val recurringRepository: RecurringRepository,
+    private val transactionRepository: ITransactionRepository,
+    private val categoryRepository: ICategoryRepository,
+    private val recurringRepository: IRecurringRepository,
     private val userPreferences: UserPreferences,
     private val periodCalculator: PeriodCalculator,
     private val balanceCalculator: BalanceCalculator,

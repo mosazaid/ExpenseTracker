@@ -12,33 +12,29 @@ import com.example.expensetracker.data.database.entities.ConfiguredLoan
 import com.example.expensetracker.data.database.entities.MonthlyLoanPayment
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
-import com.example.expensetracker.domain.CategorySystemKey
+import com.example.expensetracker.domain.model.MonthlyLoanItem
+import com.example.expensetracker.domain.repository.ILoanRepository
 import kotlinx.coroutines.flow.Flow
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
-data class MonthlyLoanItem(
-    val payment: MonthlyLoanPayment,
-    val loanConfig: ConfiguredLoan
-)
-
 @Singleton
-class LoanRepository @Inject constructor(
+class LoanRepositoryImpl @Inject constructor(
     private val configuredLoanDao: ConfiguredLoanDao,
     private val monthlyLoanPaymentDao: MonthlyLoanPaymentDao,
     private val transactionDao: TransactionDao,
     private val categoryDao: CategoryDao,
     private val appAlertDao: AppAlertDao
-) {
+) : ILoanRepository {
 
-    fun getAllConfiguredLoans(): Flow<List<ConfiguredLoan>> =
+    override fun getAllConfiguredLoans(): Flow<List<ConfiguredLoan>> =
         configuredLoanDao.getAllLoans()
 
-    suspend fun getActiveLoans(): List<ConfiguredLoan> =
+    override suspend fun getActiveLoans(): List<ConfiguredLoan> =
         configuredLoanDao.getActiveLoans()
 
-    suspend fun saveConfiguredLoan(loan: ConfiguredLoan): Long {
+    override suspend fun saveConfiguredLoan(loan: ConfiguredLoan): Long {
         return if (loan.id == 0L) {
             configuredLoanDao.insertLoan(loan)
         } else {
@@ -47,20 +43,20 @@ class LoanRepository @Inject constructor(
         }
     }
 
-    suspend fun deleteConfiguredLoan(id: Long) {
+    override suspend fun deleteConfiguredLoan(id: Long) {
         configuredLoanDao.deleteLoanById(id)
     }
 
-    fun getPaymentsForMonth(monthKey: String): Flow<List<MonthlyLoanPayment>> =
+    override fun getPaymentsForMonth(monthKey: String): Flow<List<MonthlyLoanPayment>> =
         monthlyLoanPaymentDao.getPaymentsForMonth(monthKey)
 
-    suspend fun getUnpaidPaymentsForMonth(monthKey: String): List<MonthlyLoanPayment> =
+    override suspend fun getUnpaidPaymentsForMonth(monthKey: String): List<MonthlyLoanPayment> =
         monthlyLoanPaymentDao.getUnpaidPaymentsForMonth(monthKey)
 
-    fun getUnpaidPaymentsForMonthFlow(monthKey: String): Flow<List<MonthlyLoanPayment>> =
+    override fun getUnpaidPaymentsForMonthFlow(monthKey: String): Flow<List<MonthlyLoanPayment>> =
         monthlyLoanPaymentDao.getUnpaidPaymentsForMonthFlow(monthKey)
 
-    suspend fun ensureMonthlyPaymentsCreated(monthKey: String): List<MonthlyLoanPayment> {
+    override suspend fun ensureMonthlyPaymentsCreated(monthKey: String): List<MonthlyLoanPayment> {
         val activeLoans = configuredLoanDao.getActiveLoans()
         activeLoans.forEach { loan ->
             val existing = monthlyLoanPaymentDao.getPaymentForLoanAndMonth(loan.id, monthKey)
@@ -79,7 +75,7 @@ class LoanRepository @Inject constructor(
         return monthlyLoanPaymentDao.getPaymentsForMonthSnapshot(monthKey)
     }
 
-    suspend fun getMonthlyLoanItems(monthKey: String): List<MonthlyLoanItem> {
+    override suspend fun getMonthlyLoanItems(monthKey: String): List<MonthlyLoanItem> {
         ensureMonthlyPaymentsCreated(monthKey)
         val payments = monthlyLoanPaymentDao.getPaymentsForMonthSnapshot(monthKey)
         val loans = configuredLoanDao.getAllLoans()
@@ -89,22 +85,22 @@ class LoanRepository @Inject constructor(
         }
     }
 
-    suspend fun getPreservedLoanAmountForMonth(monthKey: String): Double {
+    override suspend fun getPreservedLoanAmountForMonth(monthKey: String): Double {
         ensureMonthlyPaymentsCreated(monthKey)
         val unpaid = monthlyLoanPaymentDao.getUnpaidPaymentsForMonth(monthKey)
         return unpaid.sumOf { it.amount }
     }
 
-    suspend fun updateMonthlyPaymentAmount(paymentId: Long, newAmount: Double) {
+    override suspend fun updateMonthlyPaymentAmount(paymentId: Long, newAmount: Double) {
         val payment = monthlyLoanPaymentDao.getPaymentById(paymentId) ?: return
         monthlyLoanPaymentDao.updatePayment(payment.copy(amount = newAmount))
     }
 
-    suspend fun deductAndPayLoan(
+    override suspend fun deductAndPayLoan(
         paymentId: Long,
         accountType: AccountType,
-        customDate: Date = Date(),
-        customDescription: String? = null
+        customDate: Date,
+        customDescription: String?
     ): Transaction? {
         val payment = monthlyLoanPaymentDao.getPaymentById(paymentId) ?: return null
         val loanConfig = configuredLoanDao.getLoanById(payment.loanConfigId) ?: return null
@@ -149,8 +145,11 @@ class LoanRepository @Inject constructor(
         return transaction.copy(id = txnId)
     }
 
-    suspend fun dismissPayment(paymentId: Long) {
+    override suspend fun dismissPayment(paymentId: Long) {
         monthlyLoanPaymentDao.dismissPayment(paymentId)
         appAlertDao.dismissAlertsByTypeAndRelatedId(AppAlert.TYPE_LOAN, paymentId)
     }
 }
+
+typealias LoanRepository = LoanRepositoryImpl
+typealias MonthlyLoanItem = com.example.expensetracker.domain.model.MonthlyLoanItem

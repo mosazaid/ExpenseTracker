@@ -9,15 +9,17 @@ import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.data.preferences.UserPreferences
-import com.example.expensetracker.data.repository.AlertRepository
-import com.example.expensetracker.data.repository.CategoryRepository
-import com.example.expensetracker.data.repository.RecurringRepository
-import com.example.expensetracker.data.repository.TransactionRepository
 import com.example.expensetracker.domain.BalanceCalculator
 import com.example.expensetracker.domain.BudgetProgressCalculator
 import com.example.expensetracker.domain.CategorySystemKey
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.PeriodCalculator
+import com.example.expensetracker.domain.isDept
+import com.example.expensetracker.domain.matchesSystemKey
+import com.example.expensetracker.domain.repository.IAlertRepository
+import com.example.expensetracker.domain.repository.ICategoryRepository
+import com.example.expensetracker.domain.repository.IRecurringRepository
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import com.example.expensetracker.domain.isDept
 import com.example.expensetracker.domain.matchesSystemKey
 import com.example.expensetracker.util.NotificationHelper
@@ -46,14 +48,14 @@ data class BudgetWarningInfo(
 
 @HiltViewModel
 class AddEditTransactionViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository,
-    private val recurringRepository: RecurringRepository,
+    private val transactionRepository: ITransactionRepository,
+    private val categoryRepository: ICategoryRepository,
+    private val recurringRepository: IRecurringRepository,
     private val userPreferences: UserPreferences,
     private val periodCalculator: PeriodCalculator,
     private val balanceCalculator: BalanceCalculator,
     private val budgetProgressCalculator: BudgetProgressCalculator,
-    private val alertRepository: AlertRepository,
+    private val alertRepository: IAlertRepository,
     private val notificationHelper: NotificationHelper
 ) : ViewModel() {
 

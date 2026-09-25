@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.ConfiguredLoan
 import com.example.expensetracker.data.preferences.UserPreferences
-import com.example.expensetracker.data.repository.LoanRepository
-import com.example.expensetracker.data.repository.MonthlyLoanItem
+import com.example.expensetracker.domain.model.MonthlyLoanItem
+import com.example.expensetracker.domain.repository.ILoanRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,7 +21,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoansViewModel @Inject constructor(
-    private val loanRepository: LoanRepository,
+    private val loanRepository: ILoanRepository,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
