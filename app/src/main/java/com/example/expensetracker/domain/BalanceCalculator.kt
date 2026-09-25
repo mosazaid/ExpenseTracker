@@ -1,10 +1,10 @@
 package com.example.expensetracker.domain
 
-import com.example.expensetracker.data.database.dao.TransactionDao
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.UserPreferences
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -39,7 +39,7 @@ data class MonthFinancialSummary(
 
 @Singleton
 class BalanceCalculator @Inject constructor(
-    private val transactionDao: TransactionDao,
+    private val transactionRepository: ITransactionRepository,
     private val userPreferences: UserPreferences
 ) {
 
@@ -78,7 +78,7 @@ class BalanceCalculator @Inject constructor(
      * All period figures are derived from one pass over the same transactions.
      */
     suspend fun buildMonthFinancialSummary(startDate: Date, endDate: Date): MonthFinancialSummary {
-        val transactions = transactionDao.getTransactionsBetweenDatesSnapshot(startDate, endDate)
+        val transactions = transactionRepository.getTransactionsBetweenDatesSnapshot(startDate, endDate)
         return computeMonthFinancialSummary(transactions, getAllTimeBalances())
     }
 
@@ -185,24 +185,24 @@ class BalanceCalculator @Inject constructor(
         excludeTransactionId: Long
     ): Double {
         val opening = getOpeningBalance(account)
-        val income = transactionDao.getTotalIncomeForAccountExcluding(account, excludeTransactionId)
-        val expense = transactionDao.getTotalExpenseForAccountExcluding(account, excludeTransactionId)
-        val transferOut = transactionDao.getTotalTransferOutExcluding(account, excludeTransactionId)
-        val transferIn = transactionDao.getTotalTransferInExcluding(account, excludeTransactionId)
-        val walletOut = transactionDao.getTotalWalletMoveOutExcluding(account, excludeTransactionId)
-        val walletIn = transactionDao.getTotalWalletMoveInExcluding(account, excludeTransactionId)
+        val income = transactionRepository.getTotalIncomeForAccountExcluding(account, excludeTransactionId)
+        val expense = transactionRepository.getTotalExpenseForAccountExcluding(account, excludeTransactionId)
+        val transferOut = transactionRepository.getTotalTransferOutExcluding(account, excludeTransactionId)
+        val transferIn = transactionRepository.getTotalTransferInExcluding(account, excludeTransactionId)
+        val walletOut = transactionRepository.getTotalWalletMoveOutExcluding(account, excludeTransactionId)
+        val walletIn = transactionRepository.getTotalWalletMoveInExcluding(account, excludeTransactionId)
         return opening + income - expense - transferOut + transferIn - walletOut + walletIn
     }
 
     private suspend fun computeBalance(account: AccountType): Double {
         if (account == AccountType.WALLET) return 0.0
         val opening = getOpeningBalance(account)
-        val income = transactionDao.getTotalIncomeForAccount(account)
-        val expense = transactionDao.getTotalExpenseForAccount(account)
-        val transferOut = transactionDao.getTotalTransferOut(account)
-        val transferIn = transactionDao.getTotalTransferIn(account)
-        val walletOut = transactionDao.getTotalWalletMoveOut(account)
-        val walletIn = transactionDao.getTotalWalletMoveIn(account)
+        val income = transactionRepository.getTotalIncomeForAccount(account)
+        val expense = transactionRepository.getTotalExpenseForAccount(account)
+        val transferOut = transactionRepository.getTotalTransferOut(account)
+        val transferIn = transactionRepository.getTotalTransferIn(account)
+        val walletOut = transactionRepository.getTotalWalletMoveOut(account)
+        val walletIn = transactionRepository.getTotalWalletMoveIn(account)
         return opening + income - expense - transferOut + transferIn - walletOut + walletIn
     }
 
@@ -220,10 +220,10 @@ class BalanceCalculator @Inject constructor(
         endDate: Date
     ): Double {
         if (account == AccountType.WALLET) return 0.0
-        val income = transactionDao.getPeriodIncomeForAccount(account, startDate, endDate)
-        val expense = transactionDao.getPeriodExpenseForAccount(account, startDate, endDate)
-        val transferOut = transactionDao.getPeriodTransferOut(account, startDate, endDate)
-        val transferIn = transactionDao.getPeriodTransferIn(account, startDate, endDate)
+        val income = transactionRepository.getPeriodIncomeForAccount(account, startDate, endDate)
+        val expense = transactionRepository.getPeriodExpenseForAccount(account, startDate, endDate)
+        val transferOut = transactionRepository.getPeriodTransferOut(account, startDate, endDate)
+        val transferIn = transactionRepository.getPeriodTransferIn(account, startDate, endDate)
         return income - expense - transferOut + transferIn
     }
 }

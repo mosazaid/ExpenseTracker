@@ -1,9 +1,9 @@
 package com.example.expensetracker.domain
 
 import com.example.expensetracker.core.time.DateUtils
-import com.example.expensetracker.data.database.dao.CategoryDao
-import com.example.expensetracker.data.database.dao.TransactionDao
 import com.example.expensetracker.data.preferences.MonthMode
+import com.example.expensetracker.domain.repository.ICategoryRepository
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -16,15 +16,15 @@ import java.util.Date
 
 class PeriodCalculatorTest {
 
-    private lateinit var transactionDao: TransactionDao
-    private lateinit var categoryDao: CategoryDao
+    private lateinit var transactionRepository: ITransactionRepository
+    private lateinit var categoryRepository: ICategoryRepository
     private lateinit var periodCalculator: PeriodCalculator
 
     @Before
     fun setup() {
-        transactionDao = Mockito.mock(TransactionDao::class.java)
-        categoryDao = Mockito.mock(CategoryDao::class.java)
-        periodCalculator = PeriodCalculator(transactionDao, categoryDao)
+        transactionRepository = Mockito.mock(ITransactionRepository::class.java)
+        categoryRepository = Mockito.mock(ICategoryRepository::class.java)
+        periodCalculator = PeriodCalculator(transactionRepository, categoryRepository)
     }
 
     @Test
@@ -90,7 +90,7 @@ class PeriodCalculatorTest {
     @Test
     fun testSalaryMonthFallbackWhenNoSalaryCategory() = runTest {
         val refDate = Date()
-        Mockito.`when`(categoryDao.getCategoryByName(CategorySystemKey.SALARY.displayName, CategorySystemKey.SALARY.type)).thenReturn(null)
+        Mockito.`when`(categoryRepository.getCategoryByName(CategorySystemKey.SALARY.displayName, CategorySystemKey.SALARY.type)).thenReturn(null)
 
         val bounds = periodCalculator.getBounds(HistoryPeriod.MONTH, refDate, MonthMode.SALARY)
 

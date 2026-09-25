@@ -1,11 +1,11 @@
 package com.example.expensetracker.domain
 
-import com.example.expensetracker.data.database.dao.CategoryDao
-import com.example.expensetracker.data.database.dao.TransactionDao
+import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
-import com.example.expensetracker.core.time.DateUtils
+import com.example.expensetracker.domain.repository.ICategoryRepository
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import java.util.Calendar
 import java.util.Date
 import javax.inject.Inject
@@ -21,8 +21,8 @@ data class PeriodBounds(
 
 @Singleton
 class PeriodCalculator @Inject constructor(
-    private val transactionDao: TransactionDao,
-    private val categoryDao: CategoryDao
+    private val transactionRepository: ITransactionRepository,
+    private val categoryRepository: ICategoryRepository
 ) {
 
     suspend fun getBounds(
@@ -82,13 +82,13 @@ class PeriodCalculator @Inject constructor(
      * Returns the salary transaction that anchors the current salary month for [referenceDate].
      */
     suspend fun getCurrentPeriodAnchor(referenceDate: Date): Transaction? {
-        val salaryCategory = categoryDao.getCategoryByName(
+        val salaryCategory = categoryRepository.getCategoryByName(
             CategorySystemKey.SALARY.displayName,
             CategorySystemKey.SALARY.type
         ) ?: return null
 
         val referenceEnd = DateUtils.getEndOfDay(referenceDate)
-        val anchors = transactionDao.getSalaryPeriodAnchors(salaryCategory.id)
+        val anchors = transactionRepository.getSalaryPeriodAnchors(salaryCategory.id)
         if (anchors.isEmpty()) return null
 
         val anchorIndex = anchors.indexOfLast { it.date <= referenceEnd }
@@ -108,7 +108,7 @@ class PeriodCalculator @Inject constructor(
     }
 
     private suspend fun getSalaryMonthBounds(referenceDate: Date): PeriodBounds {
-        val salaryCategory = categoryDao.getCategoryByName(
+        val salaryCategory = categoryRepository.getCategoryByName(
             CategorySystemKey.SALARY.displayName,
             CategorySystemKey.SALARY.type
         )
@@ -116,12 +116,12 @@ class PeriodCalculator @Inject constructor(
             return calendarMonthFallback(referenceDate, "Salary category not found")
         }
 
-        val markedAnchors = transactionDao.getSalaryPeriodAnchors(salaryCategory.id)
+        val markedAnchors = transactionRepository.getSalaryPeriodAnchors(salaryCategory.id)
         val referenceEnd = DateUtils.getEndOfDay(referenceDate)
         val anchors = if (markedAnchors.isNotEmpty()) {
             markedAnchors
         } else {
-            transactionDao.getLatestSalaryIncomeBefore(referenceEnd, salaryCategory.id)
+            transactionRepository.getLatestSalaryIncomeBefore(referenceEnd, salaryCategory.id)
                 ?.let { listOf(it) }
                 .orEmpty()
         }

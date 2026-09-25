@@ -1,8 +1,8 @@
 package com.example.expensetracker.domain
 
 import com.example.expensetracker.data.database.entities.Budget
-import com.example.expensetracker.data.repository.BudgetRepository
-import com.example.expensetracker.data.repository.TransactionRepository
+import com.example.expensetracker.domain.repository.IBudgetRepository
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,8 +22,8 @@ data class CategoryBudgetProgress(
 
 @Singleton
 class BudgetProgressCalculator @Inject constructor(
-    private val budgetRepository: BudgetRepository,
-    private val transactionRepository: TransactionRepository
+    private val budgetRepository: IBudgetRepository,
+    private val transactionRepository: ITransactionRepository
 ) {
 
     suspend fun getProgressForCategory(

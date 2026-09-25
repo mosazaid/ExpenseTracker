@@ -1,6 +1,7 @@
 package com.example.expensetracker.data.repository
 
 import com.example.expensetracker.data.database.dao.TransactionDao
+import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.domain.repository.ITransactionRepository
@@ -105,6 +106,90 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun setDebtSettled(id: Long, settled: Boolean) {
         transactionDao.setDebtSettled(id, settled)
+    }
+
+    override suspend fun getTransactionsBetweenDatesSnapshot(startDate: Date, endDate: Date): List<Transaction> {
+        return transactionDao.getTransactionsBetweenDatesSnapshot(startDate, endDate)
+    }
+
+    override suspend fun getTotalIncomeForAccount(account: AccountType): Double {
+        return transactionDao.getTotalIncomeForAccount(account)
+    }
+
+    override suspend fun getTotalExpenseForAccount(account: AccountType): Double {
+        return transactionDao.getTotalExpenseForAccount(account)
+    }
+
+    override suspend fun getTotalTransferOut(account: AccountType): Double {
+        return transactionDao.getTotalTransferOut(account)
+    }
+
+    override suspend fun getTotalTransferIn(account: AccountType): Double {
+        return transactionDao.getTotalTransferIn(account)
+    }
+
+    override suspend fun getTotalWalletMoveOut(account: AccountType): Double {
+        return transactionDao.getTotalWalletMoveOut(account)
+    }
+
+    override suspend fun getTotalWalletMoveIn(account: AccountType): Double {
+        return transactionDao.getTotalWalletMoveIn(account)
+    }
+
+    override suspend fun getTotalIncomeForAccountExcluding(account: AccountType, excludeTransactionId: Long): Double {
+        return transactionDao.getTotalIncomeForAccountExcluding(account, excludeTransactionId)
+    }
+
+    override suspend fun getTotalExpenseForAccountExcluding(account: AccountType, excludeTransactionId: Long): Double {
+        return transactionDao.getTotalExpenseForAccountExcluding(account, excludeTransactionId)
+    }
+
+    override suspend fun getTotalTransferOutExcluding(account: AccountType, excludeTransactionId: Long): Double {
+        return transactionDao.getTotalTransferOutExcluding(account, excludeTransactionId)
+    }
+
+    override suspend fun getTotalTransferInExcluding(account: AccountType, excludeTransactionId: Long): Double {
+        return transactionDao.getTotalTransferInExcluding(account, excludeTransactionId)
+    }
+
+    override suspend fun getTotalWalletMoveOutExcluding(account: AccountType, excludeTransactionId: Long): Double {
+        return transactionDao.getTotalWalletMoveOutExcluding(account, excludeTransactionId)
+    }
+
+    override suspend fun getTotalWalletMoveInExcluding(account: AccountType, excludeTransactionId: Long): Double {
+        return transactionDao.getTotalWalletMoveInExcluding(account, excludeTransactionId)
+    }
+
+    override suspend fun getPeriodIncomeForAccount(account: AccountType, startDate: Date, endDate: Date): Double {
+        return transactionDao.getPeriodIncomeForAccount(account, startDate, endDate)
+    }
+
+    override suspend fun getPeriodExpenseForAccount(account: AccountType, startDate: Date, endDate: Date): Double {
+        return transactionDao.getPeriodExpenseForAccount(account, startDate, endDate)
+    }
+
+    override suspend fun getPeriodTransferOut(account: AccountType, startDate: Date, endDate: Date): Double {
+        return transactionDao.getPeriodTransferOut(account, startDate, endDate)
+    }
+
+    override suspend fun getPeriodTransferIn(account: AccountType, startDate: Date, endDate: Date): Double {
+        return transactionDao.getPeriodTransferIn(account, startDate, endDate)
+    }
+
+    override suspend fun getPeriodWalletIn(startDate: Date, endDate: Date): Double {
+        return transactionDao.getPeriodWalletIn(startDate, endDate)
+    }
+
+    override suspend fun getPeriodWalletOut(startDate: Date, endDate: Date): Double {
+        return transactionDao.getPeriodWalletOut(startDate, endDate)
+    }
+
+    override suspend fun getSalaryPeriodAnchors(salaryCategoryId: Long): List<Transaction> {
+        return transactionDao.getSalaryPeriodAnchors(salaryCategoryId)
+    }
+
+    override suspend fun getLatestSalaryIncomeBefore(beforeDate: Date, salaryCategoryId: Long): Transaction? {
+        return transactionDao.getLatestSalaryIncomeBefore(beforeDate, salaryCategoryId)
     }
 }
 

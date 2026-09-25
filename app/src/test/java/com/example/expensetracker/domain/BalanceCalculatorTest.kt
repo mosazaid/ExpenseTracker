@@ -1,10 +1,10 @@
 package com.example.expensetracker.domain
 
-import com.example.expensetracker.data.database.dao.TransactionDao
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.UserPreferences
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -15,15 +15,15 @@ import java.util.Date
 
 class BalanceCalculatorTest {
 
-    private lateinit var transactionDao: TransactionDao
+    private lateinit var transactionRepository: ITransactionRepository
     private lateinit var userPreferences: UserPreferences
     private lateinit var balanceCalculator: BalanceCalculator
 
     @Before
     fun setup() {
-        transactionDao = Mockito.mock(TransactionDao::class.java)
+        transactionRepository = Mockito.mock(ITransactionRepository::class.java)
         userPreferences = Mockito.mock(UserPreferences::class.java)
-        balanceCalculator = BalanceCalculator(transactionDao, userPreferences)
+        balanceCalculator = BalanceCalculator(transactionRepository, userPreferences)
     }
 
     @Test

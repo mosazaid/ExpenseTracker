@@ -1,8 +1,8 @@
 package com.example.expensetracker.domain
 
-import com.example.expensetracker.data.database.dao.CategoryDao
-import com.example.expensetracker.data.database.dao.TransactionDao
 import com.example.expensetracker.data.database.entities.AccountType
+import com.example.expensetracker.domain.repository.ICategoryRepository
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -11,17 +11,17 @@ import org.mockito.Mockito
 
 class WalletCalculatorTest {
 
-    private lateinit var transactionDao: TransactionDao
-    private lateinit var categoryDao: CategoryDao
+    private lateinit var transactionRepository: ITransactionRepository
+    private lateinit var categoryRepository: ICategoryRepository
     private lateinit var periodCalculator: PeriodCalculator
     private lateinit var walletCalculator: WalletCalculator
 
     @Before
     fun setup() {
-        transactionDao = Mockito.mock(TransactionDao::class.java)
-        categoryDao = Mockito.mock(CategoryDao::class.java)
-        periodCalculator = PeriodCalculator(transactionDao, categoryDao)
-        walletCalculator = WalletCalculator(transactionDao, categoryDao, periodCalculator)
+        transactionRepository = Mockito.mock(ITransactionRepository::class.java)
+        categoryRepository = Mockito.mock(ICategoryRepository::class.java)
+        periodCalculator = PeriodCalculator(transactionRepository, categoryRepository)
+        walletCalculator = WalletCalculator(transactionRepository, categoryRepository, periodCalculator)
     }
 
     @Test

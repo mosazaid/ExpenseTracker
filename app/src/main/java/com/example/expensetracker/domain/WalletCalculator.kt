@@ -1,12 +1,12 @@
 package com.example.expensetracker.domain
 
-import com.example.expensetracker.data.database.dao.CategoryDao
-import com.example.expensetracker.data.database.dao.TransactionDao
+import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
-import com.example.expensetracker.core.time.DateUtils
+import com.example.expensetracker.domain.repository.ICategoryRepository
+import com.example.expensetracker.domain.repository.ITransactionRepository
 import java.util.Calendar
 import java.util.Date
 import javax.inject.Inject
@@ -23,13 +23,13 @@ data class SalaryWalletPeriodSummary(
 
 @Singleton
 class WalletCalculator @Inject constructor(
-    private val transactionDao: TransactionDao,
-    private val categoryDao: CategoryDao,
+    private val transactionRepository: ITransactionRepository,
+    private val categoryRepository: ICategoryRepository,
     private val periodCalculator: PeriodCalculator
 ) {
 
     suspend fun getWalletBalance(startDate: Date, endDate: Date, excludeTransactionId: Long? = null): Double {
-        val transactions = transactionDao.getTransactionsBetweenDatesSnapshot(startDate, endDate)
+        val transactions = transactionRepository.getTransactionsBetweenDatesSnapshot(startDate, endDate)
         return computeWalletBalanceFromMoves(
             transactions.filter { it.type == TransactionType.WALLET_MOVE },
             excludeTransactionId
@@ -66,12 +66,12 @@ class WalletCalculator @Inject constructor(
     }
 
     suspend fun getSalaryPeriodSummariesForYear(year: Int): List<SalaryWalletPeriodSummary> {
-        val salaryCategory = categoryDao.getCategoryByName(
+        val salaryCategory = categoryRepository.getCategoryByName(
             CategorySystemKey.SALARY.displayName,
             CategorySystemKey.SALARY.type
         ) ?: return emptyList()
 
-        val anchors = transactionDao.getSalaryPeriodAnchors(salaryCategory.id)
+        val anchors = transactionRepository.getSalaryPeriodAnchors(salaryCategory.id)
         if (anchors.isEmpty()) return emptyList()
 
         val yearStart = Calendar.getInstance().apply {
