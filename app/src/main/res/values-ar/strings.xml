@@ -121,4 +121,97 @@
     <string name="db_clear_filters">مسح التصفية</string>
     <string name="db_rows_count">%1$d صف (حد أقصى 500)</string>
     <string name="db_no_rows">لا توجد صفوف مطابقة.</string>
+
+    <!-- Navigation & Tabs -->
+    <string name="nav_more">المزيد</string>
+    <string name="more_financial_tools">الأدوات المالية</string>
+    <string name="more_system_tools">النظام والإعدادات</string>
+    <string name="account_bank">بنك</string>
+    <string name="account_cash">نقد</string>
+
+    <!-- Loans & Preserved Balance -->
+    <string name="loans_title">القروض والالتزامات</string>
+    <string name="loans_subtitle">تهيئة القروض الثابتة وحجز الراتب وسداد الالتزامات</string>
+    <string name="add_loan_config">إضافة قرض</string>
+    <string name="preserved_for_loans_label">المحجوز للقروض</string>
+    <string name="preserved_for_loans_hint">مبلغ محجوز تلقائياً من راتبك لتغطية أقساط قروض هذا الشهر.</string>
+    <string name="spendable_balance_label">الرصيد المتاح للصرف: %1$s</string>
+    <string name="this_months_loans">قروض هذا الشهر</string>
+    <string name="no_loans_configured_yet">لم يتم تهيئة أي قروض بعد. أضف التزاماتك أدناه.</string>
+    <string name="loan_paid_status">تم السداد</string>
+    <string name="loan_pending_status">معلّق</string>
+    <string name="edit_amount_this_month">تعديل المبلغ</string>
+    <string name="pay_deduct_btn">خصم وسداد</string>
+    <string name="recurring_loans_settings">إعدادات القروض المتكررة</string>
+    <string name="no_configured_loans_desc">لا توجد قروض متكررة مضافة. اضغط + لإضافة التزام دوري (مثل قرض السكن أو السيارة).</string>
+    <string name="add_configured_loan">إضافة قرض متكرر</string>
+    <string name="edit_configured_loan">تعديل قرض: %1$s</string>
+    <string name="loan_name_label">اسم القرض (مثال: سكن، سيارة)</string>
+    <string name="default_amount_label">المبلغ الشهري الافتراضي</string>
+    <string name="default_account_label">حساب السداد الافتراضي</string>
+    <string name="edit_month_loan_amount">تعديل مبلغ %1$s لهذا الشهر</string>
+    <string name="edit_month_loan_amount_desc">تعديل المبلغ المخصوم لهذا الشهر فقط، ويبقى الإعداد الافتراضي كما هو.</string>
+    <string name="confirm_loan_deduction_title">تأكيد خصم القرض</string>
+    <string name="confirm_loan_deduction_desc">هل تريد تسجيل خصم %1$s بمبلغ (%2$s) كمصروف لهذا الشهر؟ سيؤدي ذلك لتحرير المبلغ المحجوز وتحديد القرض كمسدد.</string>
+    <string name="deduct_from_account">الخصم من حساب</string>
+    <string name="confirm_deduct">خصم الآن</string>
+    <string name="loan_reminder_sheet_title">التزامات القروض المعلّقة</string>
+    <string name="loan_reminder_sheet_desc">لديك التزامات قروض محجوزة ومستحقة لهذا الشهر لم يتم سدادها بعد.</string>
+    <string name="total_preserved_amount">إجمالي المحجوز: </string>
+    <string name="remind_later">ذكّرني لاحقاً</string>
+    <string name="pay_loans_btn">سداد القروض</string>
+
+    <!-- Debts & Receivables -->
+    <string name="debts_tracker_title">سجل الديون</string>
+    <string name="debts_subtitle">متابعة الأموال التي أقرَضتها والأموال التي استدَنتها</string>
+    <string name="debt_lent_header">دَين (مال أقرضته للغير)</string>
+    <string name="debt_lent_explanation">أنت دفعت مالاً لشخص ما وهو مدين به لك.</string>
+    <string name="debtor_name_label">اسم المدين (من يدين لك؟)</string>
+    <string name="debt_income_header">نوع حركة الدَّين</string>
+    <string name="debt_income_repayment_opt">سداد دَين لي</string>
+    <string name="debt_income_borrowed_opt">مال استدنته</string>
+    <string name="debt_income_repayment_desc">شخص يسدد لك مالاً كان مديناً لك به سابقاً.</string>
+    <string name="debt_income_borrowed_desc">أنت اقترضت مالاً من شخص وأصبحت مديناً به له.</string>
+    <string name="link_to_expense_optional">ربط بمصروف سلف سابق (اختياري)</string>
+    <string name="link_to_expense_debt">سجل السلفة / الدَين الأصلي</string>
+    <string name="none_opt">بدون</string>
+    <string name="creditor_name_label">اسم الدائن (من اقترضت منه؟)</string>
+    <string name="debts_owed_to_me">مستحق لي</string>
+    <string name="debts_i_owe">مستحق عليّ</string>
+    <string name="carry_debts_to_new_month">ترحيل الديون المفتوحة للشهر الجديد</string>
+    <string name="no_lent_debts">لا توجد ديون مستحقة لك. كل شيء مسدد!</string>
+    <string name="no_borrowed_debts">لا توجد ديون مستحقة عليك. الذمة بريئة!</string>
+    <string name="carry_forward_dialog_title">ترحيل الديون المفتوحة</string>
+    <string name="carry_forward_dialog_desc">اختر الديون غير المسددة لتظل ظاهرة في الشهر الجديد. لا يتم إنشاء معاملات مكررة.</string>
+    <string name="select_all">تحديد الكل</string>
+    <string name="clear_all">إلغاء التحديد</string>
+    <string name="debt_type_lent_short">أقرضته</string>
+    <string name="debt_type_borrowed_short">اقترضته</string>
+    <string name="carry_forward_confirm_btn">إبقاء المتابعة</string>
+    <string name="mark_settled_btn">تحديد كمسدد</string>
+
+    <!-- Categories & Budgets -->
+    <string name="categories_budgets_title">التصنيفات والميزانية</string>
+    <string name="categories_budgets_subtitle">إدارة التصنيفات وحدود الصرف الشهرية</string>
+    <string name="budget_warning_exceeded_title">تجاوزت الميزانية!</string>
+    <string name="budget_warning_near_title">اقتراب من حد الميزانية</string>
+    <string name="budget_warning_exceeded_desc">هذه المعاملة بمبلغ %1$s ستتجاوز ميزانية %2$s (%3$s من %4$s).</string>
+    <string name="budget_warning_near_desc">هذه المعاملة بمبلغ %1$s ستجعل مصروف %2$s يصل إلى %3$s من ميزانيته (%4$s).</string>
+
+    <!-- Notifications & In-App Alerts -->
+    <string name="notifications_alerts">التنبيهات والإشعارات</string>
+    <string name="no_active_alerts_title">لا توجد تنبيهات نشطة</string>
+    <string name="no_active_alerts_desc">أنت على اطلاع بكل شيء! تنبيهات الميزانية وتذكيرات القروض ستظهر هنا.</string>
+    <string name="notif_daily_expense_title">تذكير تسجيل المصروفات اليومي</string>
+    <string name="notif_daily_expense_desc">لم تقم بتسجيل أي مصروف اليوم. لا تنسَ تسجيل نفقاتك اليومية!</string>
+    <string name="notif_budget_exceeded_title">تجاوز الميزانية: %1$s</string>
+    <string name="notif_budget_warning_title">تنبيه الميزانية: %1$s</string>
+    <string name="notif_budget_exceeded_desc">مصروفك في %1$s وصل إلى %2$s متجاوزاً الحد البالغ %3$s!</string>
+    <string name="notif_budget_warning_desc">مصروفك في %1$s وصل إلى %2$s (يقترب من الحد %3$s).</string>
+    <string name="notif_loan_title">تذكير بالقرض: %1$s</string>
+    <string name="notif_loan_desc">لديك قسط قرض شهري بمبلغ %1$s (%2$s) في انتظار الخصم والسداد.</string>
+    <string name="settings_desc">اللغة، قفل التطبيق، الأرصدة والتصدير</string>
+    <string name="time_optional">الوقت (اختياري)</string>
+    <string name="notifications_disabled_desc">الإشعارات معطّلة. قم بتفعيلها لاستلام تذكيرات المصروفات اليومية وأقساط القروض وتنبيهات الميزانية.</string>
+    <string name="enable_notifications_btn">تفعيل الإشعارات</string>
 </resources>

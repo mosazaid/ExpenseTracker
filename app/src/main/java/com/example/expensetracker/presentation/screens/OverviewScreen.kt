@@ -34,10 +34,12 @@ import java.util.*
 @Composable
 fun OverviewScreen(
     navController: NavController,
-    viewModel: HistoryViewModel = hiltViewModel()
+    viewModel: HistoryViewModel = hiltViewModel(),
+    loansViewModel: com.example.expensetracker.presentation.viewModel.LoansViewModel = hiltViewModel()
 ) {
     val monthMode by viewModel.monthMode.collectAsState()
     val allTransactions by viewModel.allTransactions.collectAsState(initial = emptyList())
+    val preservedAmount by loansViewModel.preservedAmount.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     var monthSummary by remember { mutableStateOf(HistoryViewModel.MonthSummaryUiState()) }
     var visibleReminder by remember { mutableStateOf<RecurringTransaction?>(null) }
@@ -68,16 +70,9 @@ fun OverviewScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
-                actions = {
-                    IconButton(onClick = { navController.navigate(AppRoutes.SETTINGS) }) {
-                        Icon(
-                            Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.settings)
-                        )
-                    }
-                }
+            com.example.expensetracker.presentation.components.AppTopBar(
+                title = stringResource(R.string.app_name),
+                navController = navController
             )
         }
     ) { padding ->
@@ -136,6 +131,50 @@ fun OverviewScreen(
                     cashBalance = monthSummary.currentBalances.cash,
                     bankBalance = monthSummary.currentBalances.bank
                 )
+            }
+
+            if (preservedAmount > 0) {
+                val totalLiquid = (monthSummary.currentBalances.cash ?: 0.0) + (monthSummary.currentBalances.bank ?: 0.0)
+                val spendable = (totalLiquid - preservedAmount).coerceAtLeast(0.0)
+                item(key = "preserved-loan-banner") {
+                    Card(
+                        onClick = { navController.navigate(AppRoutes.LOANS) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.preserved_for_loans_label),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Text(
+                                    text = CurrencyUtils.formatCurrency(preservedAmount),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Text(
+                                    text = stringResource(R.string.spendable_balance_label, CurrencyUtils.formatCurrency(spendable)),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                                )
+                            }
+                            Button(onClick = { navController.navigate(AppRoutes.LOANS) }) {
+                                Text(stringResource(R.string.loans_title))
+                            }
+                        }
+                    }
+                }
             }
 
             // 3. Monthly summary card with brought-forward details & transfer button

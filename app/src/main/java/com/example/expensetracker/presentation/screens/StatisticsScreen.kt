@@ -42,40 +42,29 @@ fun StatisticsScreen(
         viewModel.loadStatisticsForPeriod(selectedFilter, now)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Top Bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = stringResource(R.string.statistics),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                if (state.periodLabel.isNotBlank()) {
-                    Text(
-                        state.periodLabel,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-            }
-            IconButton(onClick = { navController.navigate(AppRoutes.SETTINGS) }) {
-                Icon(
-                    Icons.Default.Settings,
-                    contentDescription = stringResource(R.string.settings)
-                )
-            }
+    Scaffold(
+        topBar = {
+            com.example.expensetracker.presentation.components.AppTopBar(
+                title = stringResource(R.string.statistics),
+                navController = navController
+            )
         }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(scrollState)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            if (state.periodLabel.isNotBlank()) {
+                Text(
+                    state.periodLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
 
         // Period Filter Chips
         Row(
@@ -191,4 +180,5 @@ fun StatisticsScreen(
 
         Spacer(modifier = Modifier.height(72.dp))
     }
+}
 }

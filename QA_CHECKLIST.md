@@ -97,8 +97,42 @@
 - [ ] **3-Month Multi-Chart**: Switch between Bar, Spline Trend Line, and Combined views; horizontal scrolling chip selector.
 - [ ] **3-Month Category Pie Chart**: Interactive donut slices, center total/category detail, month filter chips with horizontal scrolling.
 
+## Daily Reminder & Notification Flow
+- [ ] Daily 9 PM reminder registered via `AlarmScheduler` on startup and after boot.
+- [ ] With `SCHEDULE_EXACT_ALARM` granted: Notification triggers at 9:00 PM.
+- [ ] Without exact alarm permission (fallback): Notification still triggers during next OS maintenance window; no crashes.
+- [ ] If user already logged an expense today: 9 PM check runs and suppresses notification.
+- [ ] If user has 0 expenses today: Notification is posted asking the user to log expenses.
+- [ ] `POST_NOTIFICATIONS` permission prompt displays on Android 13+ devices.
+- [ ] WorkManager failsafe (`DailyExpenseReminderWorker`) scheduled properly.
+
+## Budget Alerts & Notification Center
+- [ ] Adding an expense that brings category to >=85% triggers warning banner and persistent `AppAlert`.
+- [ ] Adding an expense that exceeds 100% of budget triggers critical alert and system tray notification.
+- [ ] `AppTopBar` bell icon shows live badge count matching unread `app_alerts`.
+- [ ] Tapping bell icon navigates to `AlertsScreen`.
+- [ ] Dismissing an alert sets `isDismissed = true` and decrements badge count.
+
+## Debt Tracking & Directional Separation
+- [ ] Adding Expense with category "Dept": Form labels as "Money Lent" (debtor owes user).
+- [ ] Adding Income with category "Dept": Form labels as "Repayment" / "Money Borrowed".
+- [ ] `DebtsScreen` accessible from More tab: shows list of active debts grouped by debtor.
+- [ ] "Settle Debt" button marks debt as settled (`isDebtSettled = true`).
+- [ ] Month rollover prompts to carry over unsettled debts to new month.
+
+## Configured Loans & Salary Preservation
+- [ ] `LoansScreen` accessible from More tab: allows creating recurring loans (name, default amount, account).
+- [ ] First app launch of a new month shows `LoanReminderBottomSheet` once per day.
+- [ ] Recording a loan payment from the sheet creates a monthly loan payment record without deducting double from base salary.
+- [ ] Dismissing loan reminder for the month dismisses the sheet until next month.
+
+## More Screen Hub & Time Picker
+- [ ] 4th bottom nav tab opens `MoreScreen` with navigation tiles for Loans, Debts, Categories, Database Browser, and Settings.
+- [ ] Time picker in `AddTransactionScreen` allows specifying custom hour/minute.
+
 ## Regression Checks
 - [ ] Categories and Subcategories CRUD still works.
-- [ ] Existing historical data remains readable after v10 → v11 migration.
+- [ ] Existing historical data remains readable after v11 → v13 migration.
 - [ ] Currency numbers formatted with 3 decimal places across all screens.
+- [ ] Database browser includes `configured_loans`, `monthly_loan_payments`, and `app_alerts`.
 

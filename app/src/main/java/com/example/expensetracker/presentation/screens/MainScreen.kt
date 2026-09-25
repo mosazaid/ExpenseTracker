@@ -2,12 +2,14 @@ package com.example.expensetracker.presentation.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -18,17 +20,24 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.expensetracker.R
+import com.example.expensetracker.presentation.components.LoanReminderBottomSheet
 import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.viewModel.LoansViewModel
 
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val labelRes: Int) {
     object Overview : BottomNavItem(AppRoutes.OVERVIEW, Icons.Default.Dashboard, R.string.nav_overview)
-    object History : BottomNavItem(AppRoutes.HISTORY, Icons.Default.List, R.string.nav_history)
+    object History : BottomNavItem(AppRoutes.HISTORY, Icons.AutoMirrored.Filled.List, R.string.nav_history)
     object Stats : BottomNavItem(AppRoutes.STATISTICS, Icons.Default.BarChart, R.string.nav_stats)
+    object More : BottomNavItem(AppRoutes.MORE, Icons.Default.MoreHoriz, R.string.nav_more)
 }
 
 @Composable
-fun MainScreen(initialRecurringId: Long? = null) {
+fun MainScreen(
+    initialRecurringId: Long? = null,
+    loansViewModel: LoansViewModel = hiltViewModel()
+) {
     val navController = rememberNavController()
 
     LaunchedEffect(initialRecurringId) {
@@ -40,13 +49,38 @@ fun MainScreen(initialRecurringId: Long? = null) {
     val items = listOf(
         BottomNavItem.Overview,
         BottomNavItem.History,
-        BottomNavItem.Stats
+        BottomNavItem.Stats,
+        BottomNavItem.More
     )
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val isDashboardTab = currentRoute == AppRoutes.OVERVIEW ||
         currentRoute == AppRoutes.HISTORY ||
-        currentRoute == AppRoutes.STATISTICS
+        currentRoute == AppRoutes.STATISTICS ||
+        currentRoute == AppRoutes.MORE
+
+    // Loan reminder bottom sheet on app open if there are unpaid loans (shown once per day)
+    val monthlyLoanItems by loansViewModel.monthlyItems.collectAsState()
+    val unpaidLoans = remember(monthlyLoanItems) { monthlyLoanItems.filter { !it.payment.isPaid } }
+    var hasDismissedLoanSheetSession by rememberSaveable { mutableStateOf(false) }
+    val lastShownDate by loansViewModel.lastLoanSheetDate.collectAsState()
+    val todayDateStr = remember { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date()) }
+    val shouldShowToday = lastShownDate != todayDateStr
+
+    if (unpaidLoans.isNotEmpty() && shouldShowToday && !hasDismissedLoanSheetSession && currentRoute == AppRoutes.OVERVIEW) {
+        LoanReminderBottomSheet(
+            unpaidLoans = unpaidLoans,
+            onPayLoansClick = {
+                loansViewModel.markLoanSheetShownToday()
+                hasDismissedLoanSheetSession = true
+                navController.navigate(AppRoutes.LOANS)
+            },
+            onDismissRequest = {
+                loansViewModel.markLoanSheetShownToday()
+                hasDismissedLoanSheetSession = true
+            }
+        )
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -98,6 +132,10 @@ fun MainScreen(initialRecurringId: Long? = null) {
             composable(AppRoutes.OVERVIEW) { OverviewScreen(navController) }
             composable(AppRoutes.HISTORY) { HistoryScreen(navController) }
             composable(AppRoutes.STATISTICS) { StatisticsScreen(navController) }
+            composable(AppRoutes.MORE) { MoreScreen(navController) }
+            composable(AppRoutes.LOANS) { LoansScreen(navController) }
+            composable(AppRoutes.ALERTS) { AlertsScreen(navController) }
+            composable(AppRoutes.DEBTS) { DebtsScreen(navController) }
             composable(
                 route = AppRoutes.ADD_TRANSACTION_WITH_ARGS,
                 arguments = listOf(

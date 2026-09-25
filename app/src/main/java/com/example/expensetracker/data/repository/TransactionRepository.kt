@@ -81,4 +81,29 @@ class TransactionRepository @Inject constructor(
     suspend fun getDeptIncomesLinkedTo(expenseId: Long): List<Transaction> {
         return transactionDao.getDeptIncomesLinkedTo(expenseId)
     }
+
+    suspend fun getExpenseCountBetweenDates(startDate: Date, endDate: Date): Int {
+        return transactionDao.getExpenseCountBetweenDates(startDate, endDate)
+    }
+
+    fun getOutstandingLentDebtsFlow(): Flow<List<Transaction>> {
+        return transactionDao.getOutstandingLentDebtsFlow()
+    }
+
+    fun getOutstandingBorrowedDebtsFlow(): Flow<List<Transaction>> {
+        return transactionDao.getOutstandingBorrowedDebtsFlow()
+    }
+
+    fun getAllOutstandingDebtsFlow(): Flow<List<Transaction>> {
+        return transactionDao.getAllOutstandingDebtsFlow()
+    }
+
+    suspend fun getAllOutstandingDebtsSnapshot(): List<Transaction> {
+        return transactionDao.getAllOutstandingDebtsSnapshot()
+    }
+
+    suspend fun setDebtSettled(id: Long, settled: Boolean) {
+        transactionDao.setDebtSettled(id, settled)
+    }
 }
+

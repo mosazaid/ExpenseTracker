@@ -384,3 +384,78 @@ val MIGRATION_11_12 = Migration(11, 12) { db ->
         }
     }
 }
+
+val MIGRATION_12_13 = Migration(12, 13) { db ->
+    // 1. Add debtType and isDebtSettled to transactions
+    db.execSQL("ALTER TABLE transactions ADD COLUMN debtType TEXT")
+    db.execSQL("ALTER TABLE transactions ADD COLUMN isDebtSettled INTEGER NOT NULL DEFAULT 0")
+
+    // 2. Create configured_loans table
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS configured_loans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            name TEXT NOT NULL,
+            defaultAmount REAL NOT NULL,
+            accountType TEXT NOT NULL,
+            isActive INTEGER NOT NULL,
+            createdAt INTEGER NOT NULL
+        )
+        """.trimIndent()
+    )
+
+    // 3. Create monthly_loan_payments table
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS monthly_loan_payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            loanConfigId INTEGER NOT NULL,
+            monthKey TEXT NOT NULL,
+            amount REAL NOT NULL,
+            accountType TEXT NOT NULL,
+            isPaid INTEGER NOT NULL,
+            paidDate INTEGER,
+            transactionId INTEGER,
+            isDismissed INTEGER NOT NULL,
+            createdAt INTEGER NOT NULL,
+            FOREIGN KEY(loanConfigId) REFERENCES configured_loans(id) ON UPDATE NO ACTION ON DELETE CASCADE
+        )
+        """.trimIndent()
+    )
+    db.execSQL("CREATE INDEX IF NOT EXISTS index_monthly_loan_payments_loanConfigId ON monthly_loan_payments(loanConfigId)")
+    db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_monthly_loan_payments_loanConfigId_monthKey ON monthly_loan_payments(loanConfigId, monthKey)")
+
+    // 4. Create app_alerts table
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS app_alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            relatedId INTEGER,
+            periodKey TEXT NOT NULL,
+            isDismissed INTEGER NOT NULL,
+            createdAt INTEGER NOT NULL
+        )
+        """.trimIndent()
+    )
+
+    // 5. Seed default Loan and Dept expense categories if not present
+    val now = System.currentTimeMillis()
+    db.execSQL(
+        """
+        INSERT INTO categories (name, icon, color, type, isDefault, createdAt)
+        SELECT 'Loan', '🏦', '#3F51B5', 'EXPENSE', 1, $now
+        WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name = 'Loan' AND type = 'EXPENSE')
+        """.trimIndent()
+    )
+    db.execSQL(
+        """
+        INSERT INTO categories (name, icon, color, type, isDefault, createdAt)
+        SELECT 'Dept', '🔄', '#607D8B', 'EXPENSE', 1, $now
+        WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name = 'Dept' AND type = 'EXPENSE')
+        """.trimIndent()
+    )
+}
+

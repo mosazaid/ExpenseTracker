@@ -25,8 +25,12 @@ class DatabaseInspector @Inject constructor(
     private val allowedTables = setOf(
         "transactions",
         "categories",
+        "sub_categories",
         "budgets",
-        "recurring_transactions"
+        "recurring_transactions",
+        "configured_loans",
+        "monthly_loan_payments",
+        "app_alerts"
     )
 
     fun getTableNames(): List<String> {

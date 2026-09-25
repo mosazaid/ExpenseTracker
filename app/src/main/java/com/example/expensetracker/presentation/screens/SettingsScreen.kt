@@ -32,6 +32,7 @@ import com.example.expensetracker.R
 import com.example.expensetracker.core.export.ExportFileHelper
 import com.example.expensetracker.core.locale.AppLanguage
 import com.example.expensetracker.domain.CsvImportFormat
+import com.example.expensetracker.presentation.components.AppTopBar
 import com.example.expensetracker.presentation.navigation.AppRoutes
 import com.example.expensetracker.presentation.theme.CurrencyUtils
 import com.example.expensetracker.presentation.viewModel.ExportFormat
@@ -183,16 +184,10 @@ fun SettingsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
-                        )
-                    }
-                }
+            AppTopBar(
+                title = stringResource(R.string.settings),
+                navController = navController,
+                canNavigateBack = true
             )
         }
     ) { padding ->
@@ -351,19 +346,42 @@ fun SettingsScreen(
 
             // ── Section 6: Salary Reminders & Notifications
             Text("6. Salary Reminders", style = MaterialTheme.typography.titleMedium)
-            val notificationsEnabled = remember { viewModel.areNotificationsEnabled() }
+            var notificationsEnabled by remember { mutableStateOf(viewModel.areNotificationsEnabled()) }
+            val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission()
+            ) { isGranted ->
+                notificationsEnabled = isGranted || viewModel.areNotificationsEnabled()
+            }
             if (!notificationsEnabled) {
                 Surface(
                     shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.errorContainer,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "Notifications are disabled in device settings. Please enable them so salary reminders can be received.",
+                    Column(
                         modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.notifications_disabled_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Button(
+                            onClick = {
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                        putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                    }
+                                    runCatching { context.startActivity(intent) }
+                                }
+                            }
+                        ) {
+                            Text(stringResource(R.string.enable_notifications_btn))
+                        }
+                    }
                 }
             } else {
                 OutlinedButton(

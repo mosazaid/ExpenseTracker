@@ -121,4 +121,97 @@
     <string name="db_clear_filters">Clear filters</string>
     <string name="db_rows_count">%1$d rows (max 500)</string>
     <string name="db_no_rows">No rows match the filters.</string>
+
+    <!-- Navigation & Tabs -->
+    <string name="nav_more">More</string>
+    <string name="more_financial_tools">Financial Tools</string>
+    <string name="more_system_tools">System &amp; Settings</string>
+    <string name="account_bank">Bank</string>
+    <string name="account_cash">Cash</string>
+
+    <!-- Loans & Preserved Balance -->
+    <string name="loans_title">Loans &amp; Commitments</string>
+    <string name="loans_subtitle">Configure fixed loans, preserve salary &amp; pay commitments</string>
+    <string name="add_loan_config">Add Loan</string>
+    <string name="preserved_for_loans_label">Preserved for Loans</string>
+    <string name="preserved_for_loans_hint">Money automatically reserved from your salary to pay this month\'s loans.</string>
+    <string name="spendable_balance_label">Spendable Balance: %1$s</string>
+    <string name="this_months_loans">This Month\'s Loans</string>
+    <string name="no_loans_configured_yet">No loans configured yet. Add your fixed commitments below.</string>
+    <string name="loan_paid_status">Paid</string>
+    <string name="loan_pending_status">Pending</string>
+    <string name="edit_amount_this_month">Edit Amount</string>
+    <string name="pay_deduct_btn">Deduct &amp; Pay</string>
+    <string name="recurring_loans_settings">Recurring Loans Configuration</string>
+    <string name="no_configured_loans_desc">No recurring loans configured. Tap + to set up a regular commitment (e.g. house or car loan).</string>
+    <string name="add_configured_loan">Add Recurring Loan</string>
+    <string name="edit_configured_loan">Edit Loan: %1$s</string>
+    <string name="loan_name_label">Loan Name (e.g. House, Car)</string>
+    <string name="default_amount_label">Default Monthly Amount</string>
+    <string name="default_account_label">Default Payment Account</string>
+    <string name="edit_month_loan_amount">Edit this month\'s %1$s loan</string>
+    <string name="edit_month_loan_amount_desc">Adjust the amount to deduct for this month only. The default monthly config will remain unchanged.</string>
+    <string name="confirm_loan_deduction_title">Confirm Loan Deduction</string>
+    <string name="confirm_loan_deduction_desc">Deduct %1$s (%2$s) as an expense transaction for this month? This will free up the preserved amount and mark the loan as paid.</string>
+    <string name="deduct_from_account">Deduct from Account</string>
+    <string name="confirm_deduct">Deduct Now</string>
+    <string name="loan_reminder_sheet_title">Pending Loan Commitments</string>
+    <string name="loan_reminder_sheet_desc">You have unpaid loan commitments reserved for this month.</string>
+    <string name="total_preserved_amount">Total Preserved: </string>
+    <string name="remind_later">Remind Later</string>
+    <string name="pay_loans_btn">Pay Loans</string>
+
+    <!-- Debts & Receivables -->
+    <string name="debts_tracker_title">Debts Tracker</string>
+    <string name="debts_subtitle">Track money you lent and money you borrowed</string>
+    <string name="debt_lent_header">Debt (Money Lent)</string>
+    <string name="debt_lent_explanation">You gave money to someone and they owe it back to you.</string>
+    <string name="debtor_name_label">Borrower Name (Who owes you?)</string>
+    <string name="debt_income_header">Debt Transaction Type</string>
+    <string name="debt_income_repayment_opt">Repayment to Me</string>
+    <string name="debt_income_borrowed_opt">Money I Borrowed</string>
+    <string name="debt_income_repayment_desc">Someone is paying back money they previously owed you.</string>
+    <string name="debt_income_borrowed_desc">You borrowed money from someone and owe it back to them.</string>
+    <string name="link_to_expense_optional">Link to previous lent expense (optional)</string>
+    <string name="link_to_expense_debt">Original Debt / Lent Record</string>
+    <string name="none_opt">None</string>
+    <string name="creditor_name_label">Creditor Name (Who did you borrow from?)</string>
+    <string name="debts_owed_to_me">Owed to Me</string>
+    <string name="debts_i_owe">I Owe</string>
+    <string name="carry_debts_to_new_month">Rollover Open Debts to New Month</string>
+    <string name="no_lent_debts">No active lent debts. All cleared!</string>
+    <string name="no_borrowed_debts">No active borrowed debts. All clear!</string>
+    <string name="carry_forward_dialog_title">Rollover Open Debts</string>
+    <string name="carry_forward_dialog_desc">Select outstanding debts to keep tracking in the new month. No duplicate transactions are created.</string>
+    <string name="select_all">Select All</string>
+    <string name="clear_all">Clear All</string>
+    <string name="debt_type_lent_short">Lent</string>
+    <string name="debt_type_borrowed_short">Borrowed</string>
+    <string name="carry_forward_confirm_btn">Keep Active</string>
+    <string name="mark_settled_btn">Mark Settled</string>
+
+    <!-- Categories & Budgets -->
+    <string name="categories_budgets_title">Categories &amp; Budgets</string>
+    <string name="categories_budgets_subtitle">Manage categories and monthly spending limits</string>
+    <string name="budget_warning_exceeded_title">Budget Exceeded!</string>
+    <string name="budget_warning_near_title">Budget Limit Approaching</string>
+    <string name="budget_warning_exceeded_desc">This transaction of %1$s will exceed your %2$s budget limit (%3$s / %4$s).</string>
+    <string name="budget_warning_near_desc">This transaction of %1$s will bring %2$s to %3$s of its %4$s budget.</string>
+
+    <!-- Notifications & In-App Alerts -->
+    <string name="notifications_alerts">Notifications &amp; Alerts</string>
+    <string name="no_active_alerts_title">No Active Alerts</string>
+    <string name="no_active_alerts_desc">You are all caught up! Category warnings and loan reminders will appear here.</string>
+    <string name="notif_daily_expense_title">Daily Expense Reminder</string>
+    <string name="notif_daily_expense_desc">You haven\'t added any expenses today. Don\'t forget to record today\'s spending!</string>
+    <string name="notif_budget_exceeded_title">Budget Exceeded: %1$s</string>
+    <string name="notif_budget_warning_title">Budget Warning: %1$s</string>
+    <string name="notif_budget_exceeded_desc">Your spending in %1$s reached %2$s, exceeding your limit of %3$s!</string>
+    <string name="notif_budget_warning_desc">Your spending in %1$s reached %2$s (approaching your limit of %3$s).</string>
+    <string name="notif_loan_title">Loan Reminder: %1$s</string>
+    <string name="notif_loan_desc">You have a monthly loan payment of %1$s (%2$s) pending deduction.</string>
+    <string name="settings_desc">Language, app lock, balances &amp; export</string>
+    <string name="time_optional">Time (optional)</string>
+    <string name="notifications_disabled_desc">Notifications are disabled. Enable them to receive daily expense reminders, loan reminders, and budget alerts.</string>
+    <string name="enable_notifications_btn">Enable Notifications</string>
 </resources>

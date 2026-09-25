@@ -16,9 +16,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.expensetracker.R
 import com.example.expensetracker.presentation.theme.CurrencyUtils
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.TransactionType
@@ -94,16 +96,23 @@ fun CategoriesScreen(
         "💰", "🏢", "📈", "💻", "🎁", "🎮", "🏋️", "🐾", "🏠"
     )
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp)
-    ) {
-        item(key = "title") {
-            Text("Manage Categories", style = MaterialTheme.typography.titleLarge)
+    Scaffold(
+        topBar = {
+            com.example.expensetracker.presentation.components.AppTopBar(
+                title = stringResource(R.string.categories_budgets_title),
+                navController = navController,
+                canNavigateBack = true
+            )
         }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp)
+        ) {
 
         item(key = "type-filter") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -275,4 +284,5 @@ fun CategoriesScreen(
             )
         }
     }
+}
 }

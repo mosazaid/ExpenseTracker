@@ -5,13 +5,19 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.expensetracker.data.database.dao.AppAlertDao
 import com.example.expensetracker.data.database.dao.BudgetDao
 import com.example.expensetracker.data.database.dao.CategoryDao
+import com.example.expensetracker.data.database.dao.ConfiguredLoanDao
+import com.example.expensetracker.data.database.dao.MonthlyLoanPaymentDao
 import com.example.expensetracker.data.database.dao.RecurringTransactionDao
 import com.example.expensetracker.data.database.dao.TransactionDao
 import com.example.expensetracker.data.database.dao.SubCategoryDao
+import com.example.expensetracker.data.database.entities.AppAlert
 import com.example.expensetracker.data.database.entities.Budget
 import com.example.expensetracker.data.database.entities.Category
+import com.example.expensetracker.data.database.entities.ConfiguredLoan
+import com.example.expensetracker.data.database.entities.MonthlyLoanPayment
 import com.example.expensetracker.data.database.entities.RecurringTransaction
 import com.example.expensetracker.data.database.entities.SubCategory
 import com.example.expensetracker.data.database.entities.Transaction
@@ -22,9 +28,12 @@ import com.example.expensetracker.data.database.entities.Transaction
         Category::class,
         Budget::class,
         RecurringTransaction::class,
-        SubCategory::class
+        SubCategory::class,
+        ConfiguredLoan::class,
+        MonthlyLoanPayment::class,
+        AppAlert::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -35,6 +44,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun budgetDao(): BudgetDao
     abstract fun recurringTransactionDao(): RecurringTransactionDao
     abstract fun subCategoryDao(): SubCategoryDao
+    abstract fun configuredLoanDao(): ConfiguredLoanDao
+    abstract fun monthlyLoanPaymentDao(): MonthlyLoanPaymentDao
+    abstract fun appAlertDao(): AppAlertDao
 
     companion object {
         @Volatile
@@ -47,7 +59,11 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "expense_tracker_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+                    .addMigrations(
+                        MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
+                        MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
+                        MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13
+                    )
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                             super.onCreate(db)
@@ -75,6 +91,8 @@ abstract class AppDatabase : RoomDatabase() {
                 "('Education & Learning', '📚', '#98D8C8', 'EXPENSE', 1, $now)",
                 "('Family & Kids', '👨‍👩‍👧', '#FF5722', 'EXPENSE', 1, $now)",
                 "('Charity & Giving', '🤝', '#E91E63', 'EXPENSE', 1, $now)",
+                "('Loan', '🏦', '#3F51B5', 'EXPENSE', 1, $now)",
+                "('Dept', '🔄', '#607D8B', 'EXPENSE', 1, $now)",
                 "('Other', '📋', '#BDC3C7', 'EXPENSE', 1, $now)",
             )
 

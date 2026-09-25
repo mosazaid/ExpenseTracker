@@ -44,27 +44,40 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
   - Top category spend comparison with percentage labels and legends
 - Totals: Income, Expense, **Wallet**, Balance
 
-### Settings
+### Reminders & Notifications
+- **Daily 9:00 PM Expense Reminder**: Dual scheduling (`AlarmManager` exact/inexact fallback + `WorkManager` backup) prompts the user to log expenses if no expenses were added today.
+- **Category Budget Alerts**: Real-time threshold monitoring with in-app banner warnings (85%) and push notifications (100% budget reached).
+- **In-App Notification Center (`app_alerts`)**: Notification bell icon with live badge counter on `AppTopBar` linking to `AlertsScreen`.
+
+### Debts & Loans
+- **Debt Tracking & Directional Separation**:
+  - Expense + Debt: Money lent to someone (debtor owes user).
+  - Income + Debt: Repayment to user OR borrowed debt from someone.
+  - Dedicated `DebtsScreen` with debtor grouping, settle actions, and month rollover.
+- **Configured Recurring Loans**: Track car, mortgage, and personal loans in `LoansScreen`; once-per-day prompt bottom sheet (`LoanReminderBottomSheet`) on salary month rollover with salary balance preservation.
+
+### Settings & More Hub
+- **"More" Hub**: 4th bottom nav tab grouping Debts, Loans, Categories, Database Browser, and Settings.
 - **Language**: English / Arabic (RTL)
 - **App lock**: Biometric / device PIN required on open (toggle in Settings)
 - **Balances**: recalibrate current cash/bank to match reality
 - **Export**: filter (all / current month) + format (**CSV** styled spreadsheet or **PDF** report)
 - **Import CSV**: documented format + download import template
 - **Database browser**: inspect Room tables with column filters
-- Salary reminder management
 
 ## Navigation
 
 | Bottom tab | Route | Purpose |
 |------------|-------|---------|
+| Overview | `overview` | Balance cards, monthly overview, and quick actions |
 | History | `history` | Transaction list, overview breakdown & filters |
-| **Add** | `addTransaction?...` | Add/edit income & expense |
+| **Add** (FAB) | `addTransaction?...` | Add/edit income & expense with optional time picker |
 | Stats | `statistics` | Interactive multi-charts & 3-month category pie charts |
-| Categories | `categories` | Category, subcategory & budget management |
+| More | `more` | Hub for Debts, Loans, Categories, Database Browser, Settings |
 
-Additional routes (from History / Add): `settings`, `databaseBrowser`, `transfer`, `wallet`, `editTransfer/{id}`, `editWallet/{id}`.
+Additional routes: `debts`, `loans`, `alerts`, `settings`, `databaseBrowser`, `transfer`, `wallet`, `editTransfer/{id}`, `editWallet/{id}`.
 
-After **Save Transaction**, app navigates to **History**.
+Universal `AppTopBar` present across screens with live unread alert badge count.
 
 ## Security
 

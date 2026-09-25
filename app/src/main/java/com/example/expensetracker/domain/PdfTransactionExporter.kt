@@ -6,9 +6,11 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import com.example.expensetracker.R
+import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.presentation.theme.CurrencyUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -35,40 +37,64 @@ class PdfTransactionExporter @Inject constructor(
         val pageWidth = 842 // A4 landscape @ 72dpi
         val pageHeight = 595
         val margin = 36f
-        val headerHeight = 110f
         val rowHeight = 22f
-        val rowsPerPage = ((pageHeight - headerHeight - margin - 40f) / rowHeight).toInt().coerceAtLeast(1)
 
+        // 770f total width fits exactly in 842 - (36 * 2) = 770
         val columns = listOf(
-            ColumnSpec("Date", 88f),
-            ColumnSpec("Type", 62f),
-            ColumnSpec("Category", 78f),
-            ColumnSpec("Amount", 72f),
-            ColumnSpec("Account", 58f),
-            ColumnSpec("Description", 120f),
-            ColumnSpec("Details", 110f)
+            ColumnSpec("Date & Time", 96f),
+            ColumnSpec("Type", 66f),
+            ColumnSpec("Category", 95f),
+            ColumnSpec("Amount", 80f),
+            ColumnSpec("Account", 65f),
+            ColumnSpec("Description", 170f),
+            ColumnSpec("Details", 198f)
         )
 
-        val chunks = if (rows.isEmpty()) listOf(emptyList()) else rows.chunked(rowsPerPage)
-        chunks.forEachIndexed { pageIndex, pageRows ->
+        val totalIncome = rows.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
+        val totalExpense = rows.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+        val netBalance = totalIncome - totalExpense
+
+        val pages = mutableListOf<List<TransactionExportRow>>()
+        if (rows.isEmpty()) {
+            pages.add(emptyList())
+        } else {
+            val firstPageRows = rows.take(17)
+            pages.add(firstPageRows)
+            var remaining = rows.drop(17)
+            while (remaining.isNotEmpty()) {
+                pages.add(remaining.take(20))
+                remaining = remaining.drop(20)
+            }
+        }
+
+        pages.forEachIndexed { pageIndex, pageRows ->
             val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageIndex + 1).create()
             val page = document.startPage(pageInfo)
             val canvas = page.canvas
 
-            drawPageHeader(canvas, margin, pageWidth, filterLabel, pageIndex + 1, chunks.size)
-            var y = headerHeight
+            val isFirstPage = pageIndex == 0
+            drawPageHeader(canvas, margin, pageWidth, filterLabel, pageIndex + 1, pages.size)
+
+            var y: Float
+            if (isFirstPage) {
+                drawKpiSummaryCards(canvas, margin, pageWidth - margin * 2, totalIncome, totalExpense, netBalance, rows.size)
+                y = 135f
+            } else {
+                y = 80f
+            }
+
             drawTableHeader(canvas, margin, y, columns)
-            y += rowHeight
+            y += 20f
 
             pageRows.forEachIndexed { rowIndex, row ->
-                val bg = if (rowIndex % 2 == 0) Color.WHITE else Color.parseColor("#F5F7FA")
+                val bg = if (rowIndex % 2 == 0) Color.WHITE else Color.parseColor("#F8FAFC")
                 drawRowBackground(canvas, margin, y, pageWidth - margin * 2, rowHeight, bg)
-                drawDataRow(canvas, margin, y + 4f, columns, row)
+                drawDataRow(canvas, margin, y + 3f, columns, row, rowHeight)
                 y += rowHeight
             }
 
-            if (pageRows.isEmpty() && pageIndex == 0) {
-                drawEmptyState(canvas, margin, y + 20f)
+            if (pageRows.isEmpty() && isFirstPage) {
+                drawEmptyState(canvas, margin, y + 24f)
             }
 
             document.finishPage(page)
@@ -88,50 +114,93 @@ class PdfTransactionExporter @Inject constructor(
     ) {
         val icon = loadAppIcon()
         if (icon != null) {
-            val iconSize = 48
+            val iconSize = 40
             val scaled = Bitmap.createScaledBitmap(icon, iconSize, iconSize, true)
-            canvas.drawBitmap(scaled, margin, 24f, null)
+            canvas.drawBitmap(scaled, margin, 18f, null)
         }
 
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1565C0")
-            textSize = 22f
+            color = Color.parseColor("#0F172A")
+            textSize = 18f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
-        canvas.drawText(context.getString(R.string.app_name), margin + 58f, 48f, titlePaint)
+        val leftX = if (icon != null) margin + 48f else margin
+        canvas.drawText(context.getString(R.string.app_name), leftX, 34f, titlePaint)
 
         val subtitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#546E7A")
-            textSize = 11f
+            color = Color.parseColor("#64748B")
+            textSize = 9.5f
         }
-        val periodText = if (filterLabel.isBlank()) "All transactions" else filterLabel
-        canvas.drawText(periodText, margin + 58f, 66f, subtitlePaint)
-        canvas.drawText(
-            "Generated ${generatedFormat.format(java.util.Date())}",
-            margin + 58f,
-            80f,
-            subtitlePaint
-        )
+        val periodText = if (filterLabel.isBlank()) "All Transactions" else filterLabel
+        canvas.drawText("$periodText  •  Generated: ${generatedFormat.format(java.util.Date())}", leftX, 48f, subtitlePaint)
 
         val pagePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#78909C")
-            textSize = 10f
+            color = Color.parseColor("#94A3B8")
+            textSize = 9.5f
             textAlign = Paint.Align.RIGHT
         }
-        canvas.drawText("Page $pageNumber of $totalPages", pageWidth - margin, 48f, pagePaint)
+        canvas.drawText("Page $pageNumber of $totalPages", pageWidth - margin, 34f, pagePaint)
+    }
+
+    private fun drawKpiSummaryCards(
+        canvas: Canvas,
+        margin: Float,
+        availableWidth: Float,
+        income: Double,
+        expense: Double,
+        net: Double,
+        count: Int
+    ) {
+        val cardY = 64f
+        val cardHeight = 54f
+        val gap = 12f
+        val cardWidth = (availableWidth - (gap * 3)) / 4f
+
+        val cards = listOf(
+            KpiCardSpec("Total Income", CurrencyUtils.formatCurrency(income), "#DCFCE7", "#15803D", "#166534"),
+            KpiCardSpec("Total Expense", CurrencyUtils.formatCurrency(expense), "#FEE2E2", "#B91C1C", "#991B1B"),
+            KpiCardSpec("Net Balance", CurrencyUtils.formatCurrency(net), "#DBEAFE", "#1D4ED8", "#1E40AF"),
+            KpiCardSpec("Transactions", "$count recorded", "#F1F5F9", "#475569", "#334155")
+        )
+
+        cards.forEachIndexed { i, card ->
+            val cardX = margin + i * (cardWidth + gap)
+            val rect = RectF(cardX, cardY, cardX + cardWidth, cardY + cardHeight)
+
+            val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor(card.bgColor)
+            }
+            canvas.drawRoundRect(rect, 6f, 6f, bgPaint)
+
+            val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor(card.labelColor)
+                textSize = 8.5f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            }
+            canvas.drawText(card.label.uppercase(), cardX + 10f, cardY + 18f, labelPaint)
+
+            val valPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor(card.valColor)
+                textSize = 12.5f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            }
+            canvas.drawText(card.value, cardX + 10f, cardY + 38f, valPaint)
+        }
     }
 
     private fun drawTableHeader(canvas: Canvas, margin: Float, y: Float, columns: List<ColumnSpec>) {
         val headerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
-            textSize = 10f
+            textSize = 9.5f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
-        val headerBg = Paint().apply { color = Color.parseColor("#1976D2") }
+        val headerBg = Paint().apply { color = Color.parseColor("#1E293B") }
         val tableWidth = columns.sumOf { it.width.toDouble() }.toFloat()
-        canvas.drawRect(margin, y, margin + tableWidth, y + 20f, headerBg)
 
-        var x = margin + 4f
+        val headerRect = RectF(margin, y, margin + tableWidth, y + 20f)
+        canvas.drawRoundRect(headerRect, 4f, 4f, headerBg)
+
+        var x = margin + 6f
         columns.forEach { column ->
             canvas.drawText(column.title, x, y + 14f, headerPaint)
             x += column.width
@@ -149,7 +218,7 @@ class PdfTransactionExporter @Inject constructor(
         val paint = Paint().apply { this.color = color }
         canvas.drawRect(margin, y, margin + width, y + height, paint)
         val border = Paint().apply {
-            this.color = Color.parseColor("#ECEFF1")
+            this.color = Color.parseColor("#F1F5F9")
             style = Paint.Style.STROKE
             strokeWidth = 0.5f
         }
@@ -161,7 +230,8 @@ class PdfTransactionExporter @Inject constructor(
         margin: Float,
         y: Float,
         columns: List<ColumnSpec>,
-        row: TransactionExportRow
+        row: TransactionExportRow,
+        rowHeight: Float
     ) {
         val values = listOf(
             dateFormat.format(row.date),
@@ -174,31 +244,46 @@ class PdfTransactionExporter @Inject constructor(
         )
         val typeColor = typeColor(row.type)
 
-        var x = margin + 4f
+        var x = margin + 6f
         columns.forEachIndexed { index, column ->
-            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                textSize = 9f
-                color = when (index) {
-                    1 -> typeColor
-                    3 -> typeColor
-                    else -> Color.parseColor("#37474F")
-                }
-                if (index == 1 || index == 3) {
+            if (index == 1) {
+                // Type badge pill
+                val pillWidth = (column.width - 12f).coerceAtMost(56f)
+                val pillRect = RectF(x, y, x + pillWidth, y + rowHeight - 6f)
+                val pillBg = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = typeBgColor(row.type) }
+                canvas.drawRoundRect(pillRect, 4f, 4f, pillBg)
+
+                val pillTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    textSize = 8f
+                    color = typeColor
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 }
+                val typeName = row.type.name.take(7)
+                canvas.drawText(typeName, x + 4f, y + 10.5f, pillTextPaint)
+            } else {
+                val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    textSize = 8.5f
+                    color = when (index) {
+                        3 -> typeColor
+                        else -> Color.parseColor("#334155")
+                    }
+                    if (index == 3) {
+                        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    }
+                }
+                val text = truncate(values[index], column.width - 8f, paint)
+                canvas.drawText(text, x, y + 10f, paint)
             }
-            val text = truncate(values[index], column.width, paint)
-            canvas.drawText(text, x, y + 10f, paint)
             x += column.width
         }
     }
 
     private fun drawEmptyState(canvas: Canvas, margin: Float, y: Float) {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#78909C")
+            color = Color.parseColor("#64748B")
             textSize = 12f
         }
-        canvas.drawText("No transactions in this export.", margin, y, paint)
+        canvas.drawText("No transactions found in this period.", margin, y, paint)
     }
 
     private fun loadAppIcon(): Bitmap? {
@@ -207,25 +292,34 @@ class PdfTransactionExporter @Inject constructor(
         }.getOrNull()
     }
 
-    private fun formatAccount(account: com.example.expensetracker.data.database.entities.AccountType, to: com.example.expensetracker.data.database.entities.AccountType?): String {
-        return if (to != null) "${account.name}→${to.name}" else account.name
+    private fun formatAccount(account: AccountType, to: AccountType?): String {
+        return if (to != null) "${account.name} → ${to.name}" else account.name
     }
 
     private fun typeColor(type: TransactionType): Int = when (type) {
-        TransactionType.INCOME -> Color.parseColor("#2E7D32")
-        TransactionType.EXPENSE -> Color.parseColor("#C62828")
-        TransactionType.TRANSFER -> Color.parseColor("#EF6C00")
-        TransactionType.WALLET_MOVE -> Color.parseColor("#6A1B9A")
+        TransactionType.INCOME -> Color.parseColor("#15803D")
+        TransactionType.EXPENSE -> Color.parseColor("#B91C1C")
+        TransactionType.TRANSFER -> Color.parseColor("#C2410C")
+        TransactionType.WALLET_MOVE -> Color.parseColor("#7E22CE")
+    }
+
+    private fun typeBgColor(type: TransactionType): Int = when (type) {
+        TransactionType.INCOME -> Color.parseColor("#DCFCE7")
+        TransactionType.EXPENSE -> Color.parseColor("#FEE2E2")
+        TransactionType.TRANSFER -> Color.parseColor("#FFEDD5")
+        TransactionType.WALLET_MOVE -> Color.parseColor("#F3E8FF")
     }
 
     private fun truncate(text: String, maxWidth: Float, paint: Paint): String {
-        if (paint.measureText(text) <= maxWidth - 8f) return text
+        if (paint.measureText(text) <= maxWidth) return text
         var trimmed = text
-        while (trimmed.length > 1 && paint.measureText("$trimmed…") > maxWidth - 8f) {
+        while (trimmed.length > 1 && paint.measureText("$trimmed…") > maxWidth) {
             trimmed = trimmed.dropLast(1)
         }
         return "$trimmed…"
     }
 
     private data class ColumnSpec(val title: String, val width: Float)
+    private data class KpiCardSpec(val label: String, val value: String, val bgColor: String, val labelColor: String, val valColor: String)
 }
+

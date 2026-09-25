@@ -35,6 +35,8 @@ data class Transaction(
     val linkedExpenseId: Long? = null,
     val debtorNote: String? = null,
     val awaitingReimbursement: Boolean = false,
+    val debtType: String? = null,
+    val isDebtSettled: Boolean = false,
     val createdAt: Date = Date(),
     val updatedAt: Date = Date()
 )

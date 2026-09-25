@@ -220,32 +220,22 @@ fun HistoryScreen(
         )
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
-    ) {
-        // ── Title row
-        item(key = "title") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Transaction History",
-                    style = MaterialTheme.typography.titleLarge
-                )
-                IconButton(onClick = { navController.navigate(AppRoutes.SETTINGS) }) {
-                    Icon(
-                        Icons.Default.Settings,
-                        contentDescription = stringResource(R.string.settings)
-                    )
-                }
-            }
+    Scaffold(
+        topBar = {
+            com.example.expensetracker.presentation.components.AppTopBar(
+                title = stringResource(R.string.history_title),
+                navController = navController
+            )
         }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
+        ) {
 
         // ── 1. Period from to at the top
         item(key = "period-range") {
@@ -554,6 +544,7 @@ fun HistoryScreen(
             }
         }
     }
+}
 }
 
 @Composable

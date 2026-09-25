@@ -353,4 +353,23 @@ interface TransactionDao {
 
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteTransactionById(id: Long)
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE type = 'EXPENSE' AND date BETWEEN :startDate AND :endDate")
+    suspend fun getExpenseCountBetweenDates(startDate: Date, endDate: Date): Int
+
+    @Query("SELECT * FROM transactions WHERE awaitingReimbursement = 1 AND isDebtSettled = 0 ORDER BY date DESC")
+    fun getOutstandingLentDebtsFlow(): Flow<List<Transaction>>
+
+    @Query("SELECT * FROM transactions WHERE type = 'INCOME' AND debtType = 'BORROWED' AND isDebtSettled = 0 ORDER BY date DESC")
+    fun getOutstandingBorrowedDebtsFlow(): Flow<List<Transaction>>
+
+    @Query("SELECT * FROM transactions WHERE (awaitingReimbursement = 1 OR (type = 'INCOME' AND debtType = 'BORROWED')) AND isDebtSettled = 0 ORDER BY date DESC")
+    fun getAllOutstandingDebtsFlow(): Flow<List<Transaction>>
+
+    @Query("SELECT * FROM transactions WHERE (awaitingReimbursement = 1 OR (type = 'INCOME' AND debtType = 'BORROWED')) AND isDebtSettled = 0 ORDER BY date DESC")
+    suspend fun getAllOutstandingDebtsSnapshot(): List<Transaction>
+
+    @Query("UPDATE transactions SET isDebtSettled = :settled, updatedAt = :updatedAt WHERE id = :id")
+    suspend fun setDebtSettled(id: Long, settled: Boolean, updatedAt: Date = Date())
 }
+

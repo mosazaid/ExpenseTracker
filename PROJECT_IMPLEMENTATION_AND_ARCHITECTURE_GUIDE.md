@@ -1,6 +1,6 @@
 # ExpenseTracker Implementation and Architecture Guide
 
-This document is the technical and business reference for the current app state after Phase 2, Phase 3, and Phase 4 feature work (through DB version **11**, September 2026).
+This document is the technical and business reference for the current app state after Phase 2, Phase 3, Phase 4, and Phase 5 feature work (through DB version **13**, September 2026).
 
 ## 1. Project Purpose (Business View)
 
@@ -10,9 +10,13 @@ ExpenseTracker helps a user manage personal money with:
 - transfer tracking between Cash and Bank
 - **monthly wallet** (pocket money) moves scoped to the open salary month
 - salary-cycle aware history (not only calendar month)
-- reimbursement tracking ("someone owes me")
-- category budgets with progress feedback
-- recurring salary reminders
+- reimbursement and debt tracking (**Lent vs Borrowed / Repayment**)
+- category budgets with real-time in-app warnings and push alerts (at 85% and 100% capacity)
+- **daily 9:00 PM expense reminder** with dual scheduling (**AlarmManager** + **WorkManager**)
+- **configured recurring loans** with once-per-day bottom sheet reminders and salary preservation
+- persistent **in-app notification center** (`app_alerts`) with real-time badge count on the top app bar
+- **"More" hub navigation screen** consolidating Debts, Loans, Categories, DB Browser, and Settings
+- **time picker** support alongside date selection for exact timestamp logging
 - **CSV import** and **styled CSV/PDF export** for backup/share
 - **Arabic and English** UI with RTL layout support
 - **Biometric app lock** on launch and resume
@@ -40,29 +44,45 @@ ExpenseTracker helps a user manage personal money with:
    - only the **open** salary month allows add/edit/delete of wallet moves
    - wallet balance **cannot go negative** (validated in `WalletViewModel`)
 
-4. **Reimbursement ("owed")**
-   - expense is owed only when `awaitingReimbursement = true`
-   - "Dept" income can link to original expense
-   - linked expenses show as reimbursed
+4. **Reimbursement & Debt Separation**
+   - **Expense with Debt category (`debtType = LENT`)**: User gave money to someone. They owe the user.
+   - **Income with Debt category (`debtType = BORROWED` or Repayment)**: User received money returning a loan, or user took a debt from someone.
+   - Debts can be filtered by debtor name, settled with one-click actions, and carried across month rollovers.
 
-5. **Salary period start**
+5. **Configured Loans & Preserved Salary Balance**
+   - Recurring loans (e.g., car payments, mortgages) are configured in `configured_loans`.
+   - Each month, a payment record is generated in `monthly_loan_payments`.
+   - On the first app open of a new month / salary period, a bottom sheet (`LoanReminderBottomSheet`) prompts once per day to record or dismiss payments without double-counting against base salary.
+
+6. **Category Budget Limits & In-App Alerts**
+   - Evaluated during transaction entry and in background jobs.
+   - **85% limit reached**: Warning alert stored in DB and displayed via notification/banner.
+   - **100% limit reached**: Critical alert stored in DB and displayed via notification/banner.
+   - Alerts persist in `app_alerts` until dismissed (`isDismissed = 1`).
+
+7. **Daily 9:00 PM Reminder**
+   - Scheduled every day at 21:00 local time.
+   - Queries database for expenses recorded on the current day; if count > 0, skips notification silently.
+   - Dual-engine fallback: `AlarmManager` for immediate execution + `WorkManager` for guaranteed background execution.
+
+8. **Salary period start**
    - salary income can set `startsNewPeriod = true`
    - optional `carriedForwardBalance` brings previous period net into the new month
 
-6. **Budget period follows active month mode**
+9. **Budget period follows active month mode**
    - budget progress uses the same period bounds as History list filters
 
-7. **Sub-description & Subcategories**
-   - optional detail on income/expense (e.g. items bought at a store)
-   - hierarchical subcategories linked to parent categories, with an "Other" option in filters for unassigned transactions
+10. **Sub-description & Subcategories**
+    - optional detail on income/expense (e.g. items bought at a store)
+    - hierarchical subcategories linked to parent categories, with an "Other" option in filters for unassigned transactions
 
-8. **Biometric app lock**
-   - enabled by default via `UserPreferences.biometricLockEnabled`
-   - `BiometricGate` wraps `MainScreen` in `MainActivity`
-   - accepts **BIOMETRIC_STRONG** or **DEVICE_CREDENTIAL** (PIN/pattern)
-   - on failure/cancel: lock screen + error message; no app content rendered
-   - re-locks on `Lifecycle.Event.ON_STOP` (background)
-   - `FLAG_SECURE` while locked (blocks screenshots)
+11. **Biometric app lock**
+    - enabled by default via `UserPreferences.biometricLockEnabled`
+    - `BiometricGate` wraps `MainScreen` in `MainActivity`
+    - accepts **BIOMETRIC_STRONG** or **DEVICE_CREDENTIAL** (PIN/pattern)
+    - on failure/cancel: lock screen + error message; no app content rendered
+    - re-locks on `Lifecycle.Event.ON_STOP` (background)
+    - `FLAG_SECURE` while locked (blocks screenshots)
 
 ## 2. Current Architecture
 
@@ -80,7 +100,7 @@ Android MVVM with Compose + Room + Hilt.
 | ViewModel | Responsibility |
 |-----------|----------------|
 | `HistoryViewModel` | Period bounds, month summary, filters, grouping, wallet year summary, delete guards |
-| `AddEditTransactionViewModel` | Add/edit income/expense form, sub-description, salary/dept flows |
+| `AddEditTransactionViewModel` | Add/edit income/expense form, sub-description, salary/dept flows, budget warning evaluation |
 | `TransferViewModel` | Cash ↔ Bank transfers |
 | `WalletViewModel` | Wallet ↔ Cash/Bank moves, validation, closed-period guards |
 | `BudgetViewModel` | Category budgets from Categories screen |
@@ -88,6 +108,9 @@ Android MVVM with Compose + Room + Hilt.
 | `StatisticsViewModel` | Period totals, 3-month multi-chart stats, 3-month category expense shares |
 | `DatabaseBrowserViewModel` | Table listing and filtered raw queries |
 | `BiometricLockViewModel` | Unlock state, error message, lock on background |
+| `DebtsViewModel` | Track lent vs borrowed debts, debtor filters, settle actions, month rollover |
+| `LoansViewModel` | Configured loan definitions, monthly payment schedules, salary protection |
+| `AlertsViewModel` | Persistent budget alerts and reminder history, dismissal actions |
 
 ### 2.3 Domain services
 
@@ -104,6 +127,11 @@ Android MVVM with Compose + Room + Hilt.
 | `CsvImporter` | Parse CSV, upsert by id, skip `#` lines |
 | `DatabaseInspector` | `PRAGMA table_info` + filtered `SELECT` on allowed tables |
 | `BiometricAuthManager` | Device capability check + `BiometricPrompt` authentication |
+| `AlarmScheduler` | Dual-mode daily 9 PM alarm scheduling (`setExactAndAllowWhileIdle` vs `setAndAllowWhileIdle`) |
+| `NotificationHelper` | Android 13/14 notification channel setup, reminder notifications, budget breach warnings |
+| `DailyExpenseReminderReceiver` | BroadcastReceiver waking at 9 PM to inspect today's expenses and emit reminder if 0 expenses |
+| `DailyExpenseReminderWorker` | WorkManager failsafe executing at 9 PM to protect against OEM background kills |
+| `LoanReminderWorker` | Periodic background worker evaluating active loans on new salary/calendar periods |
 
 ### 2.4 Compose patterns
 
@@ -111,8 +139,11 @@ Android MVVM with Compose + Room + Hilt.
 - Central routes: `presentation/navigation/AppRoutes.kt`
 - One-shot UI events for post-save navigation (`AddEditUiEvent.NavigateHistory`)
 - History organized as **TabRow**: Overview | Transactions | Filters
+- Universal Top Bar: `AppTopBar` with unread notification badge on all screens
+- Navigation bar with 4 bottom destinations: **Overview**, **History**, **Statistics**, **More**
 - `SwipeableTransactionItem` wraps `TransactionItem` with `SwipeToDismissBox`
 - `BiometricGate` + `BiometricLockScreen` gate all financial UI until authenticated
+- `LoanReminderBottomSheet` prompts once per day on month rollover / salary arrival
 
 ### 2.5 Core security
 
@@ -340,14 +371,57 @@ Unit tests execute on the JVM (no emulator required) using JUnit 4, Kotlin Corou
 
 ---
 
-## 8. Navigation Reference
+## 8. Notifications, Reminders & Background Scheduling
+
+The application implements a resilient, dual-engine background scheduling architecture designed to operate reliably across Android 8.0 (API 26) through Android 14+ (API 34+).
+
+### 8.1 Dual-Engine Scheduling Strategy
+1. **Primary Engine — `AlarmManager`**:
+   - Manages the exact daily 9:00 PM (`21:00`) reminder.
+   - On device boot (`BOOT_COMPLETED`), the schedule is automatically re-registered.
+   - Wakes `DailyExpenseReminderReceiver`, which queries `TransactionDao` to verify if any expenses were recorded today. If >= 1 expense exists, the notification is skipped.
+
+2. **Secondary Engine — `WorkManager`**:
+   - `DailyExpenseReminderWorker` is scheduled as an unconstrained periodic worker.
+   - Acts as a safety net against aggressive OEM process termination (e.g., Xiaomi MIUI, Samsung OneUI, Huawei) where standard alarms might be blocked.
+   - Checks both expense counts and daily notification dispatch state to prevent duplicate notifications.
+
+3. **Loan Reminder Worker**:
+   - `LoanReminderWorker` runs periodically to ensure monthly payment schedules are generated in Room for all active configured loans.
+
+### 8.2 AlarmManager Behavior: Exact vs Inexact & Doze Mode Delay
+
+Understanding how `AlarmManager` behaves across Android versions and device states is critical:
+
+| Scenario / State | Granted Permission (`SCHEDULE_EXACT_ALARM`) | Denied / Revoked Permission (Fallback) |
+|---|---|---|
+| **API Mechanism** | `setExactAndAllowWhileIdle()` | `setAndAllowWhileIdle()` |
+| **Delivery Accuracy** | Exact at `21:00:00` local time | Batched / Deferred by OS power manager |
+| **Active Screen / Foreground** | Instant (0 delay) | ~0 to 5 minutes delay |
+| **Screen Off / Normal Standby** | Instant (0 delay) | ~5 to 15 minutes delay |
+| **Light Doze Mode** | Instant (0 delay, breaks through idle) | Deferred to next Light Doze maintenance window (~15 to 30 min) |
+| **Deep Doze Mode** *(stationary, screen off, on battery)* | Instant (0 delay, breaks through deep idle) | **Batched into Deep Doze maintenance windows**. Maintenance intervals start at 15 minutes and exponentially back off to 1 hour, 2 hours, 4 hours, or until the user moves/unlocks the phone. |
+| **Android 13/14+ Behavior** | In Android 14, `SCHEDULE_EXACT_ALARM` is restricted. If revoked, app automatically falls back to `setAndAllowWhileIdle()` without crashing. | `POST_NOTIFICATIONS` runtime permission is requested at startup. If denied, notifications are suppressed at the OS level while internal scheduling continues harmlessly. |
+
+---
+
+## 9. Navigation Reference
 
 ```kotlin
 // AppRoutes.kt
+OVERVIEW = "overview"
 HISTORY = "history"
+STATISTICS = "statistics"
+MORE = "more"                        // 4th bottom nav tab: hub for settings & tools
 ADD_TRANSACTION = "addTransaction"  // use addTransactionRoute() for navigation
-STATISTICS, CATEGORIES, SETTINGS, DATABASE_BROWSER
-TRANSFER, WALLET
+DEBTS = "debts"
+LOANS = "loans"
+ALERTS = "alerts"
+CATEGORIES = "categories"
+SETTINGS = "settings"
+DATABASE_BROWSER = "database_browser"
+TRANSFER = "transfer"
+WALLET = "wallet"
 EDIT_TRANSFER = "editTransfer/{transactionId}"
 EDIT_WALLET = "editWallet/{transactionId}"
 ```
@@ -356,7 +430,7 @@ EDIT_WALLET = "editWallet/{transactionId}"
 
 ---
 
-## 9. CSV Import Format (Canonical)
+## 10. CSV Import Format (Canonical)
 
 Header (single line):
 
@@ -374,14 +448,18 @@ Defined in `domain/TransactionExportRow.kt` → `CsvImportFormat` object.
 
 ---
 
-## 10. File-Level Source of Truth
+## 11. File-Level Source of Truth
 
 | Area | Files |
 |------|-------|
-| Navigation | `MainScreen.kt`, `AppRoutes.kt` |
+| Navigation | `MainScreen.kt`, `AppRoutes.kt`, `MoreScreen.kt` |
+| Top Bar & Alerts | `AppTopBar.kt`, `AlertsScreen.kt`, `AlertsViewModel.kt`, `AppAlert.kt`, `AppAlertDao.kt`, `AlertRepository.kt` |
 | History | `HistoryScreen.kt`, `HistoryViewModel.kt`, `HistoryGrouping.kt`, `TransactionItem.kt`, `SwipeableTransactionItem` |
 | Overview | `OverviewScreen.kt`, `HistoryViewModel.kt`, `AccountBalanceCards.kt` |
 | Add/Edit | `AddTransactionScreen.kt`, `AddEditTransactionViewModel.kt` |
+| Debts | `DebtsScreen.kt`, `DebtsViewModel.kt`, `Transaction.debtType`, `Transaction.isDebtSettled` |
+| Loans | `LoansScreen.kt`, `LoansViewModel.kt`, `LoanReminderBottomSheet.kt`, `ConfiguredLoan.kt`, `MonthlyLoanPayment.kt`, `ConfiguredLoanDao.kt`, `MonthlyLoanPaymentDao.kt`, `LoanRepository.kt` |
+| Scheduling & Notifications | `AlarmScheduler.kt`, `DailyExpenseReminderReceiver.kt`, `DailyExpenseReminderWorker.kt`, `LoanReminderWorker.kt`, `NotificationHelper.kt` |
 | Transfer | `TransferScreen.kt`, `TransferViewModel.kt` |
 | Wallet | `WalletScreen.kt`, `WalletViewModel.kt`, `WalletCalculator.kt` |
 | Statistics | `StatisticsScreen.kt`, `StatisticsViewModel.kt`, `ThreeMonthMultiChart.kt`, `CategoryPieChart.kt`, `StatisticsBarChart.kt` |
@@ -391,15 +469,19 @@ Defined in `domain/TransactionExportRow.kt` → `CsvImportFormat` object.
 | Locale | `LocaleHelper.kt`, `UserPreferences.kt`, `values/strings.xml`, `values-ar/strings.xml` |
 | Biometric lock | `BiometricAuthManager.kt`, `BiometricGate.kt`, `BiometricLockScreen.kt`, `BiometricLockViewModel.kt`, `MainActivity.kt` |
 | Period/Balance | `PeriodCalculator.kt`, `BalanceCalculator.kt`, `core/time/DateUtils.kt` |
-| Data | `entities/*`, `dao/*`, `Migrations.kt`, `AppDatabase.kt` |
+| Data | `entities/*`, `dao/*`, `Migrations.kt` (v13), `AppDatabase.kt` |
 
 ---
 
-## 11. Business Glossary
+## 12. Business Glossary
 
 - **Salary month**: spending period anchored by salary start event
 - **Wallet**: monthly pocket-money bucket (salary-mode); not the same as “all cash”
-- **Dept income**: reimbursement income from others
+- **Debt (Lent)**: `debtType = LENT` expense where money was lent to someone and is owed to user
+- **Debt (Borrowed / Repayment)**: `debtType = BORROWED` or debt income repaid to user
+- **Configured Loan**: recurring liability (mortgage, auto, personal) tracked across months
+- **Monthly Loan Payment**: month-specific instance of a configured loan (`monthly_loan_payments`)
+- **App Alert**: persistent notification stored in `app_alerts` with unread/dismissed state
 - **Owed expense**: `awaitingReimbursement = true`
 - **Sub-description**: optional item-level detail under main description
 - **Remaining income**: net savings generated during the active period (`income - expense - wallet`)

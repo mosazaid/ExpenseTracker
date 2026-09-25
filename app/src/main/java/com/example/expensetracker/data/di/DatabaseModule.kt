@@ -46,4 +46,19 @@ object DatabaseModule {
     fun provideSubCategoryDao(database: AppDatabase): com.example.expensetracker.data.database.dao.SubCategoryDao {
         return database.subCategoryDao()
     }
+
+    @Provides
+    fun provideConfiguredLoanDao(database: AppDatabase): com.example.expensetracker.data.database.dao.ConfiguredLoanDao {
+        return database.configuredLoanDao()
+    }
+
+    @Provides
+    fun provideMonthlyLoanPaymentDao(database: AppDatabase): com.example.expensetracker.data.database.dao.MonthlyLoanPaymentDao {
+        return database.monthlyLoanPaymentDao()
+    }
+
+    @Provides
+    fun provideAppAlertDao(database: AppDatabase): com.example.expensetracker.data.database.dao.AppAlertDao {
+        return database.appAlertDao()
+    }
 }

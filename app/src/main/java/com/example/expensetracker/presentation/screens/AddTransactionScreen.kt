@@ -7,8 +7,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -146,16 +151,38 @@ fun AddTransactionScreen(
         AccountType.WALLET -> null
     }
 
+    val timeFormat = remember { java.text.SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    val timePicker = android.app.TimePickerDialog(
+        context,
+        { _, hourOfDay, minute ->
+            val cal = Calendar.getInstance().apply {
+                time = uiState.selectedDate
+                set(Calendar.HOUR_OF_DAY, hourOfDay)
+                set(Calendar.MINUTE, minute)
+            }
+            viewModel.updateSelectedDate(cal.time)
+        },
+        Calendar.getInstance().apply { time = uiState.selectedDate }.get(Calendar.HOUR_OF_DAY),
+        Calendar.getInstance().apply { time = uiState.selectedDate }.get(Calendar.MINUTE),
+        true
+    )
+
     val datePicker = DatePickerDialog(
         context,
         { _, year, month, dayOfMonth ->
-            calendar.set(year, month, dayOfMonth)
+            val currentCal = Calendar.getInstance().apply { time = uiState.selectedDate }
+            calendar.set(year, month, dayOfMonth, currentCal.get(Calendar.HOUR_OF_DAY), currentCal.get(Calendar.MINUTE))
             viewModel.updateSelectedDate(calendar.time)
         },
         calendar.get(Calendar.YEAR),
         calendar.get(Calendar.MONTH),
         calendar.get(Calendar.DAY_OF_MONTH)
     )
+
+    var budgetWarning by remember { mutableStateOf<com.example.expensetracker.presentation.viewModel.BudgetWarningInfo?>(null) }
+    LaunchedEffect(uiState.selectedCategory, uiState.amount, uiState.selectedDate, uiState.transactionType) {
+        budgetWarning = viewModel.checkBudgetWarning(uiState.selectedCategory, uiState.amount)
+    }
 
     if (showInsufficientDialog) {
         AlertDialog(
@@ -366,15 +393,22 @@ fun AddTransactionScreen(
 
         // ── 4. Account Selector (Bank default)
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Account", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.account), style = MaterialTheme.typography.labelMedium)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 LIQUID_ACCOUNTS.forEach { type ->
                     FilterChip(
                         selected = uiState.accountType == type,
                         onClick = { viewModel.updateAccountType(type) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = if (type == AccountType.BANK) Icons.Default.AccountBalance else Icons.Default.Payments,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
                         label = {
                             Text(
-                                if (type == AccountType.BANK) "🏦 Bank" else "💵 Cash"
+                                if (type == AccountType.BANK) stringResource(R.string.account_bank) else stringResource(R.string.account_cash)
                             )
                         }
                     )
@@ -501,6 +535,52 @@ fun AddTransactionScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
+        // ── Budget Warning Banner (if approaching or exceeded)
+        budgetWarning?.let { warning ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (warning.isExceeded) {
+                        MaterialTheme.colorScheme.errorContainer
+                    } else {
+                        MaterialTheme.colorScheme.tertiaryContainer
+                    }
+                )
+            ) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = if (warning.isExceeded) {
+                            stringResource(R.string.budget_warning_exceeded_title)
+                        } else {
+                            stringResource(R.string.budget_warning_near_title)
+                        },
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (warning.isExceeded) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                    Text(
+                        text = if (warning.isExceeded) {
+                            stringResource(
+                                R.string.budget_warning_exceeded_desc,
+                                warning.categoryName,
+                                CurrencyUtils.formatCurrency(warning.projectedSpent),
+                                CurrencyUtils.formatCurrency(warning.limit)
+                            )
+                        } else {
+                            stringResource(
+                                R.string.budget_warning_near_desc,
+                                warning.categoryName,
+                                CurrencyUtils.formatCurrency(warning.projectedSpent),
+                                CurrencyUtils.formatCurrency(warning.limit)
+                            )
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (warning.isExceeded) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+            }
+        }
+
         // ── 8. Description Field
         OutlinedTextField(
             value = uiState.description,
@@ -511,84 +591,168 @@ fun AddTransactionScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // ── 9. Date Picker Button
-        OutlinedButton(
-            onClick = { datePicker.show() },
-            modifier = Modifier.fillMaxWidth()
+        // ── 9. Date & Time Selection (Time is optional, defaults to current time)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("Date: ${DateUtils.formatDate(uiState.selectedDate)}")
+            OutlinedButton(
+                onClick = { datePicker.show() },
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(DateUtils.formatDate(uiState.selectedDate))
+            }
+            OutlinedButton(
+                onClick = { timePicker.show() },
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(timeFormat.format(uiState.selectedDate))
+            }
         }
 
-        // ── 10. Dept & Reimbursement options
-        if (selectedCategory != null) {
-            var isDept by remember { mutableStateOf(false) }
-            LaunchedEffect(selectedCategory) {
-                isDept = viewModel.isDeptCategory(selectedCategory)
-            }
-            if (isDept) {
-                OutlinedTextField(
-                    value = uiState.debtorNote,
-                    onValueChange = { viewModel.updateDebtorNote(it) },
-                    label = { Text("Who owes (optional)") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    modifier = Modifier.fillMaxWidth()
-                )
+        var isDept by remember { mutableStateOf(false) }
+        LaunchedEffect(selectedCategory) {
+            isDept = viewModel.isDeptCategory(selectedCategory)
+        }
 
-                ExposedDropdownMenuBox(
-                    expanded = expenseMenuExpanded,
-                    onExpandedChange = { expenseMenuExpanded = !expenseMenuExpanded }
-                ) {
-                    val linkedExpense = unreimbursedExpenses.find { it.id == uiState.linkedExpenseId }
-                        ?: uiState.linkedExpenseId?.let { id ->
-                            unreimbursedExpenses.find { it.id == id }
-                        }
-                    OutlinedTextField(
-                        value = linkedExpense?.let {
-                            "${it.description.ifBlank { "Expense" }} — ${CurrencyUtils.formatCurrency(it.amount)}"
-                        } ?: "Link to expense (optional)",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Link to expense") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expenseMenuExpanded)
-                        },
-                        modifier = Modifier
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
-                            .fillMaxWidth()
+        // ── 10. Debt & Reimbursement options
+        if (selectedCategory != null && isDept) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     )
-                    ExposedDropdownMenu(
-                        expanded = expenseMenuExpanded,
-                        onDismissRequest = { expenseMenuExpanded = false }
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        DropdownMenuItem(
-                            text = { Text("None") },
-                            onClick = {
-                                viewModel.updateLinkedExpenseId(null)
-                                expenseMenuExpanded = false
-                            }
-                        )
-                        unreimbursedExpenses.forEach { expense ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        "${DateUtils.formatDate(expense.date)} — " +
-                                            expense.description.ifBlank { "Expense" } + " — " +
-                                            CurrencyUtils.formatCurrency(expense.amount)
-                                    )
-                                },
-                                onClick = {
-                                    viewModel.updateLinkedExpenseId(expense.id)
-                                    expenseMenuExpanded = false
-                                }
+                        if (uiState.transactionType == TransactionType.EXPENSE) {
+                            Text(
+                                text = stringResource(R.string.debt_lent_header),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
                             )
+                            Text(
+                                text = stringResource(R.string.debt_lent_explanation),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            OutlinedTextField(
+                                value = uiState.debtorNote,
+                                onValueChange = { viewModel.updateDebtorNote(it) },
+                                label = { Text(stringResource(R.string.debtor_name_label)) },
+                                placeholder = { Text("e.g. Ahmad, Omar") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(R.string.debt_income_header),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                FilterChip(
+                                    selected = !uiState.isIncomeBorrowedDebt,
+                                    onClick = { viewModel.updateIncomeDebtType(false) },
+                                    label = { Text(stringResource(R.string.debt_income_repayment_opt)) }
+                                )
+                                FilterChip(
+                                    selected = uiState.isIncomeBorrowedDebt,
+                                    onClick = { viewModel.updateIncomeDebtType(true) },
+                                    label = { Text(stringResource(R.string.debt_income_borrowed_opt)) }
+                                )
+                            }
+
+                            if (!uiState.isIncomeBorrowedDebt) {
+                                Text(
+                                    text = stringResource(R.string.debt_income_repayment_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                                ExposedDropdownMenuBox(
+                                    expanded = expenseMenuExpanded,
+                                    onExpandedChange = { expenseMenuExpanded = !expenseMenuExpanded }
+                                ) {
+                                    val linkedExpense = unreimbursedExpenses.find { it.id == uiState.linkedExpenseId }
+                                        ?: uiState.linkedExpenseId?.let { id ->
+                                            unreimbursedExpenses.find { it.id == id }
+                                        }
+                                    OutlinedTextField(
+                                        value = linkedExpense?.let {
+                                            "${it.debtorNote?.ifBlank { it.description } ?: it.description} — ${CurrencyUtils.formatCurrency(it.amount)}"
+                                        } ?: stringResource(R.string.link_to_expense_optional),
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        label = { Text(stringResource(R.string.link_to_expense_debt)) },
+                                        trailingIcon = {
+                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expenseMenuExpanded)
+                                        },
+                                        modifier = Modifier
+                                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                                            .fillMaxWidth()
+                                    )
+                                    ExposedDropdownMenu(
+                                        expanded = expenseMenuExpanded,
+                                        onDismissRequest = { expenseMenuExpanded = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.none_opt)) },
+                                            onClick = {
+                                                viewModel.updateLinkedExpenseId(null)
+                                                expenseMenuExpanded = false
+                                            }
+                                        )
+                                        unreimbursedExpenses.forEach { expense ->
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(
+                                                        "${DateUtils.formatDate(expense.date)} — " +
+                                                            (expense.debtorNote?.ifBlank { expense.description } ?: expense.description) + " — " +
+                                                            CurrencyUtils.formatCurrency(expense.amount)
+                                                    )
+                                                },
+                                                onClick = {
+                                                    viewModel.updateLinkedExpenseId(expense.id)
+                                                    expenseMenuExpanded = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.debt_income_borrowed_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                                OutlinedTextField(
+                                    value = uiState.debtorNote,
+                                    onValueChange = { viewModel.updateDebtorNote(it) },
+                                    label = { Text(stringResource(R.string.creditor_name_label)) },
+                                    placeholder = { Text("e.g. Bank, Friend") },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if (uiState.transactionType == TransactionType.EXPENSE) {
+        if (uiState.transactionType == TransactionType.EXPENSE && !isDept) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -642,6 +806,13 @@ fun AddTransactionScreen(
                         viewModel.saveSubCategory(category.id, subDescTrimmed)
                     }
 
+                    val isDeptCat = viewModel.isDeptCategory(category)
+                    val computedDebtType = if (isDeptCat) {
+                        if (uiState.transactionType == TransactionType.EXPENSE) "LENT"
+                        else if (uiState.isIncomeBorrowedDebt) "BORROWED"
+                        else "REPAYMENT"
+                    } else uiState.debtType
+
                     val transaction = Transaction(
                         id = uiState.editingTransactionId ?: 0L,
                         amount = amountDouble,
@@ -654,7 +825,9 @@ fun AddTransactionScreen(
                         linkedExpenseId = uiState.linkedExpenseId,
                         debtorNote = uiState.debtorNote.takeIf { it.isNotBlank() },
                         awaitingReimbursement = uiState.transactionType == TransactionType.EXPENSE &&
-                            uiState.awaitingReimbursement,
+                            (uiState.awaitingReimbursement || (isDeptCat && computedDebtType == "LENT")),
+                        debtType = computedDebtType,
+                        isDebtSettled = uiState.isDebtSettled,
                         startsNewPeriod = uiState.startsNewPeriod,
                         carriedForwardBalance = uiState.carriedForwardBalance,
                         allowNegativeBalance = uiState.allowNegativeBalance,

@@ -1,5 +1,44 @@
 # Release Notes
 
+## Version: Feature Expansion Phase 5 (September 2026)
+
+### Highlights
+- **Daily 9:00 PM Expense Reminder (Dual Engine: AlarmManager + WorkManager)**:
+  - Intelligently checks if any expense was logged today before notifying; skips if user already logged expenses or was already reminded.
+  - **AlarmManager Engine**: Uses `setExactAndAllowWhileIdle()` when exact alarm permission is granted.
+  - **Graceful Inexact Fallback & Doze Mode Handling**: When `SCHEDULE_EXACT_ALARM` is denied or restricted (Android 13/14+), seamlessly falls back to `setAndAllowWhileIdle()`. In standard standby, alerts fire within ~5–15 minutes; during deep battery Doze mode, notifications fire at the OS maintenance window (15m to 2+ hours).
+  - **WorkManager Secondary Guard**: `DailyExpenseReminderWorker` operates as a concurrent failsafe against aggressive OEM background task killers.
+  - Android 13/14 runtime permission flow (`POST_NOTIFICATIONS`) integrated into startup.
+- **Category Budget Limits & In-App Alerts**:
+  - Live budget threshold evaluation during transaction recording with in-app banner warnings at 85% and 100% capacity.
+  - Persistent alert history in Room database (`app_alerts` table) with dismissed status tracking (`isDismissed`).
+  - System tray notification automatically triggered if a newly added expense breaches or reaches category limits.
+- **Universal Top Bar with Unread Alert Badge (`AppTopBar`)**:
+  - Replaces disparate screen headers with a unified top app bar.
+  - Includes a real-time reactive notification bell showing unread badge count, directly navigating to the new `AlertsScreen`.
+- **Debt Tracking & Directional Separation**:
+  - Clarified model: **Expense + Debt** = money lent to someone (debtor owes user); **Income + Debt** = repayment to user OR borrowed debt from someone.
+  - Dedicated `DebtsScreen` with outstanding balances, debtor filter chips, settlement dialogs, and month rollover support.
+- **Configured Recurring Loans & Preserved Salary**:
+  - `ConfiguredLoan` and `MonthlyLoanPayment` entities for recurring liabilities (car, mortgage, personal loans).
+  - Once-per-day prompt bottom sheet (`LoanReminderBottomSheet`) on month rollover / salary arrival.
+  - Preserves base salary from double-deduction while maintaining clean accounting records.
+- **"More" Hub Navigation Tab**:
+  - 4th bottom navigation tab consolidating Loans, Debts, Categories, Database Browser, and Settings into a unified launchpad.
+- **Optional Time Picker in Transaction Creation**:
+  - Material 3 time picker adjacent to date picker in `AddTransactionScreen` for exact timestamp logging.
+- **Full Arabic & English Localization Parity**:
+  - 100% parity across `values/strings.xml` and `values-ar/strings.xml` for all alerts, reminders, debt labels, and loan actions.
+- **Export Template Enhancements**:
+  - Updated PDF and styled Excel exporters to represent loan repayments, debt settlements, and subcategories.
+
+### Data and Migration Changes
+- Database version **13**.
+- `11 -> 12`: Subcategory seed optimizations and enhancements.
+- `12 -> 13`: Added `debtType` and `isDebtSettled` to `transactions`; created `configured_loans`, `monthly_loan_payments`, and `app_alerts` tables with indexes; seeded default `Loan` and `Dept` categories.
+
+---
+
 ## Version: Feature Expansion Phase 4 (September 2026)
 
 ### Highlights

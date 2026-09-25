@@ -44,6 +44,8 @@ class UserPreferences @Inject constructor(
     private val openingCashKey = stringPreferencesKey("opening_cash_balance")
     private val openingBankKey = stringPreferencesKey("opening_bank_balance")
     private val dismissedRecurringKey = stringSetPreferencesKey("dismissed_recurring_until")
+    private val lastLoanSheetDateKey = stringPreferencesKey("last_loan_sheet_date")
+    private val lastDebtRolloverMonthKey = stringPreferencesKey("last_debt_rollover_month")
 
     val biometricLockEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[biometricLockKey] ?: false
@@ -144,6 +146,30 @@ class UserPreferences @Inject constructor(
         val key = recurringDismissKey(recurringId, dueMillis)
         return dismissedRecurringKeys.first().contains(key)
     }
+
+    val lastLoanSheetDate: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[lastLoanSheetDateKey]
+    }
+
+    suspend fun setLastLoanSheetDate(dateString: String) {
+        context.dataStore.edit { prefs ->
+            prefs[lastLoanSheetDateKey] = dateString
+        }
+    }
+
+    suspend fun getLastLoanSheetDate(): String? = lastLoanSheetDate.first()
+
+    val lastDebtRolloverMonth: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[lastDebtRolloverMonthKey]
+    }
+
+    suspend fun setLastDebtRolloverMonth(monthString: String) {
+        context.dataStore.edit { prefs ->
+            prefs[lastDebtRolloverMonthKey] = monthString
+        }
+    }
+
+    suspend fun getLastDebtRolloverMonth(): String? = lastDebtRolloverMonth.first()
 
     private fun recurringDismissKey(recurringId: Long, dueMillis: Long): String =
         "$recurringId:$dueMillis"
