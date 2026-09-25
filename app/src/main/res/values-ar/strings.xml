@@ -220,9 +220,11 @@
     <string name="view_all_history">عرض الكل</string>
     <string name="quick_actions">إجراءات سريعة</string>
     <string name="action_transfer">تحويل</string>
+    <string name="edit_transfer">تعديل التحويل</string>
     <string name="action_add_expense">مصروف</string>
     <string name="action_add_income">دخل</string>
     <string name="action_wallet">المحفظة</string>
+    <string name="edit_wallet_move">تعديل حركة المحفظة</string>
     <string name="monthly_summary">ملخص الشهر</string>
     <string name="remaining_income_label">المتبقي من الدخل</string>
     <string name="total_remaining_label">إجمالي المتبقي</string>

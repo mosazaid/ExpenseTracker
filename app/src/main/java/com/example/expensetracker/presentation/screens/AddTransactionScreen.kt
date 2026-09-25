@@ -35,6 +35,7 @@ import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.presentation.components.AccountBalanceCards
+import com.example.expensetracker.presentation.components.AppTopBar
 import com.example.expensetracker.presentation.viewModel.AddEditTransactionViewModel
 import com.example.expensetracker.presentation.viewModel.LIQUID_ACCOUNTS
 import kotlinx.coroutines.launch
@@ -336,39 +337,36 @@ fun AddTransactionScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        // ── 1. Screen Title with Back Button
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            IconButton(onClick = {
-                if (!navController.popBackStack()) {
-                    navController.navigate(AppRoutes.OVERVIEW) {
-                        popUpTo(AppRoutes.OVERVIEW) { inclusive = true }
-                    }
-                }
-            }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
-                )
+    Scaffold(
+        topBar = {
+            val titleText = if (isEditMode) {
+                "Edit ${uiState.transactionType.name.lowercase().replaceFirstChar { it.uppercase() }}"
+            } else {
+                "Add ${uiState.transactionType.name.lowercase().replaceFirstChar { it.uppercase() }}"
             }
-            Text(
-                if (isEditMode) {
-                    "Edit ${uiState.transactionType.name.lowercase().replaceFirstChar { it.uppercase() }}"
-                } else {
-                    "Add ${uiState.transactionType.name.lowercase().replaceFirstChar { it.uppercase() }}"
+            AppTopBar(
+                title = titleText,
+                navController = navController,
+                canNavigateBack = true,
+                onBackClick = {
+                    if (!navController.popBackStack()) {
+                        navController.navigate(AppRoutes.OVERVIEW) {
+                            popUpTo(AppRoutes.OVERVIEW) { inclusive = true }
+                        }
+                    }
                 },
-                style = MaterialTheme.typography.titleLarge
+                showNotificationsBadge = false
             )
         }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
 
         // ── 2. Your Money Now (Balance Cards at top)
         AccountBalanceCards(
@@ -867,6 +865,7 @@ fun AddTransactionScreen(
         ) {
             Text(if (isEditMode) "Update Transaction" else "Save Transaction")
         }
+    }
     }
 }
 

@@ -220,9 +220,11 @@
     <string name="view_all_history">View All</string>
     <string name="quick_actions">Quick Actions</string>
     <string name="action_transfer">Transfer</string>
+    <string name="edit_transfer">Edit Transfer</string>
     <string name="action_add_expense">Expense</string>
     <string name="action_add_income">Income</string>
     <string name="action_wallet">Wallet</string>
+    <string name="edit_wallet_move">Edit Wallet Move</string>
     <string name="monthly_summary">Monthly Summary</string>
     <string name="remaining_income_label">Remaining Income</string>
     <string name="total_remaining_label">Total Remaining</string>

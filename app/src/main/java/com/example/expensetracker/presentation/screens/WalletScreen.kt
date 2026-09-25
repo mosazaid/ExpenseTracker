@@ -17,6 +17,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.preferences.MonthMode
+import androidx.compose.ui.res.stringResource
+import com.example.expensetracker.R
+import com.example.expensetracker.presentation.components.AppTopBar
+import com.example.expensetracker.presentation.navigation.AppRoutes
 import com.example.expensetracker.presentation.theme.CurrencyUtils
 import com.example.expensetracker.presentation.theme.DateUtils
 import com.example.expensetracker.presentation.viewModel.LIQUID_ACCOUNTS
@@ -105,16 +109,30 @@ fun WalletScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        Text(
-            if (isEditMode) "Edit wallet move" else "Wallet",
-            style = MaterialTheme.typography.titleLarge
-        )
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = if (isEditMode) stringResource(R.string.edit_wallet_move) else stringResource(R.string.action_wallet),
+                navController = navController,
+                canNavigateBack = true,
+                onBackClick = {
+                    if (!navController.popBackStack()) {
+                        navController.navigate(AppRoutes.OVERVIEW) {
+                            popUpTo(AppRoutes.OVERVIEW) { inclusive = true }
+                        }
+                    }
+                },
+                showNotificationsBadge = false
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+        ) {
 
         if (!isSalaryMode) {
             Spacer(modifier = Modifier.height(12.dp))
@@ -320,5 +338,6 @@ fun WalletScreen(
         ) {
             Text(if (isEditMode) "Update wallet move" else "Move money")
         }
+    }
     }
 }

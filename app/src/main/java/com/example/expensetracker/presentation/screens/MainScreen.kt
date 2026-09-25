@@ -170,12 +170,25 @@ fun MainScreen(
                             ),
                             onClick = {
                                 if (currentDestination?.route != item.route) {
-                                    navController.navigate(item.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
+                                    if (item.route == AppRoutes.OVERVIEW) {
+                                        val popped = navController.popBackStack(AppRoutes.OVERVIEW, inclusive = false)
+                                        if (!popped) {
+                                            navController.navigate(AppRoutes.OVERVIEW) {
+                                                popUpTo(navController.graph.findStartDestination().id) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
                                         }
-                                        launchSingleTop = true
-                                        restoreState = true
+                                    } else {
+                                        navController.navigate(item.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
                                     }
                                 }
                             }

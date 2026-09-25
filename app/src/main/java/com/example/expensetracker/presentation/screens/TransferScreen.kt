@@ -15,6 +15,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.expensetracker.data.database.entities.AccountType
+import androidx.compose.ui.res.stringResource
+import com.example.expensetracker.R
+import com.example.expensetracker.presentation.components.AppTopBar
+import com.example.expensetracker.presentation.navigation.AppRoutes
 import com.example.expensetracker.presentation.theme.CurrencyUtils
 import com.example.expensetracker.presentation.theme.DateUtils
 import com.example.expensetracker.presentation.viewModel.TransferUiState
@@ -95,23 +99,36 @@ fun TransferScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        Text(
-            if (isEditMode) "Edit Transfer" else "Transfer",
-            style = MaterialTheme.typography.titleLarge
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            "Available ${uiState.transferFromAccount.name.lowercase()}: " +
-                CurrencyUtils.formatCurrency(availableBalance ?: 0.0),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline
-        )
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = if (isEditMode) stringResource(R.string.edit_transfer) else stringResource(R.string.action_transfer),
+                navController = navController,
+                canNavigateBack = true,
+                onBackClick = {
+                    if (!navController.popBackStack()) {
+                        navController.navigate(AppRoutes.OVERVIEW) {
+                            popUpTo(AppRoutes.OVERVIEW) { inclusive = true }
+                        }
+                    }
+                },
+                showNotificationsBadge = false
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+        ) {
+            Text(
+                "Available ${uiState.transferFromAccount.name.lowercase()}: " +
+                    CurrencyUtils.formatCurrency(availableBalance ?: 0.0),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -193,6 +210,7 @@ fun TransferScreen(
         ) {
             Text(if (isEditMode) "Update Transfer" else "Transfer")
         }
+    }
     }
 }
 

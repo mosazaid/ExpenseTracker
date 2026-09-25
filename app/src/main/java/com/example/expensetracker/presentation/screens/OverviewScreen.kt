@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.example.expensetracker.R
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Category
@@ -199,7 +200,15 @@ fun OverviewScreen(
                 RecentActivityCard(
                     recentTransactions = recentTransactions,
                     categoryMap = categoryMap,
-                    onViewAll = { navController.navigate(AppRoutes.HISTORY) },
+                    onViewAll = {
+                        navController.navigate(AppRoutes.HISTORY) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                     onTransactionClick = { txn ->
                         when (txn.type) {
                             TransactionType.TRANSFER -> {
