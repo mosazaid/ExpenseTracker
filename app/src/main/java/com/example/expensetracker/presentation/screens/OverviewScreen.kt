@@ -52,9 +52,10 @@ import com.example.expensetracker.presentation.components.FinancialInsightsCard
 import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.presentation.navigation.AppRoutes
+import com.example.expensetracker.presentation.model.MonthSummaryUiState
 import com.example.expensetracker.presentation.theme.*
-import com.example.expensetracker.presentation.viewModel.HistoryViewModel
 import com.example.expensetracker.presentation.viewModel.LoansViewModel
+import com.example.expensetracker.presentation.viewModel.OverviewViewModel
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -62,7 +63,7 @@ import java.util.*
 @Composable
 fun OverviewScreen(
     navController: NavController,
-    viewModel: HistoryViewModel = hiltViewModel(),
+    viewModel: OverviewViewModel = hiltViewModel(),
     loansViewModel: LoansViewModel = hiltViewModel()
 ) {
     val monthMode by viewModel.monthMode.collectAsState()
@@ -72,7 +73,7 @@ fun OverviewScreen(
 
     val preservedAmount by loansViewModel.preservedAmount.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-    var monthSummary by remember { mutableStateOf(HistoryViewModel.MonthSummaryUiState()) }
+    var monthSummary by remember { mutableStateOf(MonthSummaryUiState()) }
     var visibleReminder by remember { mutableStateOf<RecurringTransaction?>(null) }
     var summaryExpanded by remember { mutableStateOf(true) }
     var walletListExpanded by remember { mutableStateOf(false) }
@@ -469,7 +470,7 @@ private fun QuickActionButton(
 
 @Composable
 private fun MonthlyFinancialSummaryCard(
-    monthSummary: HistoryViewModel.MonthSummaryUiState,
+    monthSummary: MonthSummaryUiState,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
     modifier: Modifier = Modifier

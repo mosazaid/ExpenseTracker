@@ -1,7 +1,7 @@
 package com.example.expensetracker
 
 import com.example.expensetracker.domain.AccountBalances
-import com.example.expensetracker.presentation.viewModel.HistoryViewModel
+import com.example.expensetracker.presentation.model.MonthSummaryUiState
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -17,7 +17,7 @@ class MonthSummaryRemainingTest {
         val currentRemainingIncome = 38.98
         val previousMonthRemaining = totalCurrentBalances - currentRemainingIncome
 
-        val state = HistoryViewModel.MonthSummaryUiState(
+        val state = MonthSummaryUiState(
             monthIncome = 100.0,
             monthExpense = 61.02,
             monthNet = 38.98,
