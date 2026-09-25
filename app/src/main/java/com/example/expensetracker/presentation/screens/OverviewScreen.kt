@@ -574,20 +574,23 @@ private fun MonthlyFinancialSummaryCard(
                     ) {
                         SummaryMetricBox(
                             label = stringResource(R.string.income),
-                            value = "+${CurrencyUtils.formatCurrency(monthIncome)}",
+                            amountPrefix = "+",
+                            amount = monthIncome,
                             valueColor = FinancePositive,
                             modifier = Modifier.weight(1f)
                         )
                         SummaryMetricBox(
                             label = stringResource(R.string.expense),
-                            value = "-${CurrencyUtils.formatCurrency(monthExpense)}",
+                            amountPrefix = "-",
+                            amount = monthExpense,
                             valueColor = FinanceNegative,
                             modifier = Modifier.weight(1f)
                         )
                         if (monthSummary.walletBalance != 0.0) {
                             SummaryMetricBox(
                                 label = stringResource(R.string.action_wallet),
-                                value = "-${CurrencyUtils.formatCurrency(monthSummary.walletBalance)}",
+                                amountPrefix = "-",
+                                amount = monthSummary.walletBalance,
                                 valueColor = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.weight(1f)
                             )
@@ -646,12 +649,26 @@ private fun MonthlyFinancialSummaryCard(
                                     )
                                 }
                             }
-                            Text(
-                                text = formatSigned(monthSummary.remainingIncome),
-                                style = MaterialTheme.typography.titleMedium.withTabularNums(),
-                                fontWeight = FontWeight.Bold,
-                                color = if (monthSummary.remainingIncome >= 0) FinancePositive else FinanceNegative
-                            )
+                            Column(
+                                horizontalAlignment = Alignment.End,
+                                verticalArrangement = Arrangement.spacedBy(1.dp)
+                            ) {
+                                val remPrefix = if (monthSummary.remainingIncome >= 0) "+" else ""
+                                Text(
+                                    text = "$remPrefix${CurrencyUtils.formatAmountOnly(monthSummary.remainingIncome)}",
+                                    style = MaterialTheme.typography.titleMedium.withTabularNums(),
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (monthSummary.remainingIncome >= 0) FinancePositive else FinanceNegative,
+                                    textAlign = TextAlign.End
+                                )
+                                Text(
+                                    text = "JOD",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    textAlign = TextAlign.End
+                                )
+                            }
                         }
                     }
 
@@ -707,12 +724,25 @@ private fun MonthlyFinancialSummaryCard(
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold
                                 )
-                                Text(
-                                    text = CurrencyUtils.formatCurrency(monthSummary.totalRemaining),
-                                    style = MaterialTheme.typography.titleMedium.withTabularNums(),
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (monthSummary.totalRemaining >= 0) FinancePositive else FinanceNegative
-                                )
+                                Column(
+                                    horizontalAlignment = Alignment.End,
+                                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                                ) {
+                                    Text(
+                                        text = CurrencyUtils.formatAmountOnly(monthSummary.totalRemaining),
+                                        style = MaterialTheme.typography.titleMedium.withTabularNums(),
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (monthSummary.totalRemaining >= 0) FinancePositive else FinanceNegative,
+                                        textAlign = TextAlign.End
+                                    )
+                                    Text(
+                                        text = "JOD",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.outline,
+                                        textAlign = TextAlign.End
+                                    )
+                                }
                             }
                         }
                     }
@@ -725,7 +755,9 @@ private fun MonthlyFinancialSummaryCard(
 @Composable
 private fun SummaryMetricBox(
     label: String,
-    value: String,
+    amountPrefix: String = "",
+    amount: Double,
+    currency: String = "JOD",
     valueColor: Color,
     modifier: Modifier = Modifier
 ) {
@@ -735,9 +767,9 @@ private fun SummaryMetricBox(
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
                 text = label,
@@ -747,13 +779,21 @@ private fun SummaryMetricBox(
                 softWrap = true,
                 textAlign = TextAlign.Center
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = value,
+                text = "$amountPrefix${CurrencyUtils.formatAmountOnly(amount)}",
                 style = MaterialTheme.typography.titleSmall.withTabularNums(),
                 fontWeight = FontWeight.Bold,
                 color = valueColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = currency,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.outline,
                 textAlign = TextAlign.Center
             )
         }
