@@ -64,7 +64,8 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 ### Settings & More Hub
 - **"More" Hub**: 4th bottom nav tab grouping Debts, Loans, Categories, Database Browser, Settings, and **App Guide & Walkthrough**.
 - **Interactive Onboarding Walkthrough**: 3-step carousel guide on first app launch and accessible anytime from More tab.
-- **Color Themes**: Dynamic switching between 8 curated, accessible palettes: Emerald Green, Luxury Blue/Gold, Warm Earth, Cool Slate/Teal, Amethyst & Violet, Crimson & Burgundy, Midnight Ocean, and Forest & Sage Mint.
+- **Color Themes**: Dynamic switching between 12 curated, accessible palettes: Emerald Green, Luxury Blue/Gold, Warm Earth, Cool Slate/Teal, Amethyst & Violet, Crimson & Burgundy, Midnight Ocean, Forest & Sage Mint, Rose Gold & Champagne, Obsidian & Amber Gold, Nordic Frost & Glacier, and Espresso & Warm Mocha. Full WCAG contrast guaranteed across all selected chips and dark/light modes.
+- **Material 3 Recurring & Subscriptions Cards**: Redesigned spacious layout eliminating text truncation, featuring dedicated category rows, distinct frequency badges, and accessible 40dp+ touch targets.
 - **Tactile Haptic Feedback**: Subtle vibration feedback on transaction deletion and recording.
 - **Monthly Spending Comparison**: Benchmarks current month vs previous month with deltas and 3-month average in Statistics.
 - **Language**: English / Arabic (RTL)
@@ -194,6 +195,7 @@ Run all unit tests via Gradle:
 8. **`presentation/StatisticsCalculationsTest`**: 3-month stats aggregation, MoM spending change, and category expense share percentages.
 9. **`core/CoreUtilsTest`**: Currency formatting with 3 decimals and thousands grouping (`#,##0.000 JOD`), DateUtils custom pattern formatting (`PATTERN_FULL_DATE`, `PATTERN_ISO`), safe parsing, invalid rejection, month/year boundaries, and keys.
 10. **`presentation/navigation/AppDestinationsTest`**: Validates `kotlinx.serialization` contract, default parameters, and round-trip encode/decode of all Compose destinations.
+11. **`ThemeContrastTest`**: Automated WCAG contrast and distinct foreground/background container color verification across all 12 theme palettes in Light and Dark modes.
 
 ### Instrumented Tests (`app/src/androidTest/java/com/example/expensetracker/`)
 Run instrumented tests on an emulator/device:

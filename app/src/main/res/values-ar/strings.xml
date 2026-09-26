@@ -285,6 +285,10 @@
     <string name="theme_crimson_burgundy">القرمزي والبورغندي المخملي</string>
     <string name="theme_midnight_ocean">أزرق المحيط الليلي</string>
     <string name="theme_forest_mint">أخضر الغابة والنعناع الهادئ</string>
+    <string name="theme_rose_gold">الذهب الوردي والشمبانيا</string>
+    <string name="theme_obsidian_gold">السبج الأسود والكهرمان الذهبي</string>
+    <string name="theme_nordic_frost">الصقيع الاسكندنافي والجليد</string>
+    <string name="theme_espresso_mocha">إسبريسو وموكا دافئة</string>
     <string name="recurring_screen_title">المعاملات المتكررة والاشتراكات</string>
     <string name="recurring_screen_subtitle">إدارة تذكيرات الراتب، الفواتير والاشتراكات الدورية</string>
     <string name="recurring_empty_title">لا توجد معاملات متكررة</string>

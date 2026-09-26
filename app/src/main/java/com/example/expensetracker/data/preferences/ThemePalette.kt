@@ -56,5 +56,29 @@ enum class ThemePalette(
         primaryHex = 0xFF1B5E20,
         secondaryHex = 0xFF4CAF50,
         tertiaryHex = 0xFFDFC74C
+    ),
+    ROSE_GOLD(
+        titleRes = R.string.theme_rose_gold,
+        primaryHex = 0xFF8F3B55,
+        secondaryHex = 0xFFC97A91,
+        tertiaryHex = 0xFFD4AF37
+    ),
+    OBSIDIAN_GOLD(
+        titleRes = R.string.theme_obsidian_gold,
+        primaryHex = 0xFFB45309,
+        secondaryHex = 0xFFD97706,
+        tertiaryHex = 0xFF4B5563
+    ),
+    NORDIC_FROST(
+        titleRes = R.string.theme_nordic_frost,
+        primaryHex = 0xFF00677D,
+        secondaryHex = 0xFF4FA8C4,
+        tertiaryHex = 0xFF5C6BC0
+    ),
+    ESPRESSO_MOCHA(
+        titleRes = R.string.theme_espresso_mocha,
+        primaryHex = 0xFF5C3E2F,
+        secondaryHex = 0xFF8D6E63,
+        tertiaryHex = 0xFFC49A6C
     )
 }

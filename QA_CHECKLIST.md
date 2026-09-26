@@ -132,7 +132,7 @@
 
 ## More Screen Hub & Settings
 - [ ] 4th bottom nav tab opens `MoreScreen` with navigation tiles for Loans, Debts, Categories, Database Browser, and Settings.
-- [ ] Settings allows switching between 8 palettes (Emerald Green, Blue & Gold Luxury, Warm Earth, Cool Slate & Teal, Amethyst & Violet, Crimson & Burgundy, Midnight Ocean, Forest & Sage Mint).
+- [ ] Settings allows switching between 12 curated palettes (Emerald Green, Blue & Gold Luxury, Warm Earth, Cool Slate & Teal, Amethyst & Violet, Crimson & Burgundy, Midnight Ocean, Forest & Sage Mint, Rose Gold & Champagne, Obsidian & Amber Gold, Nordic Frost & Glacier, Espresso & Warm Mocha) with full WCAG contrast and visible text on selected chips.
 - [ ] Time picker in `AddTransactionScreen` allows specifying custom hour/minute.
 
 ## Regression Checks

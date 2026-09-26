@@ -347,6 +347,178 @@ val ForestSurfaceContainerDark = Color(0xFF1B211C)
 val ForestSurfaceContainerLowDark = Color(0xFF171D18)
 
 // ==========================================
+// 9. ROSE GOLD & CHAMPAGNE PALETTE
+// ==========================================
+val RoseGoldPrimaryLight = Color(0xFF8F3B55)
+val RoseGoldOnPrimaryLight = Color(0xFFFFFFFF)
+val RoseGoldPrimaryContainerLight = Color(0xFFFFD9E2)
+val RoseGoldOnPrimaryContainerLight = Color(0xFF3A0017)
+
+val RoseGoldPrimaryDark = Color(0xFFFFB1C7)
+val RoseGoldOnPrimaryDark = Color(0xFF560A28)
+val RoseGoldPrimaryContainerDark = Color(0xFF72233E)
+val RoseGoldOnPrimaryContainerDark = Color(0xFFFFD9E2)
+
+val RoseGoldSecondaryLight = Color(0xFF74565F)
+val RoseGoldOnSecondaryLight = Color(0xFFFFFFFF)
+val RoseGoldSecondaryContainerLight = Color(0xFFFFD9E2)
+val RoseGoldOnSecondaryContainerLight = Color(0xFF2B151C)
+
+val RoseGoldSecondaryDark = Color(0xFFE3BDC6)
+val RoseGoldOnSecondaryDark = Color(0xFF422931)
+val RoseGoldSecondaryContainerDark = Color(0xFF5A3F47)
+val RoseGoldOnSecondaryContainerDark = Color(0xFFFFD9E2)
+
+val RoseGoldTertiaryLight = Color(0xFF8A5122)
+val RoseGoldOnTertiaryLight = Color(0xFFFFFFFF)
+val RoseGoldTertiaryContainerLight = Color(0xFFFFDCBE)
+val RoseGoldOnTertiaryContainerLight = Color(0xFF321200)
+
+val RoseGoldTertiaryDark = Color(0xFFFFB77C)
+val RoseGoldOnTertiaryDark = Color(0xFF4F2500)
+val RoseGoldTertiaryContainerDark = Color(0xFF6C3A0C)
+val RoseGoldOnTertiaryContainerDark = Color(0xFFFFDCBE)
+
+val RoseGoldSurfaceLight = Color(0xFFFCF8F9)
+val RoseGoldOnSurfaceLight = Color(0xFF201A1B)
+val RoseGoldSurfaceContainerLight = Color(0xFFF0E9EB)
+val RoseGoldSurfaceContainerLowLight = Color(0xFFF6EFF1)
+
+val RoseGoldSurfaceDark = Color(0xFF161113)
+val RoseGoldOnSurfaceDark = Color(0xFFE9E0E1)
+val RoseGoldSurfaceContainerDark = Color(0xFF231D1F)
+val RoseGoldSurfaceContainerLowDark = Color(0xFF1E191B)
+
+// ==========================================
+// 10. OBSIDIAN & AMBER GOLD PALETTE
+// ==========================================
+val ObsidianPrimaryLight = Color(0xFF885200)
+val ObsidianOnPrimaryLight = Color(0xFFFFFFFF)
+val ObsidianPrimaryContainerLight = Color(0xFFFFDDB8)
+val ObsidianOnPrimaryContainerLight = Color(0xFF2B1700)
+
+val ObsidianPrimaryDark = Color(0xFFFFB86F)
+val ObsidianOnPrimaryDark = Color(0xFF482900)
+val ObsidianPrimaryContainerDark = Color(0xFF673D00)
+val ObsidianOnPrimaryContainerDark = Color(0xFFFFDDB8)
+
+val ObsidianSecondaryLight = Color(0xFF6F5B40)
+val ObsidianOnSecondaryLight = Color(0xFFFFFFFF)
+val ObsidianSecondaryContainerLight = Color(0xFFFBDEBC)
+val ObsidianOnSecondaryContainerLight = Color(0xFF271904)
+
+val ObsidianSecondaryDark = Color(0xFFDEC2A2)
+val ObsidianOnSecondaryDark = Color(0xFF3D2D16)
+val ObsidianSecondaryContainerDark = Color(0xFF55432B)
+val ObsidianOnSecondaryContainerDark = Color(0xFFFBDEBC)
+
+val ObsidianTertiaryLight = Color(0xFF4D606E)
+val ObsidianOnTertiaryLight = Color(0xFFFFFFFF)
+val ObsidianTertiaryContainerLight = Color(0xFFD0E5F5)
+val ObsidianOnTertiaryContainerLight = Color(0xFF071D29)
+
+val ObsidianTertiaryDark = Color(0xFFB4C9D9)
+val ObsidianOnTertiaryDark = Color(0xFF1E323F)
+val ObsidianTertiaryContainerDark = Color(0xFF354856)
+val ObsidianOnTertiaryContainerDark = Color(0xFFD0E5F5)
+
+val ObsidianSurfaceLight = Color(0xFFFCF8F4)
+val ObsidianOnSurfaceLight = Color(0xFF1E1B16)
+val ObsidianSurfaceContainerLight = Color(0xFFEFE9E2)
+val ObsidianSurfaceContainerLowLight = Color(0xFFF6F0E9)
+
+val ObsidianSurfaceDark = Color(0xFF110F0D)
+val ObsidianOnSurfaceDark = Color(0xFFEBE1D9)
+val ObsidianSurfaceContainerDark = Color(0xFF1E1B18)
+val ObsidianSurfaceContainerLowDark = Color(0xFF171512)
+
+// ==========================================
+// 11. NORDIC FROST & GLACIER PALETTE
+// ==========================================
+val NordicPrimaryLight = Color(0xFF00677D)
+val NordicOnPrimaryLight = Color(0xFFFFFFFF)
+val NordicPrimaryContainerLight = Color(0xFFB2EBFF)
+val NordicOnPrimaryContainerLight = Color(0xFF001F27)
+
+val NordicPrimaryDark = Color(0xFF82D2EC)
+val NordicOnPrimaryDark = Color(0xFF003542)
+val NordicPrimaryContainerDark = Color(0xFF004E5F)
+val NordicOnPrimaryContainerDark = Color(0xFFB2EBFF)
+
+val NordicSecondaryLight = Color(0xFF4C626A)
+val NordicOnSecondaryLight = Color(0xFFFFFFFF)
+val NordicSecondaryContainerLight = Color(0xFFCFE6F0)
+val NordicOnSecondaryContainerLight = Color(0xFF071E26)
+
+val NordicSecondaryDark = Color(0xFFB3CAD3)
+val NordicOnSecondaryDark = Color(0xFF1D343B)
+val NordicSecondaryContainerDark = Color(0xFF344A52)
+val NordicOnSecondaryContainerDark = Color(0xFFCFE6F0)
+
+val NordicTertiaryLight = Color(0xFF575C7E)
+val NordicOnTertiaryLight = Color(0xFFFFFFFF)
+val NordicTertiaryContainerLight = Color(0xFFDEE1FF)
+val NordicOnTertiaryContainerLight = Color(0xFF131937)
+
+val NordicTertiaryDark = Color(0xFFC0C5EB)
+val NordicOnTertiaryDark = Color(0xFF292E4D)
+val NordicTertiaryContainerDark = Color(0xFF3F4465)
+val NordicOnTertiaryContainerDark = Color(0xFFDEE1FF)
+
+val NordicSurfaceLight = Color(0xFFF6FAFC)
+val NordicOnSurfaceLight = Color(0xFF171D1F)
+val NordicSurfaceContainerLight = Color(0xFFE9EFF2)
+val NordicSurfaceContainerLowLight = Color(0xFFEFF5F8)
+
+val NordicSurfaceDark = Color(0xFF0F1416)
+val NordicOnSurfaceDark = Color(0xFFDEE3E6)
+val NordicSurfaceContainerDark = Color(0xFF1B2123)
+val NordicSurfaceContainerLowDark = Color(0xFF171D1F)
+
+// ==========================================
+// 12. ESPRESSO & WARM MOCHA PALETTE
+// ==========================================
+val EspressoPrimaryLight = Color(0xFF6B4534)
+val EspressoOnPrimaryLight = Color(0xFFFFFFFF)
+val EspressoPrimaryContainerLight = Color(0xFFFFDBCE)
+val EspressoOnPrimaryContainerLight = Color(0xFF280B02)
+
+val EspressoPrimaryDark = Color(0xFFFFB598)
+val EspressoOnPrimaryDark = Color(0xFF3C1D10)
+val EspressoPrimaryContainerDark = Color(0xFF532E20)
+val EspressoOnPrimaryContainerDark = Color(0xFFFFDBCE)
+
+val EspressoSecondaryLight = Color(0xFF75584C)
+val EspressoOnSecondaryLight = Color(0xFFFFFFFF)
+val EspressoSecondaryContainerLight = Color(0xFFFFDBCE)
+val EspressoOnSecondaryContainerLight = Color(0xFF2B160E)
+
+val EspressoSecondaryDark = Color(0xFFE5BEAF)
+val EspressoOnSecondaryDark = Color(0xFF422B21)
+val EspressoSecondaryContainerDark = Color(0xFF5B4136)
+val EspressoOnSecondaryContainerDark = Color(0xFFFFDBCE)
+
+val EspressoTertiaryLight = Color(0xFF7A542E)
+val EspressoOnTertiaryLight = Color(0xFFFFFFFF)
+val EspressoTertiaryContainerLight = Color(0xFFFFDDBB)
+val EspressoOnTertiaryContainerLight = Color(0xFF2B1700)
+
+val EspressoTertiaryDark = Color(0xFFEDB986)
+val EspressoOnTertiaryDark = Color(0xFF452705)
+val EspressoTertiaryContainerDark = Color(0xFF5F3D19)
+val EspressoOnTertiaryContainerDark = Color(0xFFFFDDBB)
+
+val EspressoSurfaceLight = Color(0xFFFCF8F6)
+val EspressoOnSurfaceLight = Color(0xFF201A18)
+val EspressoSurfaceContainerLight = Color(0xFFF1EAE6)
+val EspressoSurfaceContainerLowLight = Color(0xFFF7F0ED)
+
+val EspressoSurfaceDark = Color(0xFF151110)
+val EspressoOnSurfaceDark = Color(0xFFE9E0DD)
+val EspressoSurfaceContainerDark = Color(0xFF221D1B)
+val EspressoSurfaceContainerLowDark = Color(0xFF1D1817)
+
+// ==========================================
 // Semantic Financial Constants (Income / Expense / Status)
 // ==========================================
 val FinancePositive = Color(0xFF16A34A) // Crisp Green

@@ -1,7 +1,6 @@
 package com.example.expensetracker.presentation.screens
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,12 +8,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,9 +30,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.expensetracker.R
+import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.RecurrenceFrequency
 import com.example.expensetracker.data.database.entities.RecurringTransaction
 import com.example.expensetracker.data.database.entities.TransactionType
@@ -191,6 +198,7 @@ fun RecurringScreen(
                     RecurringItemCard(
                         item = item,
                         categoryName = category?.name ?: "General",
+                        categoryIcon = category?.icon,
                         onToggleActive = { viewModel.toggleActive(item.id, item.isActive) },
                         onEditClick = { editingRecurringTarget = item },
                         onDeleteClick = { deleteConfirmTarget = item },
@@ -283,6 +291,7 @@ fun RecurringScreen(
 private fun RecurringItemCard(
     item: RecurringTransaction,
     categoryName: String,
+    categoryIcon: String?,
     onToggleActive: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -290,11 +299,6 @@ private fun RecurringItemCard(
     onClick: () -> Unit
 ) {
     val isIncome = item.type == TransactionType.INCOME
-    val accentColor = if (item.isActive) {
-        if (isIncome) FinancePositive else MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.outline
-    }
 
     val freqLabel = when (item.frequency) {
         RecurrenceFrequency.DAILY -> stringResource(R.string.freq_daily)
@@ -306,167 +310,283 @@ private fun RecurringItemCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (item.isActive) {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+            }
+        )
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        Column(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Left Accent Pill
-            Box(
+            // Main Content Area
+            Column(
                 modifier = Modifier
-                    .width(4.dp)
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(accentColor)
-            )
-
-            // Details
-            Column(modifier = Modifier.weight(1f)) {
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Header: Leading icon, Title + Dedicated Category, Switch
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        text = item.description,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
+                    // Category or Type Avatar Container
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (item.isActive) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.surfaceContainerHighest
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (item.isActive) {
+                            if (isIncome) FinancePositive.copy(alpha = 0.12f)
+                            else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainerHighest
+                        },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            if (!categoryIcon.isNullOrBlank()) {
+                                Text(
+                                    text = categoryIcon,
+                                    fontSize = 20.sp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = if (isIncome) Icons.AutoMirrored.Outlined.TrendingUp else Icons.Outlined.Subscriptions,
+                                    contentDescription = null,
+                                    tint = if (item.isActive) {
+                                        if (isIncome) FinancePositive else MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.outline
+                                    },
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Title & Category in their own Column
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            text = if (item.isActive) stringResource(R.string.recurring_status_active)
-                                   else stringResource(R.string.recurring_status_paused),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (item.isActive) MaterialTheme.colorScheme.onPrimaryContainer
-                                    else MaterialTheme.colorScheme.outline
+                            text = item.description,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = categoryName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    // Active / Paused Pill & Switch
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (item.isActive) MaterialTheme.colorScheme.primaryContainer
+                                    else MaterialTheme.colorScheme.surfaceContainerHighest
+                        ) {
+                            Text(
+                                text = if (item.isActive) stringResource(R.string.recurring_status_active)
+                                       else stringResource(R.string.recurring_status_paused),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium,
+                                color = if (item.isActive) MaterialTheme.colorScheme.onPrimaryContainer
+                                        else MaterialTheme.colorScheme.outline
+                            )
+                        }
+                        Switch(
+                            checked = item.isActive,
+                            onCheckedChange = { onToggleActive() },
+                            modifier = Modifier.size(width = 44.dp, height = 28.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                // Amount
+                Text(
+                    text = (if (isIncome) "+" else "-") + CurrencyUtils.formatCurrency(item.amount),
+                    style = MaterialTheme.typography.headlineSmall.withTabularNums(),
+                    fontWeight = FontWeight.Bold,
+                    color = if (item.isActive) {
+                        if (isIncome) FinancePositive else FinanceNegative
+                    } else {
+                        MaterialTheme.colorScheme.outline
+                    }
+                )
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                // Material 3 Badges FlowRow (Frequency period, Account, Next Due Date)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Event,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Text(
-                        text = stringResource(
-                            R.string.recurring_next_due,
-                            DateUtils.formatDate(item.nextDueDate)
-                        ),
-                        style = MaterialTheme.typography.bodySmall.withTabularNums(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text("•", color = MaterialTheme.colorScheme.outlineVariant)
-                    Text(
-                        text = categoryName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = (if (isIncome) "+" else "-") + CurrencyUtils.formatCurrency(item.amount),
-                        style = MaterialTheme.typography.titleSmall.withTabularNums(),
-                        fontWeight = FontWeight.Bold,
-                        color = if (isIncome) FinancePositive else FinanceNegative
-                    )
+                    // 1. Recurring Period (Prominent Secondary Container)
                     Surface(
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Repeat,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = freqLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+
+                    // 2. Account (Bank / Cash)
+                    val isBank = item.accountType == AccountType.BANK
+                    val accountLabel = if (isBank) stringResource(R.string.account_bank) else stringResource(R.string.account_cash)
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerHighest
                     ) {
-                        Text(
-                            text = item.accountType.name,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isBank) Icons.Outlined.AccountBalance else Icons.Outlined.Payments,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = accountLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
+
+                    // 3. Next Due Date
                     Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest
                     ) {
-                        Text(
-                            text = freqLabel,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Event,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = stringResource(
+                                    R.string.recurring_next_due,
+                                    DateUtils.formatDate(item.nextDueDate)
+                                ),
+                                style = MaterialTheme.typography.labelMedium.withTabularNums(),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
 
-            // Toggle switch and actions
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+            // Divider before action controls
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                thickness = 0.8.dp
+            )
+
+            // Action Bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Switch(
-                    checked = item.isActive,
-                    onCheckedChange = { onToggleActive() },
-                    modifier = Modifier.size(width = 44.dp, height = 28.dp)
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                TextButton(
+                    onClick = onClick,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.AddCircleOutline,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.recurring_record_now),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     IconButton(
                         onClick = onHistoryClick,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.History,
                             contentDescription = stringResource(R.string.history_title),
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                     IconButton(
                         onClick = onEditClick,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Edit,
                             contentDescription = stringResource(R.string.edit),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                     IconButton(
                         onClick = onDeleteClick,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Delete,
                             contentDescription = stringResource(R.string.delete),
-                            tint = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.size(18.dp)
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }

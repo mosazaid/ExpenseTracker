@@ -285,6 +285,10 @@
     <string name="theme_crimson_burgundy">Crimson &amp; Burgundy</string>
     <string name="theme_midnight_ocean">Midnight Ocean</string>
     <string name="theme_forest_mint">Forest &amp; Sage Mint</string>
+    <string name="theme_rose_gold">Rose Gold &amp; Champagne</string>
+    <string name="theme_obsidian_gold">Obsidian &amp; Amber Gold</string>
+    <string name="theme_nordic_frost">Nordic Frost &amp; Glacier</string>
+    <string name="theme_espresso_mocha">Espresso &amp; Warm Mocha</string>
     <string name="recurring_screen_title">Recurring &amp; Subscriptions</string>
     <string name="recurring_screen_subtitle">Manage salary reminders, recurring bills and subscriptions</string>
     <string name="recurring_empty_title">No Recurring Transactions</string>
