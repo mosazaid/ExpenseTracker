@@ -175,6 +175,178 @@ val SlateTealSurfaceContainerDark = Color(0xFF1B2123)
 val SlateTealSurfaceContainerLowDark = Color(0xFF171D1F)
 
 // ==========================================
+// 5. AMETHYST & VIOLET PALETTE
+// ==========================================
+val AmethystPrimaryLight = Color(0xFF6A1B9A)
+val AmethystOnPrimaryLight = Color(0xFFFFFFFF)
+val AmethystPrimaryContainerLight = Color(0xFFF3E5F5)
+val AmethystOnPrimaryContainerLight = Color(0xFF2E004F)
+
+val AmethystPrimaryDark = Color(0xFFCE93D8)
+val AmethystOnPrimaryDark = Color(0xFF380062)
+val AmethystPrimaryContainerDark = Color(0xFF4A148C)
+val AmethystOnPrimaryContainerDark = Color(0xFFF3E5F5)
+
+val AmethystSecondaryLight = Color(0xFF6B538C)
+val AmethystOnSecondaryLight = Color(0xFFFFFFFF)
+val AmethystSecondaryContainerLight = Color(0xFFEEDBFF)
+val AmethystOnSecondaryContainerLight = Color(0xFF260D44)
+
+val AmethystSecondaryDark = Color(0xFFD4BBF7)
+val AmethystOnSecondaryDark = Color(0xFF3B255B)
+val AmethystSecondaryContainerDark = Color(0xFF523C73)
+val AmethystOnSecondaryContainerDark = Color(0xFFEEDBFF)
+
+val AmethystTertiaryLight = Color(0xFF865300)
+val AmethystOnTertiaryLight = Color(0xFFFFFFFF)
+val AmethystTertiaryContainerLight = Color(0xFFFFDDB6)
+val AmethystOnTertiaryContainerLight = Color(0xFF2B1700)
+
+val AmethystTertiaryDark = Color(0xFFFFB86B)
+val AmethystOnTertiaryDark = Color(0xFF472A00)
+val AmethystTertiaryContainerDark = Color(0xFF653E00)
+val AmethystOnTertiaryContainerDark = Color(0xFFFFDDB6)
+
+val AmethystSurfaceLight = Color(0xFFFCF7FD)
+val AmethystOnSurfaceLight = Color(0xFF1D1A20)
+val AmethystSurfaceContainerLight = Color(0xFFEFE9F2)
+val AmethystSurfaceContainerLowLight = Color(0xFFF6F0F9)
+
+val AmethystSurfaceDark = Color(0xFF151218)
+val AmethystOnSurfaceDark = Color(0xFFE7E0E8)
+val AmethystSurfaceContainerDark = Color(0xFF211E24)
+val AmethystSurfaceContainerLowDark = Color(0xFF1D1A20)
+
+// ==========================================
+// 6. CRIMSON & BURGUNDY PALETTE
+// ==========================================
+val CrimsonPrimaryLight = Color(0xFF9E1B32)
+val CrimsonOnPrimaryLight = Color(0xFFFFFFFF)
+val CrimsonPrimaryContainerLight = Color(0xFFFFD9DD)
+val CrimsonOnPrimaryContainerLight = Color(0xFF40000D)
+
+val CrimsonPrimaryDark = Color(0xFFFFB2B9)
+val CrimsonOnPrimaryDark = Color(0xFF5F0017)
+val CrimsonPrimaryContainerDark = Color(0xFF7E0022)
+val CrimsonOnPrimaryContainerDark = Color(0xFFFFD9DD)
+
+val CrimsonSecondaryLight = Color(0xFF76565A)
+val CrimsonOnSecondaryLight = Color(0xFFFFFFFF)
+val CrimsonSecondaryContainerLight = Color(0xFFFFD9DC)
+val CrimsonOnSecondaryContainerLight = Color(0xFF2C1518)
+
+val CrimsonSecondaryDark = Color(0xFFE5BDC0)
+val CrimsonOnSecondaryDark = Color(0xFF43292C)
+val CrimsonSecondaryContainerDark = Color(0xFF5C3F42)
+val CrimsonOnSecondaryContainerDark = Color(0xFFFFD9DC)
+
+val CrimsonTertiaryLight = Color(0xFF875225)
+val CrimsonOnTertiaryLight = Color(0xFFFFFFFF)
+val CrimsonTertiaryContainerLight = Color(0xFFFFDCC4)
+val CrimsonOnTertiaryContainerLight = Color(0xFF311300)
+
+val CrimsonTertiaryDark = Color(0xFFFDB986)
+val CrimsonOnTertiaryDark = Color(0xFF4E2600)
+val CrimsonTertiaryContainerDark = Color(0xFF6A3B0F)
+val CrimsonOnTertiaryContainerDark = Color(0xFFFFDCC4)
+
+val CrimsonSurfaceLight = Color(0xFFFCF7F7)
+val CrimsonOnSurfaceLight = Color(0xFF201A1A)
+val CrimsonSurfaceContainerLight = Color(0xFFEFE8E8)
+val CrimsonSurfaceContainerLowLight = Color(0xFFF6EFEF)
+
+val CrimsonSurfaceDark = Color(0xFF161112)
+val CrimsonOnSurfaceDark = Color(0xFFE9E0E0)
+val CrimsonSurfaceContainerDark = Color(0xFF231D1E)
+val CrimsonSurfaceContainerLowDark = Color(0xFF1E191A)
+
+// ==========================================
+// 7. MIDNIGHT OCEAN PALETTE
+// ==========================================
+val MidnightPrimaryLight = Color(0xFF0D47A1)
+val MidnightOnPrimaryLight = Color(0xFFFFFFFF)
+val MidnightPrimaryContainerLight = Color(0xFFD6E4FF)
+val MidnightOnPrimaryContainerLight = Color(0xFF001B3F)
+
+val MidnightPrimaryDark = Color(0xFFA6C8FF)
+val MidnightOnPrimaryDark = Color(0xFF002F68)
+val MidnightPrimaryContainerDark = Color(0xFF004491)
+val MidnightOnPrimaryContainerDark = Color(0xFFD6E4FF)
+
+val MidnightSecondaryLight = Color(0xFF006875)
+val MidnightOnSecondaryLight = Color(0xFFFFFFFF)
+val MidnightSecondaryContainerLight = Color(0xFF9DEFFD)
+val MidnightOnSecondaryContainerLight = Color(0xFF001F24)
+
+val MidnightSecondaryDark = Color(0xFF80D4E1)
+val MidnightOnSecondaryDark = Color(0xFF00363E)
+val MidnightSecondaryContainerDark = Color(0xFF004F59)
+val MidnightOnSecondaryContainerDark = Color(0xFF9DEFFD)
+
+val MidnightTertiaryLight = Color(0xFF9E4324)
+val MidnightOnTertiaryLight = Color(0xFFFFFFFF)
+val MidnightTertiaryContainerLight = Color(0xFFFFDBD0)
+val MidnightOnTertiaryContainerLight = Color(0xFF3A0B00)
+
+val MidnightTertiaryDark = Color(0xFFFFB59D)
+val MidnightOnTertiaryDark = Color(0xFF5E1700)
+val MidnightTertiaryContainerDark = Color(0xFF7E2D10)
+val MidnightOnTertiaryContainerDark = Color(0xFFFFDBD0)
+
+val MidnightSurfaceLight = Color(0xFFF7F9FC)
+val MidnightOnSurfaceLight = Color(0xFF181C20)
+val MidnightSurfaceContainerLight = Color(0xFFEAEEF4)
+val MidnightSurfaceContainerLowLight = Color(0xFFF1F4FA)
+
+val MidnightSurfaceDark = Color(0xFF0F1418)
+val MidnightOnSurfaceDark = Color(0xFFDEE3E9)
+val MidnightSurfaceContainerDark = Color(0xFF1A1F24)
+val MidnightSurfaceContainerLowDark = Color(0xFF161B20)
+
+// ==========================================
+// 8. FOREST & SAGE MINT PALETTE
+// ==========================================
+val ForestPrimaryLight = Color(0xFF1B5E20)
+val ForestOnPrimaryLight = Color(0xFFFFFFFF)
+val ForestPrimaryContainerLight = Color(0xFFA3F2A7)
+val ForestOnPrimaryContainerLight = Color(0xFF002206)
+
+val ForestPrimaryDark = Color(0xFF88D58D)
+val ForestOnPrimaryDark = Color(0xFF003A0E)
+val ForestPrimaryContainerDark = Color(0xFF005318)
+val ForestOnPrimaryContainerDark = Color(0xFFA3F2A7)
+
+val ForestSecondaryLight = Color(0xFF3A6546)
+val ForestOnSecondaryLight = Color(0xFFFFFFFF)
+val ForestSecondaryContainerLight = Color(0xFFBCEDC4)
+val ForestOnSecondaryContainerLight = Color(0xFF00210C)
+
+val ForestSecondaryDark = Color(0xFFA1D1A9)
+val ForestOnSecondaryDark = Color(0xFF08371B)
+val ForestSecondaryContainerDark = Color(0xFF224E30)
+val ForestOnSecondaryContainerDark = Color(0xFFBCEDC4)
+
+val ForestTertiaryLight = Color(0xFF6B5F00)
+val ForestOnTertiaryLight = Color(0xFFFFFFFF)
+val ForestTertiaryContainerLight = Color(0xFFFCE365)
+val ForestOnTertiaryContainerLight = Color(0xFF201C00)
+
+val ForestTertiaryDark = Color(0xFFDFC74C)
+val ForestOnTertiaryDark = Color(0xFF373100)
+val ForestTertiaryContainerDark = Color(0xFF504700)
+val ForestOnTertiaryContainerDark = Color(0xFFFCE365)
+
+val ForestSurfaceLight = Color(0xFFF7FAF4)
+val ForestOnSurfaceLight = Color(0xFF181D18)
+val ForestSurfaceContainerLight = Color(0xFFE9EFE7)
+val ForestSurfaceContainerLowLight = Color(0xFFF0F5EE)
+
+val ForestSurfaceDark = Color(0xFF101511)
+val ForestOnSurfaceDark = Color(0xFFDFE4DD)
+val ForestSurfaceContainerDark = Color(0xFF1B211C)
+val ForestSurfaceContainerLowDark = Color(0xFF171D18)
+
+// ==========================================
 // Semantic Financial Constants (Income / Expense / Status)
 // ==========================================
 val FinancePositive = Color(0xFF16A34A) // Crisp Green

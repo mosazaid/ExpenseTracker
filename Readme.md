@@ -24,7 +24,9 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 - **Three tabs**: Overview | Transactions | Filters
 - **Overview**:
   - Detailed balance cards: Cash, Bank, and total available (centered amounts and currency)
-  - **Remaining Breakdown**: Clarifies **Remaining This Month** vs **Remaining Carried Over from Last Month** totaling **Total Remaining**
+  - **Remaining Breakdown**:
+  - 
+  - Clarifies **Remaining This Month** vs **Remaining Carried Over from Last Month** totaling **Total Remaining**
   - Collapsible month summary, salary reminder, wallet year timeline (salary mode)
 - **Transactions**:
   - Grouped list, swipe-left to delete (trash icon hidden to prevent visual clutter), tap to edit
@@ -55,11 +57,14 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
   - Income + Debt: Repayment to user OR borrowed debt from someone.
   - Dedicated `DebtsScreen` with debtor grouping, settle actions, and month rollover.
 - **Configured Recurring Loans**: Track car, mortgage, and personal loans in `LoansScreen`; once-per-day prompt bottom sheet (`LoanReminderBottomSheet`) on salary month rollover with salary balance preservation.
+- **Paid Loan Overview Card**: Shows in `OverviewScreen` for any paid loans during the month, dynamically highlighting whether deducted from income or accounted in monthly expenses.
+- **Recurring Transaction Execution History**: Dedicated history bottom sheet (`RecurringHistoryBottomSheet`) for every recurring item displaying past recorded occurrences with exact time and amount.
+- **Loan Payment History**: Dedicated history bottom sheet (`LoanHistoryBottomSheet`) for every loan displaying monthly installments, exact paid date/time, and status.
 
 ### Settings & More Hub
 - **"More" Hub**: 4th bottom nav tab grouping Debts, Loans, Categories, Database Browser, Settings, and **App Guide & Walkthrough**.
 - **Interactive Onboarding Walkthrough**: 3-step carousel guide on first app launch and accessible anytime from More tab.
-- **Color Themes**: Dynamic switching between Emerald Green, Luxury Blue/Gold, Warm Earth tones, and Cool Slate/Teal palettes.
+- **Color Themes**: Dynamic switching between 8 curated, accessible palettes: Emerald Green, Luxury Blue/Gold, Warm Earth, Cool Slate/Teal, Amethyst & Violet, Crimson & Burgundy, Midnight Ocean, and Forest & Sage Mint.
 - **Tactile Haptic Feedback**: Subtle vibration feedback on transaction deletion and recording.
 - **Monthly Spending Comparison**: Benchmarks current month vs previous month with deltas and 3-month average in Statistics.
 - **Language**: English / Arabic (RTL)

@@ -32,5 +32,29 @@ enum class ThemePalette(
         primaryHex = 0xFF006876,
         secondaryHex = 0xFF486267,
         tertiaryHex = 0xFF006684
+    ),
+    AMETHYST_VIOLET(
+        titleRes = R.string.theme_amethyst_violet,
+        primaryHex = 0xFF6A1B9A,
+        secondaryHex = 0xFF9C27B0,
+        tertiaryHex = 0xFFFFB86B
+    ),
+    CRIMSON_BURGUNDY(
+        titleRes = R.string.theme_crimson_burgundy,
+        primaryHex = 0xFF9E1B32,
+        secondaryHex = 0xFFC2185B,
+        tertiaryHex = 0xFFFDB986
+    ),
+    MIDNIGHT_OCEAN(
+        titleRes = R.string.theme_midnight_ocean,
+        primaryHex = 0xFF0D47A1,
+        secondaryHex = 0xFF00ACC1,
+        tertiaryHex = 0xFFFFB59D
+    ),
+    FOREST_MINT(
+        titleRes = R.string.theme_forest_mint,
+        primaryHex = 0xFF1B5E20,
+        secondaryHex = 0xFF4CAF50,
+        tertiaryHex = 0xFFDFC74C
     )
 }

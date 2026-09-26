@@ -281,6 +281,10 @@
     <string name="theme_blue_gold">Blue &amp; Gold Luxury</string>
     <string name="theme_warm_earth">Warm Earth Tones</string>
     <string name="theme_slate_teal">Cool Slate &amp; Teal</string>
+    <string name="theme_amethyst_violet">Amethyst &amp; Violet</string>
+    <string name="theme_crimson_burgundy">Crimson &amp; Burgundy</string>
+    <string name="theme_midnight_ocean">Midnight Ocean</string>
+    <string name="theme_forest_mint">Forest &amp; Sage Mint</string>
     <string name="recurring_screen_title">Recurring &amp; Subscriptions</string>
     <string name="recurring_screen_subtitle">Manage salary reminders, recurring bills and subscriptions</string>
     <string name="recurring_empty_title">No Recurring Transactions</string>

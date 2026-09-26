@@ -281,6 +281,10 @@
     <string name="theme_blue_gold">أزرق وذهبي ملكي</string>
     <string name="theme_warm_earth">ألوان الأرض الدافئة</string>
     <string name="theme_slate_teal">رمادي وتركواز بارد</string>
+    <string name="theme_amethyst_violet">الأرجواني والبنفسجي الملكي</string>
+    <string name="theme_crimson_burgundy">القرمزي والبورغندي المخملي</string>
+    <string name="theme_midnight_ocean">أزرق المحيط الليلي</string>
+    <string name="theme_forest_mint">أخضر الغابة والنعناع الهادئ</string>
     <string name="recurring_screen_title">المعاملات المتكررة والاشتراكات</string>
     <string name="recurring_screen_subtitle">إدارة تذكيرات الراتب، الفواتير والاشتراكات الدورية</string>
     <string name="recurring_empty_title">لا توجد معاملات متكررة</string>

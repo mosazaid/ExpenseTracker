@@ -120,18 +120,24 @@
 - [ ] Month rollover prompts to carry over unsettled debts to new month.
 
 ## Configured Loans & Salary Preservation
-- [ ] `LoansScreen` accessible from More tab: allows creating recurring loans (name, default amount, account).
+- [ ] `LoansScreen` accessible from More tab: allows creating recurring loans (name, default amount, account, and calculate in expenses toggle).
+- [ ] "Calculate as monthly expense" toggle defaults to OFF (`deductFromIncome = true`).
 - [ ] First app launch of a new month shows `LoanReminderBottomSheet` once per day.
-- [ ] Recording a loan payment from the sheet creates a monthly loan payment record without deducting double from base salary.
+- [ ] Recording a loan payment creates a transaction in history, while deducting directly from monthly income and excluding it from monthly expense totals and statistics.
+- [ ] Paid loans show in `OverviewScreen` inside dedicated `PaidLoanCard` regardless of whether deducted directly from income or calculated as monthly expense.
+- [ ] Overview screen reactively refreshes on resume when returning from adding transactions, paying loans, or adding salary.
 - [ ] Dismissing loan reminder for the month dismisses the sheet until next month.
+- [ ] History icon on each recurring item opens `RecurringHistoryBottomSheet` displaying chronological past transactions with date, exact time, and amount.
+- [ ] History icon on each loan opens `LoanHistoryBottomSheet` displaying monthly payment history with status (paid date & time vs pending) and amount.
 
-## More Screen Hub & Time Picker
+## More Screen Hub & Settings
 - [ ] 4th bottom nav tab opens `MoreScreen` with navigation tiles for Loans, Debts, Categories, Database Browser, and Settings.
+- [ ] Settings allows switching between 8 palettes (Emerald Green, Blue & Gold Luxury, Warm Earth, Cool Slate & Teal, Amethyst & Violet, Crimson & Burgundy, Midnight Ocean, Forest & Sage Mint).
 - [ ] Time picker in `AddTransactionScreen` allows specifying custom hour/minute.
 
 ## Regression Checks
 - [ ] Categories and Subcategories CRUD still works.
-- [ ] Existing historical data remains readable after v11 → v13 migration.
+- [ ] Existing historical data remains readable after v14 → v15 migration.
 - [ ] Currency numbers formatted with 3 decimal places across all screens.
 - [ ] Database browser includes `configured_loans`, `monthly_loan_payments`, and `app_alerts`.
 
