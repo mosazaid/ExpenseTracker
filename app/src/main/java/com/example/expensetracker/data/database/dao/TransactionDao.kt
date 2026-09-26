@@ -371,5 +371,17 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET isDebtSettled = :settled, updatedAt = :updatedAt WHERE id = :id")
     suspend fun setDebtSettled(id: Long, settled: Boolean, updatedAt: Date = Date())
+
+    @Query("""
+        SELECT * FROM transactions 
+        WHERE (recurringId = :recurringId) 
+           OR (recurringId IS NULL AND description = :description AND type = :type)
+        ORDER BY date DESC
+    """)
+    fun getTransactionsForRecurringFlow(
+        recurringId: Long,
+        description: String,
+        type: TransactionType
+    ): Flow<List<Transaction>>
 }
 

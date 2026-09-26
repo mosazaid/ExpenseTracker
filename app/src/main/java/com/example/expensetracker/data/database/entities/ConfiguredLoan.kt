@@ -11,6 +11,7 @@ data class ConfiguredLoan(
     val name: String,
     val defaultAmount: Double,
     val accountType: AccountType = AccountType.BANK,
+    val deductFromIncome: Boolean = true,
     val isActive: Boolean = true,
     val createdAt: Date = Date()
 )

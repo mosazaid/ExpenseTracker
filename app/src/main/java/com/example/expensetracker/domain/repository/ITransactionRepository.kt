@@ -49,4 +49,9 @@ interface ITransactionRepository {
     suspend fun getSalaryPeriodAnchors(salaryCategoryId: Long): List<Transaction>
     suspend fun getLatestSalaryIncomeBefore(beforeDate: Date, salaryCategoryId: Long): Transaction?
     suspend fun setDebtSettled(id: Long, settled: Boolean)
+    fun getTransactionsForRecurringFlow(
+        recurringId: Long,
+        description: String,
+        type: TransactionType
+    ): Flow<List<Transaction>>
 }

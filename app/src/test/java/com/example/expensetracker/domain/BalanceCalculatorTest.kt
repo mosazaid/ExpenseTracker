@@ -128,4 +128,109 @@ class BalanceCalculatorTest {
         assertEquals(-100.0, summary.transferImpact.cash, 0.001)
         assertEquals(-100.0, summary.periodChangeByAccount.cash, 0.001)
     }
+
+    @Test
+    fun testComputeMonthFinancialSummary_loanDeductedFromIncome() {
+        val now = Date()
+        val currentBalances = AccountBalances(cash = 0.0, bank = 700.0)
+
+        val txns = listOf(
+            Transaction(
+                id = 1L,
+                amount = 1000.0,
+                type = TransactionType.INCOME,
+                categoryId = null,
+                accountType = AccountType.BANK,
+                date = now,
+                description = "Salary"
+            ),
+            Transaction(
+                id = 2L,
+                amount = 300.0,
+                type = TransactionType.EXPENSE,
+                categoryId = 10L,
+                accountType = AccountType.BANK,
+                date = now,
+                description = "Loan payment: Car"
+            )
+        )
+
+        val paidLoan = com.example.expensetracker.data.database.dao.PaidLoanInfo(
+            paymentId = 1L,
+            loanConfigId = 1L,
+            loanName = "Car Loan",
+            amount = 300.0,
+            accountType = AccountType.BANK,
+            paidDate = now,
+            transactionId = 2L,
+            deductFromIncome = true
+        )
+
+        val summary = balanceCalculator.computeMonthFinancialSummary(
+            periodTransactions = txns,
+            currentBalances = currentBalances,
+            paidLoans = listOf(paidLoan)
+        )
+
+        // As requested: Income is 1000 - 300 = 700, Expense is 0, Net is 700
+        assertEquals(700.0, summary.periodIncome, 0.001)
+        assertEquals(0.0, summary.periodExpense, 0.001)
+        assertEquals(700.0, summary.periodNet, 0.001)
+        assertEquals(300.0, summary.periodLoansDeducted, 0.001)
+        assertEquals(300.0, summary.totalPaidLoans, 0.001)
+        assertEquals(1, summary.paidLoans.size)
+        assertEquals(700.0, summary.incomeExpenseByAccount.bank, 0.001)
+    }
+
+    @Test
+    fun computeMonthFinancialSummary_paidLoanCalculatedAsMonthlyExpense() {
+        val now = Date()
+        val currentBalances = AccountBalances(cash = 500.0, bank = 1000.0)
+        val txns = listOf(
+            Transaction(
+                id = 1L,
+                amount = 1000.0,
+                type = TransactionType.INCOME,
+                categoryId = 1L,
+                accountType = AccountType.BANK,
+                date = now,
+                description = "Salary"
+            ),
+            Transaction(
+                id = 2L,
+                amount = 300.0,
+                type = TransactionType.EXPENSE,
+                categoryId = 10L,
+                accountType = AccountType.BANK,
+                date = now,
+                description = "Loan payment: Car"
+            )
+        )
+
+        val paidLoan = com.example.expensetracker.data.database.dao.PaidLoanInfo(
+            paymentId = 1L,
+            loanConfigId = 1L,
+            loanName = "Car Loan",
+            amount = 300.0,
+            accountType = AccountType.BANK,
+            paidDate = now,
+            transactionId = 2L,
+            deductFromIncome = false
+        )
+
+        val summary = balanceCalculator.computeMonthFinancialSummary(
+            periodTransactions = txns,
+            currentBalances = currentBalances,
+            paidLoans = listOf(paidLoan)
+        )
+
+        // Calculated as monthly expense: Income remains 1000, Expense is 300, Net is 700, periodLoansDeducted is 0, totalPaidLoans is 300
+        assertEquals(1000.0, summary.periodIncome, 0.001)
+        assertEquals(300.0, summary.periodExpense, 0.001)
+        assertEquals(700.0, summary.periodNet, 0.001)
+        assertEquals(0.0, summary.periodLoansDeducted, 0.001)
+        assertEquals(300.0, summary.totalPaidLoans, 0.001)
+        assertEquals(1, summary.paidLoans.size)
+        assertEquals(700.0, summary.incomeExpenseByAccount.bank, 0.001)
+    }
 }

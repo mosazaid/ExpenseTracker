@@ -64,7 +64,8 @@ class StatisticsViewModel @Inject constructor(
     private val categoryRepository: ICategoryRepository,
     private val periodCalculator: PeriodCalculator,
     private val walletCalculator: WalletCalculator,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val monthlyLoanPaymentDao: com.example.expensetracker.data.database.dao.MonthlyLoanPaymentDao? = null
 ) : ViewModel() {
 
     private val _statisticsState = MutableStateFlow(StatisticsState())
@@ -77,12 +78,18 @@ class StatisticsViewModel @Inject constructor(
         viewModelScope.launch {
             _statisticsState.value = _statisticsState.value.copy(isLoading = true)
             val bounds = periodCalculator.getBounds(period, referenceDate, monthMode.value)
-            val totalIncome = transactionRepository.getTotalAmountByTypeAndDateRange(
+            val rawTotalIncome = transactionRepository.getTotalAmountByTypeAndDateRange(
                 TransactionType.INCOME, bounds.start, bounds.end
             )
-            val totalExpense = transactionRepository.getTotalAmountByTypeAndDateRange(
+            val rawTotalExpense = transactionRepository.getTotalAmountByTypeAndDateRange(
                 TransactionType.EXPENSE, bounds.start, bounds.end
             )
+            val paidLoans = monthlyLoanPaymentDao?.getPaidLoansBetweenDates(bounds.start, bounds.end) ?: emptyList()
+            val loansDeductedFromIncome = paidLoans.filter { it.deductFromIncome }
+            val loansDeducted = loansDeductedFromIncome.sumOf { it.amount }
+
+            val totalIncome = (rawTotalIncome - loansDeducted).coerceAtLeast(0.0)
+            val totalExpense = (rawTotalExpense - loansDeducted).coerceAtLeast(0.0)
             val totalWallet = walletCalculator.getWalletBalance(bounds.start, bounds.end)
 
             val threeMonthStats = calculateThreeMonthStats(referenceDate, monthMode.value)
@@ -117,11 +124,18 @@ class StatisticsViewModel @Inject constructor(
 
         val monthlyBreakdowns = periods.map { bounds ->
             val txns = transactionRepository.getTransactionsBetweenDates(bounds.start, bounds.end).first()
-            val income = txns.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
-            val expense = txns.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+            val paidLoans = monthlyLoanPaymentDao?.getPaidLoansBetweenDates(bounds.start, bounds.end) ?: emptyList()
+            val loansDeductedFromIncome = paidLoans.filter { it.deductFromIncome }
+            val paidTxnIds = loansDeductedFromIncome.mapNotNull { it.transactionId }.toSet()
+            val loansDeducted = loansDeductedFromIncome.sumOf { it.amount }
+
+            val rawIncome = txns.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
+            val income = (rawIncome - loansDeducted).coerceAtLeast(0.0)
+
+            val expenseTxns = txns.filter { it.type == TransactionType.EXPENSE && it.id !in paidTxnIds }
+            val expense = expenseTxns.sumOf { it.amount }
             val wallet = walletCalculator.getWalletBalance(bounds.start, bounds.end)
 
-            val expenseTxns = txns.filter { it.type == TransactionType.EXPENSE }
             allThreeMonthExpenses.addAll(expenseTxns)
 
             val catBreakdown = expenseTxns

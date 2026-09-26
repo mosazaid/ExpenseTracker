@@ -1,8 +1,12 @@
 package com.example.expensetracker.presentation.screens
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -13,6 +17,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,6 +36,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.example.expensetracker.data.database.entities.AccountType
+import com.example.expensetracker.data.database.entities.RecurrenceFrequency
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
@@ -75,6 +81,8 @@ fun AddTransactionScreen(
     var pendingTransaction by remember { mutableStateOf<Transaction?>(null) }
     var unreimbursedExpenses by remember { mutableStateOf<List<Transaction>>(emptyList()) }
     var expenseMenuExpanded by remember { mutableStateOf(false) }
+    var makeRecurringChecked by remember { mutableStateOf(false) }
+    var selectedRecurrenceFrequency by remember { mutableStateOf(RecurrenceFrequency.MONTHLY) }
 
     // Subcategory state
     val selectedCategory = uiState.selectedCategory
@@ -230,12 +238,18 @@ fun AddTransactionScreen(
         val canCarryForward = (previousPeriodSaved ?: 0.0) != 0.0
 
         AlertDialog(
-            onDismissRequest = { showSalaryMonthDialog = false },
-            title = { Text("Start new month?") },
+            onDismissRequest = {
+                showSalaryMonthDialog = false
+                pendingTransaction = null
+            },
+            title = { Text(stringResource(R.string.start_new_month_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        "Start a new salary month from ${DateUtils.formatDate(uiState.selectedDate)}?"
+                        stringResource(
+                            R.string.start_new_month_desc,
+                            DateUtils.formatDate(uiState.selectedDate)
+                        )
                     )
                     if (canCarryForward) {
                         Row(
@@ -247,9 +261,12 @@ fun AddTransactionScreen(
                                 onCheckedChange = { carryForwardEnabled = it }
                             )
                             Column {
-                                Text("Bring previous balance into new month")
+                                Text(stringResource(R.string.bring_previous_balance))
                                 Text(
-                                    "Adds ${formatSignedAmount(previousPeriodSaved ?: 0.0)} from the previous salary month",
+                                    stringResource(
+                                        R.string.adds_from_current_savings,
+                                        formatSignedAmount(previousPeriodSaved ?: 0.0)
+                                    ),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.outline
                                 )
@@ -257,7 +274,7 @@ fun AddTransactionScreen(
                         }
                     } else {
                         Text(
-                            "No saved balance from the previous salary month to carry forward.",
+                            stringResource(R.string.no_savings_to_carry),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.outline
                         )
@@ -265,7 +282,7 @@ fun AddTransactionScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                Button(onClick = {
                     showSalaryMonthDialog = false
                     pendingTransaction?.let { txn ->
                         coroutineScope.launch {
@@ -292,18 +309,34 @@ fun AddTransactionScreen(
                             }
                         }
                     }
-                }) { Text("Yes, start new month") }
+                }) { Text(stringResource(R.string.btn_yes_start_new_month)) }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showSalaryMonthDialog = false
-                    pendingTransaction?.let { txn ->
-                        coroutineScope.launch {
-                            saveAndNavigate(viewModel, txn, navController)
-                        }
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = {
+                        showSalaryMonthDialog = false
+                        pendingTransaction = null
+                    }) {
+                        Text(stringResource(R.string.cancel))
                     }
-                    pendingTransaction = null
-                }) { Text("No") }
+                    TextButton(onClick = {
+                        showSalaryMonthDialog = false
+                        pendingTransaction?.let { txn ->
+                            coroutineScope.launch {
+                                saveAndNavigate(
+                                    viewModel,
+                                    txn,
+                                    navController,
+                                    makeRecurringChecked,
+                                    selectedRecurrenceFrequency
+                                )
+                            }
+                        }
+                        pendingTransaction = null
+                    }) {
+                        Text(stringResource(R.string.btn_no_just_income))
+                    }
+                }
             }
         )
     }
@@ -856,7 +889,13 @@ fun AddTransactionScreen(
                         showSalaryMonthDialog = true
                     } else {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        saveAndNavigate(viewModel, transaction, navController)
+                        saveAndNavigate(
+                            viewModel,
+                            transaction,
+                            navController,
+                            makeRecurringChecked,
+                            selectedRecurrenceFrequency
+                        )
                     }
                 }
             },
@@ -865,6 +904,77 @@ fun AddTransactionScreen(
         ) {
             Text(if (isEditMode) "Update Transaction" else "Save Transaction")
         }
+
+        if (!isEditMode && uiState.pendingRecurringId == null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { makeRecurringChecked = !makeRecurringChecked }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Autorenew,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.make_recurring_label),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = stringResource(R.string.make_recurring_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = makeRecurringChecked,
+                            onCheckedChange = { makeRecurringChecked = it }
+                        )
+                    }
+
+                    if (makeRecurringChecked) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            RecurrenceFrequency.entries.forEach { freq ->
+                                val label = when (freq) {
+                                    RecurrenceFrequency.DAILY -> stringResource(R.string.freq_daily)
+                                    RecurrenceFrequency.WEEKLY -> stringResource(R.string.freq_weekly)
+                                    RecurrenceFrequency.MONTHLY -> stringResource(R.string.freq_monthly)
+                                    RecurrenceFrequency.YEARLY -> stringResource(R.string.freq_yearly)
+                                }
+                                FilterChip(
+                                    selected = selectedRecurrenceFrequency == freq,
+                                    onClick = { selectedRecurrenceFrequency = freq },
+                                    label = { Text(label) },
+                                    modifier = Modifier.height(34.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     }
 }
@@ -872,12 +982,32 @@ fun AddTransactionScreen(
 private suspend fun saveAndNavigate(
     viewModel: AddEditTransactionViewModel,
     transaction: Transaction,
-    navController: NavController
+    navController: NavController,
+    isRecurring: Boolean = false,
+    recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.MONTHLY
 ) {
     viewModel.saveTransaction(transaction)
     val recurringId = viewModel.uiState.value.pendingRecurringId
     if (recurringId != null) {
         viewModel.advanceRecurringAfterSave(recurringId)
+    } else if (isRecurring) {
+        val calendar = Calendar.getInstance()
+        calendar.time = transaction.date
+        when (recurrenceFrequency) {
+            RecurrenceFrequency.DAILY -> calendar.add(Calendar.DAY_OF_YEAR, 1)
+            RecurrenceFrequency.WEEKLY -> calendar.add(Calendar.WEEK_OF_YEAR, 1)
+            RecurrenceFrequency.MONTHLY -> calendar.add(Calendar.MONTH, 1)
+            RecurrenceFrequency.YEARLY -> calendar.add(Calendar.YEAR, 1)
+        }
+        viewModel.createRecurringTemplate(
+            amount = transaction.amount,
+            description = transaction.description,
+            type = transaction.type,
+            categoryId = transaction.categoryId,
+            accountType = transaction.accountType,
+            frequency = recurrenceFrequency,
+            nextDueDate = calendar.time
+        )
     }
     finishNavigate(viewModel, navController)
 }

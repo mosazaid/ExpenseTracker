@@ -44,4 +44,90 @@ interface MonthlyLoanPaymentDao {
 
     @Query("UPDATE monthly_loan_payments SET isDismissed = 1 WHERE id = :id")
     suspend fun dismissPayment(id: Long)
+
+    @Query("SELECT * FROM monthly_loan_payments WHERE transactionId = :txnId LIMIT 1")
+    suspend fun getPaymentByTransactionId(txnId: Long): MonthlyLoanPayment?
+
+    @Query("UPDATE monthly_loan_payments SET isPaid = 0, paidDate = NULL, transactionId = NULL WHERE transactionId = :txnId")
+    suspend fun unmarkPaymentByTransactionId(txnId: Long)
+
+    @Query("""
+        SELECT 
+            mlp.id AS paymentId,
+            mlp.loanConfigId AS loanConfigId,
+            cl.name AS loanName,
+            mlp.amount AS amount,
+            mlp.accountType AS accountType,
+            COALESCE(t.date, mlp.paidDate) AS paidDate,
+            mlp.transactionId AS transactionId,
+            cl.deductFromIncome AS deductFromIncome
+        FROM monthly_loan_payments mlp
+        INNER JOIN configured_loans cl ON mlp.loanConfigId = cl.id
+        LEFT JOIN transactions t ON mlp.transactionId = t.id
+        WHERE mlp.isPaid = 1 
+          AND (
+              (t.date IS NOT NULL AND t.date >= :startDate AND t.date <= :endDate)
+              OR (t.date IS NULL AND mlp.paidDate IS NOT NULL AND mlp.paidDate >= :startDate AND mlp.paidDate <= :endDate)
+          )
+    """)
+    suspend fun getPaidLoansBetweenDates(
+        startDate: java.util.Date,
+        endDate: java.util.Date
+    ): List<PaidLoanInfo>
+
+    @Query("""
+        SELECT COALESCE(SUM(mlp.amount), 0.0)
+        FROM monthly_loan_payments mlp
+        INNER JOIN configured_loans cl ON mlp.loanConfigId = cl.id
+        LEFT JOIN transactions t ON mlp.transactionId = t.id
+        WHERE mlp.isPaid = 1 
+          AND cl.deductFromIncome = 1
+          AND (
+              (t.date IS NOT NULL AND t.date >= :startDate AND t.date <= :endDate)
+              OR (t.date IS NULL AND mlp.paidDate IS NOT NULL AND mlp.paidDate >= :startDate AND mlp.paidDate <= :endDate)
+          )
+    """)
+    suspend fun getTotalPaidLoansDeductedFromIncomeBetweenDates(
+        startDate: java.util.Date,
+        endDate: java.util.Date
+    ): Double
+
+    @Query("""
+        SELECT 
+            mlp.id AS paymentId,
+            mlp.loanConfigId AS loanConfigId,
+            mlp.monthKey AS monthKey,
+            mlp.amount AS amount,
+            mlp.accountType AS accountType,
+            mlp.isPaid AS isPaid,
+            COALESCE(t.date, mlp.paidDate) AS paidDate,
+            mlp.transactionId AS transactionId
+        FROM monthly_loan_payments mlp
+        LEFT JOIN transactions t ON mlp.transactionId = t.id
+        WHERE mlp.loanConfigId = :loanConfigId
+        ORDER BY mlp.monthKey DESC, COALESCE(t.date, mlp.paidDate) DESC
+    """)
+    fun getPaymentHistoryForLoanFlow(loanConfigId: Long): Flow<List<LoanPaymentHistoryItem>>
 }
+
+data class PaidLoanInfo(
+    val paymentId: Long,
+    val loanConfigId: Long,
+    val loanName: String,
+    val amount: Double,
+    val accountType: com.example.expensetracker.data.database.entities.AccountType,
+    val paidDate: java.util.Date?,
+    val transactionId: Long?,
+    val deductFromIncome: Boolean
+)
+
+data class LoanPaymentHistoryItem(
+    val paymentId: Long,
+    val loanConfigId: Long,
+    val monthKey: String,
+    val amount: Double,
+    val accountType: com.example.expensetracker.data.database.entities.AccountType,
+    val isPaid: Boolean,
+    val paidDate: java.util.Date?,
+    val transactionId: Long?
+)

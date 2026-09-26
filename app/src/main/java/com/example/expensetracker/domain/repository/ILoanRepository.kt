@@ -20,6 +20,8 @@ interface ILoanRepository {
     suspend fun getMonthlyLoanItems(monthKey: String): List<MonthlyLoanItem>
     suspend fun getPreservedLoanAmountForMonth(monthKey: String): Double
     suspend fun updateMonthlyPaymentAmount(paymentId: Long, newAmount: Double)
+    suspend fun getPaymentById(id: Long): MonthlyLoanPayment?
+    suspend fun getLoanById(id: Long): ConfiguredLoan?
     suspend fun deductAndPayLoan(
         paymentId: Long,
         accountType: AccountType,
@@ -27,4 +29,5 @@ interface ILoanRepository {
         customDescription: String? = null
     ): Transaction?
     suspend fun dismissPayment(paymentId: Long)
+    fun getPaymentHistoryForLoanFlow(loanConfigId: Long): Flow<List<com.example.expensetracker.data.database.dao.LoanPaymentHistoryItem>>
 }

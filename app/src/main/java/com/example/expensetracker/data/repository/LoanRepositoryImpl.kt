@@ -96,6 +96,12 @@ class LoanRepositoryImpl @Inject constructor(
         monthlyLoanPaymentDao.updatePayment(payment.copy(amount = newAmount))
     }
 
+    override suspend fun getPaymentById(id: Long): MonthlyLoanPayment? =
+        monthlyLoanPaymentDao.getPaymentById(id)
+
+    override suspend fun getLoanById(id: Long): ConfiguredLoan? =
+        configuredLoanDao.getLoanById(id)
+
     override suspend fun deductAndPayLoan(
         paymentId: Long,
         accountType: AccountType,
@@ -148,6 +154,10 @@ class LoanRepositoryImpl @Inject constructor(
     override suspend fun dismissPayment(paymentId: Long) {
         monthlyLoanPaymentDao.dismissPayment(paymentId)
         appAlertDao.dismissAlertsByTypeAndRelatedId(AppAlert.TYPE_LOAN, paymentId)
+    }
+
+    override fun getPaymentHistoryForLoanFlow(loanConfigId: Long): kotlinx.coroutines.flow.Flow<List<com.example.expensetracker.data.database.dao.LoanPaymentHistoryItem>> {
+        return monthlyLoanPaymentDao.getPaymentHistoryForLoanFlow(loanConfigId)
     }
 }
 

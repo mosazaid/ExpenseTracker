@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Category
+import com.example.expensetracker.data.database.entities.RecurrenceFrequency
+import com.example.expensetracker.data.database.entities.RecurringTransaction
 import com.example.expensetracker.data.database.entities.SubCategory
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
@@ -14,14 +16,13 @@ import com.example.expensetracker.domain.BudgetProgressCalculator
 import com.example.expensetracker.domain.CategorySystemKey
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.PeriodCalculator
+import com.example.expensetracker.domain.WalletCalculator
 import com.example.expensetracker.domain.isDept
 import com.example.expensetracker.domain.matchesSystemKey
 import com.example.expensetracker.domain.repository.IAlertRepository
 import com.example.expensetracker.domain.repository.ICategoryRepository
 import com.example.expensetracker.domain.repository.IRecurringRepository
 import com.example.expensetracker.domain.repository.ITransactionRepository
-import com.example.expensetracker.domain.isDept
-import com.example.expensetracker.domain.matchesSystemKey
 import com.example.expensetracker.util.NotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -54,6 +55,7 @@ class AddEditTransactionViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
     private val periodCalculator: PeriodCalculator,
     private val balanceCalculator: BalanceCalculator,
+    private val walletCalculator: WalletCalculator,
     private val budgetProgressCalculator: BudgetProgressCalculator,
     private val alertRepository: IAlertRepository,
     private val notificationHelper: NotificationHelper
@@ -159,17 +161,23 @@ class AddEditTransactionViewModel @Inject constructor(
     }
 
     suspend fun saveTransaction(transaction: Transaction): Long {
-        val savedId = if (transaction.id == 0L) {
-            transactionRepository.insertTransaction(transaction)
+        val recurringId = _uiState.value.pendingRecurringId
+        val txn = if (recurringId != null && transaction.recurringId == null) {
+            transaction.copy(recurringId = recurringId)
+        } else {
+            transaction
+        }
+        val savedId = if (txn.id == 0L) {
+            transactionRepository.insertTransaction(txn)
         } else {
             val preserved = originalTransaction
             transactionRepository.updateTransaction(
-                transaction.copy(
-                    createdAt = preserved?.createdAt ?: transaction.createdAt,
+                txn.copy(
+                    createdAt = preserved?.createdAt ?: txn.createdAt,
                     updatedAt = Date()
                 )
             )
-            transaction.id
+            txn.id
         }
 
         // Post-save checks for Budget notifications & alert records
@@ -251,10 +259,39 @@ class AddEditTransactionViewModel @Inject constructor(
         )
     }
 
+    suspend fun createRecurringTemplate(
+        amount: Double,
+        description: String,
+        type: TransactionType,
+        categoryId: Long?,
+        accountType: AccountType,
+        frequency: RecurrenceFrequency,
+        nextDueDate: java.util.Date
+    ): Long {
+        return recurringRepository.insertRecurringTransaction(
+            RecurringTransaction(
+                amount = amount,
+                description = description,
+                type = type,
+                categoryId = categoryId,
+                accountType = accountType,
+                frequency = frequency,
+                nextDueDate = nextDueDate,
+                isActive = true
+            )
+        )
+    }
+
     suspend fun getPreviousPeriodSavedAmount(beforeNewSalaryDate: Date): Double {
-        val bounds = periodCalculator.getPreviousSalaryPeriodBounds(beforeNewSalaryDate)
-            ?: return 0.0
-        return balanceCalculator.buildMonthFinancialSummary(bounds.start, bounds.end).periodNet
+        val mode = monthMode.first()
+        val bounds = periodCalculator.getBounds(HistoryPeriod.MONTH, beforeNewSalaryDate, mode)
+        val financials = balanceCalculator.buildMonthFinancialSummary(bounds.start, bounds.end)
+        val walletBalance = if (mode == MonthMode.SALARY) {
+            walletCalculator.getWalletBalance(bounds.start, bounds.end)
+        } else {
+            0.0
+        }
+        return financials.periodNet - walletBalance
     }
 
     suspend fun isSalaryCategory(category: Category?): Boolean {

@@ -459,3 +459,14 @@ val MIGRATION_12_13 = Migration(12, 13) { db ->
     )
 }
 
+val MIGRATION_13_14 = Migration(13, 14) { db ->
+    db.execSQL(
+        "ALTER TABLE configured_loans ADD COLUMN deductFromIncome INTEGER NOT NULL DEFAULT 1"
+    )
+}
+
+val MIGRATION_14_15 = Migration(14, 15) { db ->
+    db.execSQL("ALTER TABLE transactions ADD COLUMN recurringId INTEGER")
+    db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_recurringId ON transactions(recurringId)")
+}
+

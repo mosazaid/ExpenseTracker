@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.ConfiguredLoan
 import com.example.expensetracker.data.preferences.UserPreferences
+import com.example.expensetracker.domain.BalanceCalculator
 import com.example.expensetracker.domain.model.MonthlyLoanItem
 import com.example.expensetracker.domain.repository.ILoanRepository
+import com.example.expensetracker.core.format.CurrencyUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,7 +24,8 @@ import javax.inject.Inject
 @HiltViewModel
 class LoansViewModel @Inject constructor(
     private val loanRepository: ILoanRepository,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val balanceCalculator: BalanceCalculator
 ) : ViewModel() {
 
     private val currentMonthKey: String = SimpleDateFormat("yyyy-MM", Locale.US).format(Date())
@@ -58,13 +61,20 @@ class LoansViewModel @Inject constructor(
         }
     }
 
-    fun saveConfiguredLoan(name: String, amount: Double, accountType: AccountType, id: Long = 0L) {
+    fun saveConfiguredLoan(
+        name: String,
+        amount: Double,
+        accountType: AccountType,
+        deductFromIncome: Boolean = true,
+        id: Long = 0L
+    ) {
         viewModelScope.launch {
             val loan = ConfiguredLoan(
                 id = id,
                 name = name,
                 defaultAmount = amount,
                 accountType = accountType,
+                deductFromIncome = deductFromIncome,
                 isActive = true
             )
             loanRepository.saveConfiguredLoan(loan)
@@ -86,15 +96,56 @@ class LoansViewModel @Inject constructor(
         }
     }
 
+    suspend fun getAvailableBalance(accountType: AccountType): Double {
+        return balanceCalculator.getAvailableBalance(accountType)
+    }
+
     fun deductAndPayLoan(
         paymentId: Long,
-        accountType: AccountType,
-        onComplete: (Boolean) -> Unit = {}
+        customAmount: Double? = null,
+        accountType: AccountType? = null,
+        onComplete: (success: Boolean, errorMessage: String?) -> Unit = { _, _ -> }
     ) {
         viewModelScope.launch {
-            val result = loanRepository.deductAndPayLoan(paymentId, accountType)
+            val payment = loanRepository.getPaymentById(paymentId)
+            if (payment == null) {
+                onComplete(false, "Loan payment not found")
+                return@launch
+            }
+            val loanConfig = loanRepository.getLoanById(payment.loanConfigId)
+            val targetAccount = accountType ?: loanConfig?.accountType ?: payment.accountType
+            val finalAmount = customAmount ?: payment.amount
+
+            if (finalAmount <= 0.0) {
+                onComplete(false, "Amount must be greater than zero")
+                return@launch
+            }
+
+            val currentBalance = balanceCalculator.getAvailableBalance(targetAccount)
+            if (finalAmount > currentBalance) {
+                val accName = if (targetAccount == AccountType.BANK) "Bank" else "Cash"
+                onComplete(
+                    false,
+                    "Insufficient $accName balance. Available: ${CurrencyUtils.formatCurrency(currentBalance)}, Required: ${CurrencyUtils.formatCurrency(finalAmount)}"
+                )
+                return@launch
+            }
+
+            if (finalAmount != payment.amount) {
+                loanRepository.updateMonthlyPaymentAmount(paymentId, finalAmount)
+            }
+
+            val result = loanRepository.deductAndPayLoan(paymentId, targetAccount)
             loadMonthlyData()
-            onComplete(result != null)
+            if (result != null) {
+                onComplete(true, null)
+            } else {
+                onComplete(false, "Failed to deduct loan")
+            }
         }
+    }
+
+    fun getPaymentHistoryForLoanFlow(loanConfigId: Long): kotlinx.coroutines.flow.Flow<List<com.example.expensetracker.data.database.dao.LoanPaymentHistoryItem>> {
+        return loanRepository.getPaymentHistoryForLoanFlow(loanConfigId)
     }
 }

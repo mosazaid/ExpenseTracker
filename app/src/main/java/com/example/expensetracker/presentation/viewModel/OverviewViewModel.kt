@@ -38,32 +38,34 @@ class OverviewViewModel @Inject constructor(
     private val walletCalculator: WalletCalculator
 ) : ViewModel() {
 
+    private val _refreshTrigger = kotlinx.coroutines.flow.MutableStateFlow(0)
+
+    fun refresh() {
+        _refreshTrigger.value += 1
+    }
+
     val monthMode: StateFlow<MonthMode> = userPreferences.monthMode
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MonthMode.CALENDAR)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, MonthMode.CALENDAR)
 
     val allTransactions = transactionRepository.getAllTransactions()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val allCategories: Flow<List<Category>> = categoryRepository.getCategoriesSortedByUsage()
 
     /**
-     * Derives a [MonthSummaryUiState] reactively from [monthMode] + [allTransactions].
-     *
-     * Using [combine] + [flatMapLatest] ensures:
-     * - The computation runs on the ViewModel scope (background thread).
-     * - A new computation is started only when month-mode or the transaction
-     *   list actually changes — NOT on every recomposition.
-     * - Only the **latest** emission is kept; stale computations are cancelled.
+     * Derives a [MonthSummaryUiState] reactively from [monthMode] + [allTransactions] + [_refreshTrigger].
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     val monthSummary: StateFlow<MonthSummaryUiState> =
-        combine(monthMode, allTransactions) { mode, _ -> mode }
-            .flatMapLatest { mode ->
+        combine(monthMode, allTransactions, _refreshTrigger) { mode, txns, trigger ->
+            Triple(mode, txns.size, trigger)
+        }
+            .flatMapLatest { (mode, _, _) ->
                 flow { emit(buildMonthSummary(mode, Date())) }
             }
             .stateIn(
                 viewModelScope,
-                SharingStarted.WhileSubscribed(5000),
+                SharingStarted.Eagerly,
                 MonthSummaryUiState()
             )
 
@@ -108,7 +110,10 @@ class OverviewViewModel @Inject constructor(
             transferImpact = financials.transferImpact,
             currentBalances = financials.currentBalances,
             walletBalance = walletBalance,
-            dueReminders = dueReminders
+            dueReminders = dueReminders,
+            periodLoansDeducted = financials.periodLoansDeducted,
+            totalPaidLoans = financials.totalPaidLoans,
+            paidLoans = financials.paidLoans
         )
     }
 

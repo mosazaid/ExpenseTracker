@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -57,6 +58,10 @@ import com.example.expensetracker.presentation.navigation.EditWallet
 import com.example.expensetracker.presentation.navigation.History
 import com.example.expensetracker.presentation.navigation.Loans
 import com.example.expensetracker.presentation.navigation.Transfer
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.example.expensetracker.data.database.dao.PaidLoanInfo
 import com.example.expensetracker.presentation.navigation.Wallet
 import com.example.expensetracker.presentation.model.MonthSummaryUiState
 import com.example.expensetracker.presentation.theme.*
@@ -80,9 +85,21 @@ fun OverviewScreen(
     val preservedAmount by loansViewModel.preservedAmount.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
-    // monthSummary is now a StateFlow computed in the ViewModel background scope.
-    // This eliminates the LaunchedEffect(allTransactions) anti-pattern that re-ran
-    // expensive DB work on every single transaction change.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refresh()
+                loansViewModel.loadMonthlyData()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // monthSummary is a StateFlow computed in the ViewModel background scope.
     val monthSummary by viewModel.monthSummary.collectAsState()
 
     var visibleReminder by remember { mutableStateOf<RecurringTransaction?>(null) }
@@ -185,6 +202,17 @@ fun OverviewScreen(
                     PreservedLoanCard(
                         preservedAmount = preservedAmount,
                         spendableAmount = spendable,
+                        onNavigateLoans = { navController.navigate(Loans) }
+                    )
+                }
+            }
+
+            // 5b. Paid Loans Banner (if loans paid this month)
+            if (monthSummary.totalPaidLoans > 0) {
+                item(key = "paid-loans-banner") {
+                    PaidLoanCard(
+                        paidAmount = monthSummary.totalPaidLoans,
+                        paidLoans = monthSummary.paidLoans,
                         onNavigateLoans = { navController.navigate(Loans) }
                     )
                 }
@@ -1041,17 +1069,124 @@ private fun PreservedLoanCard(
 }
 
 @Composable
+private fun PaidLoanCard(
+    paidAmount: Double,
+    paidLoans: List<PaidLoanInfo>,
+    onNavigateLoans: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onNavigateLoans,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
+        shadowElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                    modifier = Modifier.size(42.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    val allDeductedFromIncome = paidLoans.isNotEmpty() && paidLoans.all { it.deductFromIncome }
+                    val allExpense = paidLoans.isNotEmpty() && paidLoans.none { it.deductFromIncome }
+
+                    val cardTitle = when {
+                        allDeductedFromIncome -> stringResource(R.string.paid_loans_card_title)
+                        allExpense -> stringResource(R.string.paid_loans_card_title_expense)
+                        else -> stringResource(R.string.paid_loans_card_title_general)
+                    }
+                    Text(
+                        text = cardTitle,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    val baseSubtitle = when {
+                        allDeductedFromIncome -> stringResource(R.string.paid_loans_card_subtitle, CurrencyUtils.formatCurrency(paidAmount))
+                        allExpense -> stringResource(R.string.paid_loans_card_subtitle_expense, CurrencyUtils.formatCurrency(paidAmount))
+                        else -> stringResource(R.string.paid_loans_card_subtitle_general, CurrencyUtils.formatCurrency(paidAmount))
+                    }
+                    val detailText = if (paidLoans.size == 1) {
+                        "${paidLoans.first().loanName} • $baseSubtitle"
+                    } else {
+                        baseSubtitle
+                    }
+                    Text(
+                        text = detailText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = CurrencyUtils.formatCurrency(paidAmount),
+                    style = MaterialTheme.typography.titleMedium.withTabularNums(),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = stringResource(R.string.loans_title),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun SalaryReminderBanner(
     reminder: RecurringTransaction,
     onRecord: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isIncome = reminder.type == TransactionType.INCOME
+    val title = if (reminder.description.isNotBlank()) {
+        reminder.description
+    } else {
+        if (isIncome) stringResource(R.string.recurring_banner_title_income)
+        else stringResource(R.string.recurring_banner_title_expense)
+    }
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+        color = if (isIncome) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+        border = BorderStroke(
+            1.dp,
+            if (isIncome) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+            else MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)
+        )
     ) {
         Row(
             modifier = Modifier
@@ -1062,15 +1197,15 @@ private fun SalaryReminderBanner(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Salary reminder",
+                    text = title,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = if (isIncome) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 Text(
                     text = "Tap to record ${CurrencyUtils.formatCurrency(reminder.amount)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    color = if (isIncome) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                 )
             }
             TextButton(onClick = onRecord) {

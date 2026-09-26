@@ -3,7 +3,9 @@ package com.example.expensetracker.presentation.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
@@ -12,6 +14,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +30,7 @@ import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.ConfiguredLoan
 import com.example.expensetracker.data.repository.MonthlyLoanItem
 import com.example.expensetracker.presentation.components.AppTopBar
+import com.example.expensetracker.presentation.components.LoanHistoryBottomSheet
 import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.presentation.viewModel.LIQUID_ACCOUNTS
 import com.example.expensetracker.presentation.viewModel.LoansViewModel
@@ -45,6 +49,7 @@ fun LoansScreen(
     var loanToEdit by remember { mutableStateOf<ConfiguredLoan?>(null) }
     var editingPaymentItem by remember { mutableStateOf<MonthlyLoanItem?>(null) }
     var payingPaymentItem by remember { mutableStateOf<MonthlyLoanItem?>(null) }
+    var historyLoanTarget by remember { mutableStateOf<ConfiguredLoan?>(null) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -182,12 +187,28 @@ fun LoansScreen(
                                     }
                                 }
 
-                                Text(
-                                    text = CurrencyUtils.formatCurrency(item.payment.amount),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (item.payment.isPaid) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = CurrencyUtils.formatCurrency(item.payment.amount),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (item.payment.isPaid) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    IconButton(
+                                        onClick = { historyLoanTarget = item.loanConfig },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.History,
+                                            contentDescription = stringResource(R.string.history_title),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
                             }
 
                             if (!item.payment.isPaid) {
@@ -251,8 +272,24 @@ fun LoansScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.outline
                                 )
+                                Text(
+                                    text = if (loan.deductFromIncome) {
+                                        stringResource(R.string.loan_deducted_from_income_badge)
+                                    } else {
+                                        stringResource(R.string.loan_calculated_in_expenses_badge)
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (loan.deductFromIncome) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                                )
                             }
-                            Row {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { historyLoanTarget = loan }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.History,
+                                        contentDescription = stringResource(R.string.history_title),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                                 IconButton(onClick = {
                                     loanToEdit = loan
                                     showAddLoanDialog = true
@@ -274,11 +311,20 @@ fun LoansScreen(
         }
     }
 
+    historyLoanTarget?.let { loan ->
+        LoanHistoryBottomSheet(
+            loan = loan,
+            historyFlow = remember(loan.id) { viewModel.getPaymentHistoryForLoanFlow(loan.id) },
+            onDismissRequest = { historyLoanTarget = null }
+        )
+    }
+
     // ── Dialog: Add / Edit Configured Loan
     if (showAddLoanDialog) {
         var nameInput by remember { mutableStateOf(loanToEdit?.name.orEmpty()) }
         var amountInput by remember { mutableStateOf(loanToEdit?.defaultAmount?.toString().orEmpty()) }
         var selectedAccount by remember { mutableStateOf(loanToEdit?.accountType ?: AccountType.BANK) }
+        var calculateInExpenses by remember { mutableStateOf(loanToEdit?.let { !it.deductFromIncome } ?: false) }
 
         AlertDialog(
             onDismissRequest = { showAddLoanDialog = false },
@@ -321,6 +367,30 @@ fun LoansScreen(
                             }
                         }
                     }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                            Text(
+                                text = stringResource(R.string.calculate_in_expenses_label),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = stringResource(R.string.calculate_in_expenses_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                        Switch(
+                            checked = calculateInExpenses,
+                            onCheckedChange = { calculateInExpenses = it }
+                        )
+                    }
                 }
             },
             confirmButton = {
@@ -332,6 +402,7 @@ fun LoansScreen(
                                 name = nameInput.trim(),
                                 amount = amount,
                                 accountType = selectedAccount,
+                                deductFromIncome = !calculateInExpenses,
                                 id = loanToEdit?.id ?: 0L
                             )
                             showAddLoanDialog = false
@@ -393,55 +464,206 @@ fun LoansScreen(
         )
     }
 
-    // ── Dialog: Deduct / Pay Loan
+    // ── BottomSheet: Deduct / Pay Loan
     payingPaymentItem?.let { item ->
-        var selectedAccount by remember { mutableStateOf(item.payment.accountType) }
-        AlertDialog(
+        val targetAccount = item.loanConfig.accountType
+        var amountInput by remember { mutableStateOf(CurrencyUtils.cleanDecimalInput(item.payment.amount.toString())) }
+        var errorMessage by remember { mutableStateOf<String?>(null) }
+        var availableBalance by remember { mutableStateOf<Double?>(null) }
+        var isDeducting by remember { mutableStateOf(false) }
+
+        LaunchedEffect(item.payment.id, targetAccount) {
+            availableBalance = viewModel.getAvailableBalance(targetAccount)
+        }
+
+        val parsedAmount = amountInput.toDoubleOrNull() ?: 0.0
+        val isInsufficient = availableBalance != null && parsedAmount > (availableBalance ?: 0.0)
+
+        ModalBottomSheet(
             onDismissRequest = { payingPaymentItem = null },
-            title = { Text(stringResource(R.string.confirm_loan_deduction_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        stringResource(
-                            R.string.confirm_loan_deduction_desc,
-                            item.loanConfig.name,
-                            CurrencyUtils.formatCurrency(item.payment.amount)
-                        )
-                    )
-                    Text(stringResource(R.string.deduct_from_account), style = MaterialTheme.typography.labelMedium)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        LIQUID_ACCOUNTS.forEach { acc ->
-                            FilterChip(
-                                selected = selectedAccount == acc,
-                                onClick = { selectedAccount = acc },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = if (acc == AccountType.BANK) Icons.Default.AccountBalance else Icons.Default.Payments,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                },
-                                label = { Text(if (acc == AccountType.BANK) stringResource(R.string.account_bank) else stringResource(R.string.account_cash)) }
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (targetAccount == AccountType.BANK) Icons.Default.AccountBalance else Icons.Default.Payments,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.deductAndPayLoan(item.payment.id, selectedAccount)
-                        payingPaymentItem = null
+                    Column {
+                        Text(
+                            text = item.loanConfig.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = stringResource(
+                                R.string.deducting_from_account_label,
+                                if (targetAccount == AccountType.BANK) stringResource(R.string.account_bank) else stringResource(R.string.account_cash)
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                ) {
-                    Text(stringResource(R.string.confirm_deduct))
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { payingPaymentItem = null }) {
-                    Text(stringResource(R.string.cancel))
+
+                HorizontalDivider()
+
+                // Account & Available Balance Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.balance),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            Text(
+                                text = if (targetAccount == AccountType.BANK) stringResource(R.string.account_bank) else stringResource(R.string.account_cash),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        Text(
+                            text = CurrencyUtils.formatCurrency(availableBalance ?: 0.0),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isInsufficient) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                // Amount TextField — unfocused until user clicks inside
+                OutlinedTextField(
+                    value = amountInput,
+                    onValueChange = {
+                        amountInput = CurrencyUtils.cleanDecimalInput(it)
+                        errorMessage = null
+                    },
+                    label = { Text(stringResource(R.string.amount)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = isInsufficient || parsedAmount <= 0.0,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (isInsufficient) {
+                    val accName = if (targetAccount == AccountType.BANK) stringResource(R.string.account_bank) else stringResource(R.string.account_cash)
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.loan_insufficient_balance,
+                                accName,
+                                CurrencyUtils.formatCurrency(availableBalance ?: 0.0),
+                                CurrencyUtils.formatCurrency(parsedAmount)
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+
+                if (errorMessage != null) {
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = errorMessage.orEmpty(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { payingPaymentItem = null },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isDeducting
+                    ) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                    Button(
+                        onClick = {
+                            if (parsedAmount <= 0.0) {
+                                errorMessage = "Please enter a valid amount"
+                                return@Button
+                            }
+                            if (isInsufficient) {
+                                return@Button
+                            }
+
+                            isDeducting = true
+                            viewModel.deductAndPayLoan(
+                                paymentId = item.payment.id,
+                                customAmount = parsedAmount,
+                                accountType = targetAccount
+                            ) { success, errorMsg ->
+                                isDeducting = false
+                                if (success) {
+                                    payingPaymentItem = null
+                                } else {
+                                    errorMessage = errorMsg
+                                }
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isDeducting && parsedAmount > 0.0 && !isInsufficient
+                    ) {
+                        if (isDeducting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Text(stringResource(R.string.confirm_deduct))
+                        }
+                    }
                 }
             }
-        )
+        }
     }
 }

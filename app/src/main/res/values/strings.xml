@@ -11,6 +11,7 @@
     <!-- Common -->
     <string name="back">Back</string>
     <string name="save">Save</string>
+    <string name="edit">Edit</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
     <string name="ok">OK</string>
@@ -160,6 +161,39 @@
     <string name="total_preserved_amount">Total Preserved: </string>
     <string name="remind_later">Remind Later</string>
     <string name="pay_loans_btn">Pay Loans</string>
+    <string name="loan_insufficient_balance">Insufficient %1$s balance. Available: %2$s, Required: %3$s</string>
+    <string name="deducting_from_account_label">Deducting from %1$s</string>
+    <string name="start_new_month_title">Start new month?</string>
+    <string name="start_new_month_desc">Start a new salary month from %1$s?</string>
+    <string name="bring_previous_balance">Bring previous balance into new month</string>
+    <string name="adds_from_current_savings">Adds %1$s from current savings into new month</string>
+    <string name="no_savings_to_carry">No saved balance from the ending salary month to carry forward.</string>
+    <string name="btn_yes_start_new_month">Yes, start new month</string>
+    <string name="btn_no_just_income">No, just add income</string>
+    <string name="calculate_in_expenses_label">Calculate as monthly expense</string>
+    <string name="calculate_in_expenses_desc">When disabled (default), payments are deducted directly from income and excluded from expenses.</string>
+    <string name="loan_deducted_from_income_badge">Deducted from income</string>
+    <string name="loan_calculated_in_expenses_badge">Calculated in expenses</string>
+    <string name="paid_loans_card_title">Loans Paid (Deducted from Income)</string>
+    <string name="paid_loans_card_title_expense">Loans Paid (Monthly Expense)</string>
+    <string name="paid_loans_card_title_general">Loans Paid This Month</string>
+    <string name="paid_loans_card_subtitle">%1$s deducted directly from monthly income</string>
+    <string name="paid_loans_card_subtitle_expense">%1$s calculated in monthly expenses</string>
+    <string name="paid_loans_card_subtitle_general">%1$s total paid for loans</string>
+
+    <!-- Payment History -->
+    <string name="recurring_history_title">Execution History</string>
+    <string name="recurring_history_subtitle">Past occurrences recorded for this recurring item</string>
+    <string name="recurring_history_empty_title">No Occurrences Yet</string>
+    <string name="recurring_history_empty_desc">Transactions recorded from this recurring item will appear here with exact time and amount.</string>
+    <string name="loan_history_title">Payment History</string>
+    <string name="loan_history_subtitle">Monthly payments and schedule for this loan</string>
+    <string name="loan_history_empty_title">No Payments Recorded</string>
+    <string name="loan_history_empty_desc">Monthly loan payments will appear here with exact date, time, and status.</string>
+    <string name="history_total_paid">Total Paid: %1$s</string>
+    <string name="history_occurrences_count">%1$d occurrences</string>
+    <string name="history_payments_count">%1$d payments</string>
+    <string name="history_time_label">Time</string>
 
     <!-- Debts & Receivables -->
     <string name="debts_tracker_title">Debts Tracker</string>
@@ -272,5 +306,27 @@
     <string name="comparison_this_month">This Month</string>
     <string name="comparison_last_month">Last Month</string>
     <string name="comparison_change">Change: %1$s</string>
+    <string name="add_recurring_title">Add Recurring / Subscription</string>
+    <string name="edit_recurring_title">Edit Recurring / Subscription</string>
+    <string name="recurring_sheet_desc">Set up a recurring bill, subscription, or future expense reminder</string>
+    <string name="recurring_name_label">Name / Description</string>
+    <string name="recurring_name_hint">e.g. Netflix, Gym, Internet, Rent</string>
+    <string name="recurring_amount_label">Amount</string>
+    <string name="recurring_type_label">Type</string>
+    <string name="recurring_frequency_label">Frequency</string>
+    <string name="freq_daily">Daily</string>
+    <string name="freq_weekly">Weekly</string>
+    <string name="freq_monthly">Monthly</string>
+    <string name="freq_yearly">Yearly</string>
+    <string name="recurring_account_label">Account</string>
+    <string name="recurring_category_label">Category</string>
+    <string name="recurring_start_date_label">First / Next Due Date</string>
+    <string name="recurring_record_now">Record Payment</string>
+    <string name="make_recurring_label">Repeat / Recurring</string>
+    <string name="make_recurring_desc">Automatically schedule recurring reminders for this transaction</string>
+    <string name="recurring_error_empty_description">Please enter a description or name</string>
+    <string name="recurring_error_invalid_amount">Please enter a valid amount</string>
+    <string name="recurring_banner_title_expense">Upcoming Bill / Subscription</string>
+    <string name="recurring_banner_title_income">Upcoming Income</string>
 </resources>
 

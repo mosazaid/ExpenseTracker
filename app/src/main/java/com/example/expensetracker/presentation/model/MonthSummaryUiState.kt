@@ -25,7 +25,10 @@ data class MonthSummaryUiState(
     val transferImpact: AccountBalances = AccountBalances(0.0, 0.0),
     val currentBalances: AccountBalances = AccountBalances(0.0, 0.0),
     val walletBalance: Double = 0.0,
-    val dueReminders: List<RecurringTransaction> = emptyList()
+    val dueReminders: List<RecurringTransaction> = emptyList(),
+    val periodLoansDeducted: Double = 0.0,
+    val totalPaidLoans: Double = 0.0,
+    val paidLoans: List<com.example.expensetracker.data.database.dao.PaidLoanInfo> = emptyList()
 ) {
     val hasBroughtForward: Boolean get() = previousMonthRemaining != 0.0 || broughtForward != 0.0
     val remainingIncome: Double get() = monthNet - walletBalance

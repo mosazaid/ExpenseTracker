@@ -1,5 +1,6 @@
 package com.example.expensetracker.data.repository
 
+import com.example.expensetracker.data.database.dao.MonthlyLoanPaymentDao
 import com.example.expensetracker.data.database.dao.TransactionDao
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Transaction
@@ -13,7 +14,8 @@ import javax.inject.Singleton
 
 @Singleton
 class TransactionRepositoryImpl @Inject constructor(
-    private val transactionDao: TransactionDao
+    private val transactionDao: TransactionDao,
+    private val monthlyLoanPaymentDao: MonthlyLoanPaymentDao? = null
 ) : ITransactionRepository {
 
     override fun getAllTransactions(): Flow<List<Transaction>> {
@@ -65,10 +67,12 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteTransaction(transaction: Transaction) {
+        monthlyLoanPaymentDao?.unmarkPaymentByTransactionId(transaction.id)
         transactionDao.deleteTransaction(transaction)
     }
 
     override suspend fun deleteTransactionById(id: Long) {
+        monthlyLoanPaymentDao?.unmarkPaymentByTransactionId(id)
         transactionDao.deleteTransactionById(id)
     }
 
@@ -190,6 +194,14 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun getLatestSalaryIncomeBefore(beforeDate: Date, salaryCategoryId: Long): Transaction? {
         return transactionDao.getLatestSalaryIncomeBefore(beforeDate, salaryCategoryId)
+    }
+
+    override fun getTransactionsForRecurringFlow(
+        recurringId: Long,
+        description: String,
+        type: TransactionType
+    ): Flow<List<Transaction>> {
+        return transactionDao.getTransactionsForRecurringFlow(recurringId, description, type)
     }
 }
 

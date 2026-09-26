@@ -11,6 +11,7 @@
     <!-- Common -->
     <string name="back">رجوع</string>
     <string name="save">حفظ</string>
+    <string name="edit">تعديل</string>
     <string name="cancel">إلغاء</string>
     <string name="delete">حذف</string>
     <string name="ok">موافق</string>
@@ -160,6 +161,39 @@
     <string name="total_preserved_amount">إجمالي المحجوز: </string>
     <string name="remind_later">ذكّرني لاحقاً</string>
     <string name="pay_loans_btn">سداد القروض</string>
+    <string name="loan_insufficient_balance">رصيد %1$s غير كافٍ. المتاح: %2$s، المطلوب: %3$s</string>
+    <string name="deducting_from_account_label">سيتم الخصم من حساب: %1$s</string>
+    <string name="start_new_month_title">بدء شهر جديد؟</string>
+    <string name="start_new_month_desc">هل تريد بدء شهر راتب جديد اعتباراً من %1$s؟</string>
+    <string name="bring_previous_balance">ترحيل رصيد الشهر السابق إلى الشهر الجديد</string>
+    <string name="adds_from_current_savings">إضافة %1$s من رصيد الشهر الحالي المتبقي</string>
+    <string name="no_savings_to_carry">لا يوجد رصيد فائض متبقٍ من الشهر الحالي للترحيل.</string>
+    <string name="btn_yes_start_new_month">نعم، ابدأ شهراً جديداً</string>
+    <string name="btn_no_just_income">لا، أضف كدخل فقط</string>
+    <string name="calculate_in_expenses_label">احتساب كمصروف شهري</string>
+    <string name="calculate_in_expenses_desc">عند التعطيل (الافتراضي)، يتم خصم القسط من الدخل مباشرة واستبعاده من المصاريف.</string>
+    <string name="loan_deducted_from_income_badge">يُخصم من الدخل</string>
+    <string name="loan_calculated_in_expenses_badge">يُحسب ضمن المصاريف</string>
+    <string name="paid_loans_card_title">قروض مسددة (مخصومة من الدخل)</string>
+    <string name="paid_loans_card_title_expense">قروض مسددة (ضمن المصاريف)</string>
+    <string name="paid_loans_card_title_general">قروض مسددة هذا الشهر</string>
+    <string name="paid_loans_card_subtitle">تم خصم %1$s مباشرة من دخل الشهر</string>
+    <string name="paid_loans_card_subtitle_expense">تم احتساب %1$s ضمن مصاريف الشهر</string>
+    <string name="paid_loans_card_subtitle_general">إجمالي %1$s مسدد للقروض</string>
+
+    <!-- Payment History -->
+    <string name="recurring_history_title">سجل العمليات</string>
+    <string name="recurring_history_subtitle">العمليات السابقة المسجلة لهذه المعاملة المتكررة</string>
+    <string name="recurring_history_empty_title">لا توجد عمليات سابقة بعد</string>
+    <string name="recurring_history_empty_desc">العمليات المسجلة من هذا البند المتكرر ستظهر هنا مع الوقت المحدد والمبلغ.</string>
+    <string name="loan_history_title">سجل سداد القرض</string>
+    <string name="loan_history_subtitle">الدفعات الشهرية والجدول الزمني لهذا القرض</string>
+    <string name="loan_history_empty_title">لا توجد دفعات مسجلة</string>
+    <string name="loan_history_empty_desc">دفعات القرض الشهرية ستظهر هنا مع التاريخ والوقت والحالة.</string>
+    <string name="history_total_paid">إجمالي المسدد: %1$s</string>
+    <string name="history_occurrences_count">%1$d عمليات</string>
+    <string name="history_payments_count">%1$d دفعات</string>
+    <string name="history_time_label">الوقت</string>
 
     <!-- Debts & Receivables -->
     <string name="debts_tracker_title">سجل الديون</string>
@@ -272,5 +306,27 @@
     <string name="comparison_this_month">هذا الشهر</string>
     <string name="comparison_last_month">الشهر الماضي</string>
     <string name="comparison_change">التغير: %1$s</string>
+    <string name="add_recurring_title">إضافة معاملة متكررة / اشتراك</string>
+    <string name="edit_recurring_title">تعديل المعاملة المتكررة / الاشتراك</string>
+    <string name="recurring_sheet_desc">إعداد تذكير لفاتورة متكررة، اشتراك، أو مصروف قادم</string>
+    <string name="recurring_name_label">الاسم / الوصف</string>
+    <string name="recurring_name_hint">مثال: نتفلكس، الجيم، الإنترنت، الإيجار</string>
+    <string name="recurring_amount_label">المبلغ</string>
+    <string name="recurring_type_label">النوع</string>
+    <string name="recurring_frequency_label">التكرار</string>
+    <string name="freq_daily">يومي</string>
+    <string name="freq_weekly">أسبوعي</string>
+    <string name="freq_monthly">شهري</string>
+    <string name="freq_yearly">سنوي</string>
+    <string name="recurring_account_label">الحساب</string>
+    <string name="recurring_category_label">الفئة</string>
+    <string name="recurring_start_date_label">تاريخ الاستحقاق الأول / القادم</string>
+    <string name="recurring_record_now">تسجيل الدفعة</string>
+    <string name="make_recurring_label">تكرار المعاملة / اشتراك دوري</string>
+    <string name="make_recurring_desc">جدولة تذكيرات دورية تلقائياً لهذه المعاملة</string>
+    <string name="recurring_error_empty_description">يرجى إدخال اسم أو وصف</string>
+    <string name="recurring_error_invalid_amount">يرجى إدخال مبلغ صحيح</string>
+    <string name="recurring_banner_title_expense">فاتورة أو اشتراك مستحق</string>
+    <string name="recurring_banner_title_income">دخل مستحق</string>
 </resources>
 

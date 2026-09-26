@@ -53,7 +53,12 @@ class RecurringRepositoryImpl @Inject constructor(
     override suspend fun advanceRecurringDueDate(recurring: RecurringTransaction) {
         val calendar = Calendar.getInstance()
         calendar.time = recurring.nextDueDate
-        calendar.add(Calendar.MONTH, 1)
+        when (recurring.frequency) {
+            RecurrenceFrequency.DAILY -> calendar.add(Calendar.DAY_OF_YEAR, 1)
+            RecurrenceFrequency.WEEKLY -> calendar.add(Calendar.WEEK_OF_YEAR, 1)
+            RecurrenceFrequency.MONTHLY -> calendar.add(Calendar.MONTH, 1)
+            RecurrenceFrequency.YEARLY -> calendar.add(Calendar.YEAR, 1)
+        }
         recurringTransactionDao.updateRecurringTransaction(
             recurring.copy(nextDueDate = calendar.time)
         )
@@ -77,6 +82,10 @@ class RecurringRepositoryImpl @Inject constructor(
 
     override suspend fun updateRecurring(recurring: RecurringTransaction) {
         recurringTransactionDao.updateRecurringTransaction(recurring)
+    }
+
+    override suspend fun insertRecurringTransaction(recurring: RecurringTransaction): Long {
+        return recurringTransactionDao.insertRecurringTransaction(recurring)
     }
 
     private fun computeNextDueDate(dayOfMonth: Int): Date {

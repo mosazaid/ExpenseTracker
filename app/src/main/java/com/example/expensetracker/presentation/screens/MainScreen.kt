@@ -31,7 +31,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.expensetracker.R
+import com.example.expensetracker.core.format.CurrencyUtils
+import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.presentation.components.LoanReminderBottomSheet
+import kotlinx.coroutines.launch
 import com.example.expensetracker.presentation.navigation.AddTransaction
 import com.example.expensetracker.presentation.navigation.Alerts
 import com.example.expensetracker.presentation.navigation.Categories
@@ -93,6 +96,7 @@ fun MainScreen(
     loansViewModel: LoansViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(initialRecurringId) {
         if (initialRecurringId != null) {
@@ -121,10 +125,35 @@ fun MainScreen(
     if (unpaidLoans.isNotEmpty() && shouldShowToday && !hasDismissedLoanSheetSession && isOnOverview) {
         LoanReminderBottomSheet(
             unpaidLoans = unpaidLoans,
-            onPayLoansClick = {
-                loansViewModel.markLoanSheetShownToday()
-                hasDismissedLoanSheetSession = true
-                navController.navigate(Loans)
+            onPayLoansClick = { amounts, onResult ->
+                coroutineScope.launch {
+                    var firstError: String? = null
+                    for (item in unpaidLoans) {
+                        val amt = amounts[item.payment.id] ?: item.payment.amount
+                        val targetAccount = item.loanConfig.accountType
+                        val balance = loansViewModel.getAvailableBalance(targetAccount)
+                        if (amt > balance) {
+                            val accName = if (targetAccount == AccountType.BANK) "Bank" else "Cash"
+                            firstError = "Insufficient $accName balance for ${item.loanConfig.name}. Available: ${CurrencyUtils.formatCurrency(balance)}, Required: ${CurrencyUtils.formatCurrency(amt)}"
+                            break
+                        }
+                    }
+
+                    if (firstError != null) {
+                        onResult(false, firstError)
+                        return@launch
+                    }
+
+                    // All balances sufficient, perform deductions
+                    for (item in unpaidLoans) {
+                        val amt = amounts[item.payment.id] ?: item.payment.amount
+                        loansViewModel.deductAndPayLoan(item.payment.id, customAmount = amt)
+                    }
+
+                    loansViewModel.markLoanSheetShownToday()
+                    hasDismissedLoanSheetSession = true
+                    onResult(true, null)
+                }
             },
             onDismissRequest = {
                 loansViewModel.markLoanSheetShownToday()

@@ -22,4 +22,5 @@ interface IRecurringRepository {
     suspend fun setRecurringActive(id: Long, isActive: Boolean)
     suspend fun deleteRecurringById(id: Long)
     suspend fun updateRecurring(recurring: RecurringTransaction)
+    suspend fun insertRecurringTransaction(recurring: RecurringTransaction): Long
 }

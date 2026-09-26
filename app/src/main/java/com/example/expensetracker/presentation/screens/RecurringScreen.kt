@@ -12,7 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,9 +28,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.expensetracker.R
+import com.example.expensetracker.data.database.entities.RecurrenceFrequency
 import com.example.expensetracker.data.database.entities.RecurringTransaction
 import com.example.expensetracker.data.database.entities.TransactionType
+import com.example.expensetracker.presentation.components.AddEditRecurringBottomSheet
 import com.example.expensetracker.presentation.components.AppTopBar
+import com.example.expensetracker.presentation.components.RecurringHistoryBottomSheet
 import com.example.expensetracker.presentation.navigation.AddTransaction
 import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.core.time.DateUtils
@@ -45,7 +50,11 @@ fun RecurringScreen(
 ) {
     val recurringList by viewModel.recurringList.collectAsState()
     val categoryMap by viewModel.categoryMap.collectAsState()
+    val allCategories by viewModel.allCategories.collectAsState()
     var deleteConfirmTarget by remember { mutableStateOf<RecurringTransaction?>(null) }
+    var editingRecurringTarget by remember { mutableStateOf<RecurringTransaction?>(null) }
+    var historyRecurringTarget by remember { mutableStateOf<RecurringTransaction?>(null) }
+    var showAddRecurringSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -57,14 +66,14 @@ fun RecurringScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate(AddTransaction()) },
+                onClick = { showAddRecurringSheet = true },
                 shape = RoundedCornerShape(16.dp),
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.add_new_transaction),
+                    contentDescription = stringResource(R.string.add_recurring_title),
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -183,7 +192,9 @@ fun RecurringScreen(
                         item = item,
                         categoryName = category?.name ?: "General",
                         onToggleActive = { viewModel.toggleActive(item.id, item.isActive) },
+                        onEditClick = { editingRecurringTarget = item },
                         onDeleteClick = { deleteConfirmTarget = item },
+                        onHistoryClick = { historyRecurringTarget = item },
                         onClick = {
                             navController.navigate(
                                 AddTransaction(recurringId = item.id)
@@ -193,6 +204,40 @@ fun RecurringScreen(
                 }
             }
         }
+    }
+
+    if (showAddRecurringSheet || editingRecurringTarget != null) {
+        val target = editingRecurringTarget
+        AddEditRecurringBottomSheet(
+            initialItem = target,
+            categories = allCategories,
+            onSave = { id, description, amount, type, categoryId, accountType, frequency, nextDueDate ->
+                viewModel.saveRecurringTransaction(
+                    id = id,
+                    amount = amount,
+                    description = description,
+                    type = type,
+                    categoryId = categoryId,
+                    accountType = accountType,
+                    frequency = frequency,
+                    nextDueDate = nextDueDate
+                )
+            },
+            onDismissRequest = {
+                showAddRecurringSheet = false
+                editingRecurringTarget = null
+            }
+        )
+    }
+
+    historyRecurringTarget?.let { target ->
+        val category = categoryMap[target.categoryId]
+        RecurringHistoryBottomSheet(
+            recurring = target,
+            categoryName = category?.name ?: "General",
+            historyFlow = remember(target.id) { viewModel.getHistoryForRecurringFlow(target) },
+            onDismissRequest = { historyRecurringTarget = null }
+        )
     }
 
     deleteConfirmTarget?.let { target ->
@@ -239,7 +284,9 @@ private fun RecurringItemCard(
     item: RecurringTransaction,
     categoryName: String,
     onToggleActive: () -> Unit,
+    onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onHistoryClick: () -> Unit,
     onClick: () -> Unit
 ) {
     val isIncome = item.type == TransactionType.INCOME
@@ -247,6 +294,13 @@ private fun RecurringItemCard(
         if (isIncome) FinancePositive else MaterialTheme.colorScheme.primary
     } else {
         MaterialTheme.colorScheme.outline
+    }
+
+    val freqLabel = when (item.frequency) {
+        RecurrenceFrequency.DAILY -> stringResource(R.string.freq_daily)
+        RecurrenceFrequency.WEEKLY -> stringResource(R.string.freq_weekly)
+        RecurrenceFrequency.MONTHLY -> stringResource(R.string.freq_monthly)
+        RecurrenceFrequency.YEARLY -> stringResource(R.string.freq_yearly)
     }
 
     Card(
@@ -357,29 +411,64 @@ private fun RecurringItemCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                    ) {
+                        Text(
+                            text = freqLabel,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
                 }
             }
 
-            // Toggle switch and delete action
+            // Toggle switch and actions
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Switch(
                     checked = item.isActive,
                     onCheckedChange = { onToggleActive() },
                     modifier = Modifier.size(width = 44.dp, height = 28.dp)
                 )
-                IconButton(
-                    onClick = onDeleteClick,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = stringResource(R.string.delete),
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(18.dp)
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    IconButton(
+                        onClick = onHistoryClick,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.History,
+                            contentDescription = stringResource(R.string.history_title),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = onEditClick,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Edit,
+                            contentDescription = stringResource(R.string.edit),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = onDeleteClick,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Delete,
+                            contentDescription = stringResource(R.string.delete),
+                            tint = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }

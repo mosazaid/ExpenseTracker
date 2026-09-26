@@ -31,7 +31,10 @@ data class MonthFinancialSummary(
     /** Net transfer movement per account; cash + bank always equals zero. */
     val transferImpact: AccountBalances,
     /** Cash/bank available right now — same formula as the Add expense/income screen. */
-    val currentBalances: AccountBalances
+    val currentBalances: AccountBalances,
+    val periodLoansDeducted: Double = 0.0,
+    val totalPaidLoans: Double = 0.0,
+    val paidLoans: List<com.example.expensetracker.data.database.dao.PaidLoanInfo> = emptyList()
 ) {
     val hasTransfers: Boolean get() =
         transferImpact.cash != 0.0 || transferImpact.bank != 0.0
@@ -40,7 +43,8 @@ data class MonthFinancialSummary(
 @Singleton
 class BalanceCalculator @Inject constructor(
     private val transactionRepository: ITransactionRepository,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val monthlyLoanPaymentDao: com.example.expensetracker.data.database.dao.MonthlyLoanPaymentDao? = null
 ) {
 
     suspend fun getAllTimeBalances(): AccountBalances {
@@ -79,51 +83,50 @@ class BalanceCalculator @Inject constructor(
      */
     suspend fun buildMonthFinancialSummary(startDate: Date, endDate: Date): MonthFinancialSummary {
         val transactions = transactionRepository.getTransactionsBetweenDatesSnapshot(startDate, endDate)
-        return computeMonthFinancialSummary(transactions, getAllTimeBalances())
+        val paidLoans = monthlyLoanPaymentDao?.getPaidLoansBetweenDates(startDate, endDate) ?: emptyList()
+        return computeMonthFinancialSummary(transactions, getAllTimeBalances(), paidLoans)
     }
 
     internal fun computeMonthFinancialSummary(
         periodTransactions: List<Transaction>,
-        currentBalances: AccountBalances
+        currentBalances: AccountBalances,
+        paidLoans: List<com.example.expensetracker.data.database.dao.PaidLoanInfo> = emptyList()
     ): MonthFinancialSummary {
-        var periodIncome = 0.0
+        var rawIncome = 0.0
         var periodExpense = 0.0
-        var cashIncomeExpense = 0.0
-        var bankIncomeExpense = 0.0
+        var cashIncome = 0.0
+        var bankIncome = 0.0
+        var cashExpense = 0.0
+        var bankExpense = 0.0
         var cashTransferImpact = 0.0
         var bankTransferImpact = 0.0
+
+        val loansDeductedFromIncome = paidLoans.filter { it.deductFromIncome }
+        val loansDeductedTxnIds = loansDeductedFromIncome.mapNotNull { it.transactionId }.toSet()
 
         for (transaction in periodTransactions) {
             when (transaction.type) {
                 TransactionType.INCOME -> {
-                    periodIncome += transaction.amount
+                    rawIncome += transaction.amount
                     when (transaction.accountType) {
-                        AccountType.CASH -> cashIncomeExpense += transaction.amount
-                        AccountType.BANK -> bankIncomeExpense += transaction.amount
+                        AccountType.CASH -> cashIncome += transaction.amount
+                        AccountType.BANK -> bankIncome += transaction.amount
                         AccountType.WALLET -> Unit
                     }
                 }
                 TransactionType.EXPENSE -> {
-                    periodExpense += transaction.amount
-                    when (transaction.accountType) {
-                        AccountType.CASH -> cashIncomeExpense -= transaction.amount
-                        AccountType.BANK -> bankIncomeExpense -= transaction.amount
-                        AccountType.WALLET -> Unit
+                    if (transaction.id in loansDeductedTxnIds) {
+                        // Loan payment is deducted directly from income and excluded from monthly expenses
+                    } else {
+                        periodExpense += transaction.amount
+                        when (transaction.accountType) {
+                            AccountType.CASH -> cashExpense += transaction.amount
+                            AccountType.BANK -> bankExpense += transaction.amount
+                            AccountType.WALLET -> Unit
+                        }
                     }
                 }
-                TransactionType.TRANSFER -> {
-                    when (transaction.accountType) {
-                        AccountType.CASH -> cashTransferImpact -= transaction.amount
-                        AccountType.BANK -> bankTransferImpact -= transaction.amount
-                        AccountType.WALLET -> Unit
-                    }
-                    when (transaction.toAccountType) {
-                        AccountType.CASH -> cashTransferImpact += transaction.amount
-                        AccountType.BANK -> bankTransferImpact += transaction.amount
-                        AccountType.WALLET, null -> Unit
-                    }
-                }
-                TransactionType.WALLET_MOVE -> {
+                TransactionType.TRANSFER, TransactionType.WALLET_MOVE -> {
                     when (transaction.accountType) {
                         AccountType.CASH -> cashTransferImpact -= transaction.amount
                         AccountType.BANK -> bankTransferImpact -= transaction.amount
@@ -137,6 +140,18 @@ class BalanceCalculator @Inject constructor(
                 }
             }
         }
+
+        val totalLoansDeducted = loansDeductedFromIncome.sumOf { it.amount }
+        val cashLoanDeductions = loansDeductedFromIncome.filter { it.accountType == AccountType.CASH }.sumOf { it.amount }
+        val bankLoanDeductions = loansDeductedFromIncome.filter { it.accountType == AccountType.BANK }.sumOf { it.amount }
+        val totalPaidLoans = paidLoans.sumOf { it.amount }
+
+        val periodIncome = (rawIncome - totalLoansDeducted).coerceAtLeast(0.0)
+        val adjustedCashIncome = (cashIncome - cashLoanDeductions).coerceAtLeast(0.0)
+        val adjustedBankIncome = (bankIncome - bankLoanDeductions).coerceAtLeast(0.0)
+
+        val cashIncomeExpense = adjustedCashIncome - cashExpense
+        val bankIncomeExpense = adjustedBankIncome - bankExpense
 
         val incomeExpenseByAccount = AccountBalances(cashIncomeExpense, bankIncomeExpense)
         val transferImpact = AccountBalances(cashTransferImpact, bankTransferImpact)
@@ -153,7 +168,10 @@ class BalanceCalculator @Inject constructor(
             periodChangeByAccount = periodChangeByAccount,
             incomeExpenseByAccount = incomeExpenseByAccount,
             transferImpact = transferImpact,
-            currentBalances = currentBalances
+            currentBalances = currentBalances,
+            periodLoansDeducted = totalLoansDeducted,
+            totalPaidLoans = totalPaidLoans,
+            paidLoans = paidLoans
         )
     }
 
