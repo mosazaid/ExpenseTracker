@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.SwapHoriz
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Category
@@ -45,18 +46,20 @@ fun TransactionItem(
     category: Category?,
     onDelete: (Transaction) -> Unit,
     onEdit: (Transaction) -> Unit = {},
+    onClick: (Transaction) -> Unit = onEdit,
     isReimbursed: Boolean = false,
     isOwed: Boolean = false,
     linkedExpenseDescription: String? = null
 ) {
     when (transaction.type) {
-        TransactionType.TRANSFER -> TransferItem(transaction, onDelete, onEdit)
-        TransactionType.WALLET_MOVE -> WalletMoveItem(transaction, onDelete, onEdit)
+        TransactionType.TRANSFER -> TransferItem(transaction, onDelete, onEdit, onClick)
+        TransactionType.WALLET_MOVE -> WalletMoveItem(transaction, onDelete, onEdit, onClick)
         else -> StandardTransactionItem(
             transaction = transaction,
             category = category,
             onDelete = onDelete,
             onEdit = onEdit,
+            onClick = onClick,
             isReimbursed = isReimbursed,
             isOwed = isOwed,
             linkedExpenseDescription = linkedExpenseDescription
@@ -68,7 +71,8 @@ fun TransactionItem(
 private fun TransferItem(
     transaction: Transaction,
     onDelete: (Transaction) -> Unit,
-    onEdit: (Transaction) -> Unit
+    onEdit: (Transaction) -> Unit,
+    onClick: (Transaction) -> Unit = onEdit
 ) {
     val from = formatAccountLabel(transaction.accountType)
     val to = transaction.toAccountType?.let { formatAccountLabel(it) } ?: "?"
@@ -76,9 +80,11 @@ private fun TransferItem(
     Surface(
         tonalElevation = 2.dp,
         shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onEdit(transaction) }
+            .clickable { onClick(transaction) }
     ) {
         Row(
             modifier = Modifier
@@ -176,11 +182,27 @@ private fun TransferItem(
                     } else {
                         Spacer(modifier = Modifier.weight(1f))
                     }
-                    Text(
-                        text = CurrencyUtils.formatCurrency(transaction.amount),
-                        style = MaterialTheme.typography.titleMedium.withTabularNums(),
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = CurrencyUtils.formatCurrency(transaction.amount),
+                            style = MaterialTheme.typography.titleMedium.withTabularNums(),
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                        IconButton(
+                            onClick = { onEdit(transaction) },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "Edit",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -191,7 +213,8 @@ private fun TransferItem(
 private fun WalletMoveItem(
     transaction: Transaction,
     onDelete: (Transaction) -> Unit,
-    onEdit: (Transaction) -> Unit
+    onEdit: (Transaction) -> Unit,
+    onClick: (Transaction) -> Unit = onEdit
 ) {
     val from = formatAccountLabel(transaction.accountType)
     val to = transaction.toAccountType?.let { formatAccountLabel(it) } ?: "?"
@@ -199,10 +222,11 @@ private fun WalletMoveItem(
     Surface(
         tonalElevation = 2.dp,
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.25f),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, WalletAccent.copy(alpha = 0.35f)),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onEdit(transaction) }
+            .clickable { onClick(transaction) }
     ) {
         Row(
             modifier = Modifier
@@ -300,11 +324,27 @@ private fun WalletMoveItem(
                     } else {
                         Spacer(modifier = Modifier.weight(1f))
                     }
-                    Text(
-                        text = CurrencyUtils.formatCurrency(transaction.amount),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = WalletAccent
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = CurrencyUtils.formatCurrency(transaction.amount),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = WalletAccent
+                        )
+                        IconButton(
+                            onClick = { onEdit(transaction) },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "Edit",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -317,6 +357,7 @@ private fun StandardTransactionItem(
     category: Category?,
     onDelete: (Transaction) -> Unit,
     onEdit: (Transaction) -> Unit,
+    onClick: (Transaction) -> Unit = onEdit,
     isReimbursed: Boolean,
     isOwed: Boolean,
     linkedExpenseDescription: String?
@@ -359,7 +400,7 @@ private fun StandardTransactionItem(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onEdit(transaction) }
+            .clickable { onClick(transaction) }
     ) {
         Row(
             modifier = Modifier
@@ -499,11 +540,27 @@ private fun StandardTransactionItem(
                     } else {
                         Spacer(modifier = Modifier.weight(1f))
                     }
-                    Text(
-                        text = "$amountPrefix${CurrencyUtils.formatCurrency(transaction.amount)}",
-                        style = MaterialTheme.typography.titleMedium.withTabularNums(),
-                        color = amountColor
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "$amountPrefix${CurrencyUtils.formatCurrency(transaction.amount)}",
+                            style = MaterialTheme.typography.titleMedium.withTabularNums(),
+                            color = amountColor
+                        )
+                        IconButton(
+                            onClick = { onEdit(transaction) },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "Edit",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -517,6 +574,7 @@ fun SwipeableTransactionItem(
     category: Category?,
     onDelete: (Transaction) -> Unit,
     onEdit: (Transaction) -> Unit = {},
+    onClick: (Transaction) -> Unit = onEdit,
     isReimbursed: Boolean = false,
     isOwed: Boolean = false,
     linkedExpenseDescription: String? = null
@@ -537,26 +595,30 @@ fun SwipeableTransactionItem(
         enableDismissFromStartToEnd = false,
         enableDismissFromEndToStart = true,
         backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(vertical = 4.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.fillMaxHeight()
+            val isSwiping = dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart ||
+                    dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+            if (isSwiping) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(vertical = 4.dp),
+                    contentAlignment = Alignment.CenterEnd
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxHeight()
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            tint = MaterialTheme.colorScheme.onErrorContainer
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete",
+                                tint = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
                     }
                 }
             }
@@ -567,6 +629,7 @@ fun SwipeableTransactionItem(
             category = category,
             onDelete = onDelete,
             onEdit = onEdit,
+            onClick = onClick,
             isReimbursed = isReimbursed,
             isOwed = isOwed,
             linkedExpenseDescription = linkedExpenseDescription

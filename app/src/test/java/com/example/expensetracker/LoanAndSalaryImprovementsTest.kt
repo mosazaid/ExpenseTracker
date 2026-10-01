@@ -7,9 +7,11 @@ import com.example.expensetracker.data.database.entities.ConfiguredLoan
 import com.example.expensetracker.data.database.entities.MonthlyLoanPayment
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
+import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.data.preferences.UserPreferences
 import com.example.expensetracker.data.repository.TransactionRepositoryImpl
 import com.example.expensetracker.domain.BalanceCalculator
+import com.example.expensetracker.domain.PeriodCalculator
 import com.example.expensetracker.domain.model.MonthlyLoanItem
 import com.example.expensetracker.domain.repository.ILoanRepository
 import com.example.expensetracker.presentation.viewModel.LoansViewModel
@@ -30,6 +32,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito
 import java.util.Date
 
@@ -45,6 +48,7 @@ class LoanAndSalaryImprovementsTest {
     private lateinit var fakeLoanRepository: FakeLoanRepository
     private lateinit var userPreferences: UserPreferences
     private lateinit var balanceCalculator: BalanceCalculator
+    private lateinit var periodCalculator: PeriodCalculator
 
     class FakeLoanRepository : ILoanRepository {
         var paymentById: MonthlyLoanPayment? = null
@@ -104,8 +108,10 @@ class LoanAndSalaryImprovementsTest {
         fakeLoanRepository = FakeLoanRepository()
         userPreferences = Mockito.mock(UserPreferences::class.java)
         balanceCalculator = Mockito.mock(BalanceCalculator::class.java)
+        periodCalculator = PeriodCalculator(transactionRepository, Mockito.mock(com.example.expensetracker.domain.repository.ICategoryRepository::class.java))
 
         Mockito.`when`(userPreferences.lastLoanSheetDate).thenReturn(flowOf(null))
+        Mockito.`when`(userPreferences.monthMode).thenReturn(flowOf(MonthMode.CALENDAR))
     }
 
     @After
@@ -141,7 +147,7 @@ class LoanAndSalaryImprovementsTest {
 
     @Test
     fun deductAndPayLoan_failsWhenInsufficientBalance() = runTest {
-        val viewModel = LoansViewModel(fakeLoanRepository, userPreferences, balanceCalculator)
+        val viewModel = LoansViewModel(fakeLoanRepository, userPreferences, balanceCalculator, periodCalculator)
 
         fakeLoanRepository.paymentById = MonthlyLoanPayment(
             id = 10L,
@@ -179,7 +185,7 @@ class LoanAndSalaryImprovementsTest {
 
     @Test
     fun deductAndPayLoan_succeedsWhenBalanceIsSufficient() = runTest {
-        val viewModel = LoansViewModel(fakeLoanRepository, userPreferences, balanceCalculator)
+        val viewModel = LoansViewModel(fakeLoanRepository, userPreferences, balanceCalculator, periodCalculator)
 
         fakeLoanRepository.paymentById = MonthlyLoanPayment(
             id = 10L,

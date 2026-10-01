@@ -61,15 +61,27 @@ class LoanRepositoryImpl @Inject constructor(
         activeLoans.forEach { loan ->
             val existing = monthlyLoanPaymentDao.getPaymentForLoanAndMonth(loan.id, monthKey)
             if (existing == null) {
-                monthlyLoanPaymentDao.insertPayment(
-                    MonthlyLoanPayment(
-                        loanConfigId = loan.id,
-                        monthKey = monthKey,
-                        amount = loan.defaultAmount,
-                        accountType = loan.accountType,
-                        isPaid = false
+                // If monthKey is salary-aware (e.g. "salary-2026-09-25"), check if an existing payment
+                // was previously recorded under the calendar month ("2026-09") for this loan.
+                val fallbackPayment = if (monthKey.startsWith("salary-")) {
+                    val datePart = monthKey.removePrefix("salary-")
+                    val calKey = datePart.take(7)
+                    monthlyLoanPaymentDao.getPaymentForLoanAndMonth(loan.id, calKey)
+                } else null
+
+                if (fallbackPayment != null) {
+                    monthlyLoanPaymentDao.updatePayment(fallbackPayment.copy(monthKey = monthKey))
+                } else {
+                    monthlyLoanPaymentDao.insertPayment(
+                        MonthlyLoanPayment(
+                            loanConfigId = loan.id,
+                            monthKey = monthKey,
+                            amount = loan.defaultAmount,
+                            accountType = loan.accountType,
+                            isPaid = false
+                        )
                     )
-                )
+                }
             }
         }
         return monthlyLoanPaymentDao.getPaymentsForMonthSnapshot(monthKey)

@@ -180,4 +180,22 @@ class PeriodCalculator @Inject constructor(
             hint = hint
         )
     }
+
+    /**
+     * Computes the period key for monthly operations (loans, debts, recurring).
+     * In SALARY mode, returns "salary-yyyy-MM-dd" referencing the period anchor start date.
+     * In CALENDAR mode (or salary fallback), returns "yyyy-MM".
+     */
+    suspend fun getMonthKey(referenceDate: Date = Date(), monthMode: MonthMode): String {
+        return if (monthMode == MonthMode.SALARY) {
+            val bounds = getBounds(HistoryPeriod.MONTH, referenceDate, MonthMode.SALARY)
+            if (bounds.isSalaryFallback) {
+                DateUtils.format(bounds.start, "yyyy-MM", java.util.Locale.US)
+            } else {
+                "salary-" + DateUtils.format(bounds.start, "yyyy-MM-dd", java.util.Locale.US)
+            }
+        } else {
+            DateUtils.format(referenceDate, "yyyy-MM", java.util.Locale.US)
+        }
+    }
 }

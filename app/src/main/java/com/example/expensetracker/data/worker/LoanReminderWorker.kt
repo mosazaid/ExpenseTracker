@@ -4,14 +4,15 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.example.expensetracker.data.preferences.UserPreferences
+import com.example.expensetracker.domain.PeriodCalculator
 import com.example.expensetracker.domain.repository.IAlertRepository
 import com.example.expensetracker.domain.repository.ILoanRepository
 import com.example.expensetracker.util.NotificationHelper
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import java.text.SimpleDateFormat
+import kotlinx.coroutines.flow.first
 import java.util.Date
-import java.util.Locale
 
 @HiltWorker
 class LoanReminderWorker @AssistedInject constructor(
@@ -19,12 +20,18 @@ class LoanReminderWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val loanRepository: ILoanRepository,
     private val alertRepository: IAlertRepository,
-    private val notificationHelper: NotificationHelper
+    private val notificationHelper: NotificationHelper,
+    private val periodCalculator: PeriodCalculator,
+    private val userPreferences: UserPreferences
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         return try {
-            val monthKey = SimpleDateFormat("yyyy-MM", Locale.US).format(Date())
+            if (!userPreferences.loanAlertsEnabled.first()) {
+                return Result.success()
+            }
+            val mode = userPreferences.monthMode.first()
+            val monthKey = periodCalculator.getMonthKey(Date(), mode)
             val loanItems = loanRepository.getMonthlyLoanItems(monthKey)
             val unpaidItems = loanItems.filter { !it.payment.isPaid }
 
