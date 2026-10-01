@@ -49,6 +49,10 @@ class HistoryViewModel @Inject constructor(
         return categoryRepository.getSubCategories(categoryId)
     }
 
+    suspend fun getSplitsForTransaction(transactionId: Long): List<com.example.expensetracker.data.database.entities.TransactionSplit> {
+        return transactionRepository.getSplitsForTransactionSnapshot(transactionId)
+    }
+
     /**
      * Holds data scoped to whatever period the user has selected for the transaction list
      * (day / week / month / year). Used for category totals and budget progress only.

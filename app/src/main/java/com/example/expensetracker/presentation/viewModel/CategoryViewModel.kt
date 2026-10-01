@@ -24,6 +24,10 @@ class CategoryViewModel @Inject constructor(
         return categoryRepository.getCategoriesByType(type)
     }
 
+    fun getCategoriesByTypeSortedByUsage(type: TransactionType): Flow<List<Category>> {
+        return categoryRepository.getCategoriesByTypeSortedByUsage(type)
+    }
+
     fun insertCategory(category: Category) {
         viewModelScope.launch {
             try {

@@ -15,8 +15,11 @@ import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -35,9 +38,12 @@ import com.example.expensetracker.presentation.navigation.Categories
 import com.example.expensetracker.presentation.navigation.DatabaseBrowser
 import com.example.expensetracker.presentation.navigation.Debts
 import com.example.expensetracker.presentation.navigation.Loans
+import com.example.expensetracker.presentation.navigation.NotificationSettings
 import com.example.expensetracker.presentation.navigation.Onboarding
+import com.example.expensetracker.presentation.navigation.PrayerQiblah
 import com.example.expensetracker.presentation.navigation.Recurring
 import com.example.expensetracker.presentation.navigation.Settings
+import com.example.expensetracker.presentation.navigation.ZakahCalculator
 
 @Composable
 fun MoreScreen(navController: NavController) {
@@ -158,7 +164,38 @@ fun MoreScreen(navController: NavController) {
                 )
             }
 
-            // ── Section 2: Tools & System
+            // ── Section 2: Islamic Finance & Tools
+            item {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.more_islamic_tools),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            item {
+                MoreMenuCard(
+                    title = stringResource(R.string.zakah_calculator_title),
+                    subtitle = stringResource(R.string.zakah_calculator_subtitle),
+                    icon = Icons.Outlined.VolunteerActivism,
+                    accentColor = Color(0xFF10B981),
+                    onClick = { navController.navigate(ZakahCalculator) }
+                )
+            }
+
+            item {
+                MoreMenuCard(
+                    title = stringResource(R.string.prayer_qiblah_title),
+                    subtitle = stringResource(R.string.prayer_qiblah_subtitle),
+                    icon = Icons.Outlined.Explore,
+                    accentColor = Color(0xFF0EA5E9),
+                    onClick = { navController.navigate(PrayerQiblah) }
+                )
+            }
+
+            // ── Section 3: Tools & System
             item {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
@@ -176,6 +213,16 @@ fun MoreScreen(navController: NavController) {
                     icon = Icons.Default.Storage,
                     accentColor = MaterialTheme.colorScheme.secondary,
                     onClick = { navController.navigate(DatabaseBrowser) }
+                )
+            }
+
+            item {
+                MoreMenuCard(
+                    title = stringResource(R.string.notification_settings_title),
+                    subtitle = stringResource(R.string.manage_notifications_desc),
+                    icon = Icons.Outlined.Notifications,
+                    accentColor = Color(0xFF8B5CF6),
+                    onClick = { navController.navigate(NotificationSettings) }
                 )
             }
 

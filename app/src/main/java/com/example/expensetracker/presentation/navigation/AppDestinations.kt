@@ -17,8 +17,11 @@ import kotlinx.serialization.Serializable
 @Serializable object Recurring
 @Serializable object Categories
 @Serializable object Settings
+@Serializable object NotificationSettings
 @Serializable object DatabaseBrowser
 @Serializable object Onboarding
+@Serializable object ZakahCalculator
+@Serializable object PrayerQiblah
 
 // ── Parameterised destinations ────────────────────────────────────────────────
 /**

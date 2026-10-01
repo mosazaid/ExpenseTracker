@@ -9,6 +9,7 @@ object AppRoutes {
     const val TRANSFER = "transfer"
     const val WALLET = "wallet"
     const val SETTINGS = "settings"
+    const val NOTIFICATION_SETTINGS = "notificationSettings"
     const val DATABASE_BROWSER = "databaseBrowser"
     const val MORE = "more"
     const val LOANS = "loans"
@@ -16,6 +17,8 @@ object AppRoutes {
     const val DEBTS = "debts"
     const val RECURRING = "recurring"
     const val ONBOARDING = "onboarding"
+    const val ZAKAH_CALCULATOR = "zakahCalculator"
+    const val PRAYER_QIBLAH = "prayerQiblah"
 
     const val EDIT_TRANSFER = "editTransfer/{transactionId}"
     const val EDIT_TRANSFER_ARG = "transactionId"

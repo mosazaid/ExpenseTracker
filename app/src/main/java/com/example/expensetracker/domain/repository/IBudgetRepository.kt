@@ -7,6 +7,8 @@ import java.util.Date
 interface IBudgetRepository {
     fun getBudgetsInPeriod(periodStart: Date, periodEnd: Date): Flow<List<Budget>>
     suspend fun getBudgetForCategoryInPeriod(categoryId: Long, periodStart: Date, periodEnd: Date): Budget?
+    suspend fun getLatestBudgetForCategory(categoryId: Long): Budget?
     suspend fun upsertBudget(categoryId: Long, amount: Double, periodStart: Date, periodEnd: Date): Long
     suspend fun deleteBudget(budget: Budget)
+    suspend fun deleteBudgetsForCategory(categoryId: Long)
 }

@@ -48,6 +48,65 @@ class UserPreferences @Inject constructor(
     private val lastLoanSheetDateKey = stringPreferencesKey("last_loan_sheet_date")
     private val lastDebtRolloverMonthKey = stringPreferencesKey("last_debt_rollover_month")
     private val onboardingCompletedKey = booleanPreferencesKey("onboarding_completed")
+    private val loanAlertsKey = booleanPreferencesKey("alert_loan_enabled")
+    private val debtAlertsKey = booleanPreferencesKey("alert_debt_enabled")
+    private val salaryAlertsKey = booleanPreferencesKey("alert_salary_enabled")
+    private val budgetAlertsKey = booleanPreferencesKey("alert_budget_enabled")
+    private val dailyReminderKey = booleanPreferencesKey("alert_daily_reminder_enabled")
+    private val currencyCodeKey = stringPreferencesKey("app_currency_code")
+
+    val currencyCode: Flow<String> = context.dataStore.data.map { prefs ->
+        val code = prefs[currencyCodeKey] ?: com.example.expensetracker.core.format.CurrencyUtils.detectDefaultCurrency()
+        com.example.expensetracker.core.format.CurrencyUtils.activeCurrencyCode = code
+        code
+    }
+
+    suspend fun setCurrencyCode(code: String) {
+        com.example.expensetracker.core.format.CurrencyUtils.activeCurrencyCode = code
+        context.dataStore.edit { prefs ->
+            prefs[currencyCodeKey] = code
+        }
+    }
+
+    val loanAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[loanAlertsKey] ?: true
+    }
+
+    val debtAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[debtAlertsKey] ?: true
+    }
+
+    val salaryAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[salaryAlertsKey] ?: true
+    }
+
+    val budgetAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[budgetAlertsKey] ?: true
+    }
+
+    val dailyReminderEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[dailyReminderKey] ?: false
+    }
+
+    suspend fun setLoanAlertsEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[loanAlertsKey] = enabled }
+    }
+
+    suspend fun setDebtAlertsEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[debtAlertsKey] = enabled }
+    }
+
+    suspend fun setSalaryAlertsEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[salaryAlertsKey] = enabled }
+    }
+
+    suspend fun setBudgetAlertsEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[budgetAlertsKey] = enabled }
+    }
+
+    suspend fun setDailyReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[dailyReminderKey] = enabled }
+    }
 
     val onboardingCompleted: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[onboardingCompletedKey] ?: false

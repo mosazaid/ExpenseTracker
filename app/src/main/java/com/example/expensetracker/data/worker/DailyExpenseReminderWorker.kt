@@ -7,6 +7,8 @@ import androidx.work.WorkerParameters
 import com.example.expensetracker.domain.repository.IAlertRepository
 import com.example.expensetracker.domain.repository.ITransactionRepository
 import com.example.expensetracker.util.NotificationHelper
+import com.example.expensetracker.data.preferences.UserPreferences
+import kotlinx.coroutines.flow.first
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.text.SimpleDateFormat
@@ -19,11 +21,15 @@ class DailyExpenseReminderWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val transactionRepository: ITransactionRepository,
     private val alertRepository: IAlertRepository,
-    private val notificationHelper: NotificationHelper
+    private val notificationHelper: NotificationHelper,
+    private val userPreferences: UserPreferences
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         return try {
+            if (!userPreferences.dailyReminderEnabled.first()) {
+                return Result.success()
+            }
             val calendar = Calendar.getInstance()
             calendar.set(Calendar.HOUR_OF_DAY, 0)
             calendar.set(Calendar.MINUTE, 0)

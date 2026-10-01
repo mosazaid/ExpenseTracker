@@ -336,5 +336,87 @@
     <string name="recurring_error_invalid_amount">Please enter a valid amount</string>
     <string name="recurring_banner_title_expense">Upcoming Bill / Subscription</string>
     <string name="recurring_banner_title_income">Upcoming Income</string>
+
+    <!-- Notification & Alert Settings -->
+    <string name="notification_settings_title">Alerts &amp; Notifications</string>
+    <string name="notifications_system_disabled_title">Notifications Disabled</string>
+    <string name="notifications_system_disabled_desc">System notification permission is turned off. Enable it to receive reminders.</string>
+    <string name="enable_system_notifications">Enable Notifications</string>
+    <string name="active_alerts_inbox">Active Alerts Inbox</string>
+    <string name="view_active_alerts_desc">View all unread and active alert notifications</string>
+    <string name="alert_categories_header">Alert Channels</string>
+    <string name="alert_loan_title">Loan &amp; Installments</string>
+    <string name="alert_loan_desc">Reminders when monthly loan or installment payments are due.</string>
+    <string name="alert_debt_title">Debts &amp; Borrowing</string>
+    <string name="alert_debt_desc">Alerts for pending borrowed money and settlement dates.</string>
+    <string name="alert_salary_title">Salary &amp; Recurring Bills</string>
+    <string name="alert_salary_desc">Reminders to log monthly salary deposits and regular subscriptions.</string>
+    <string name="alert_budget_title">Budget Warnings</string>
+    <string name="alert_budget_desc">Warnings when category spending nears or exceeds your budget limit.</string>
+    <string name="alert_daily_title">Daily Logging Reminder</string>
+    <string name="alert_daily_desc">Gentle evening reminder if no transactions have been logged today.</string>
+    <string name="test_notification_sent">Test notification sent</string>
+    <string name="send_test_notification_btn">Send Test Notification</string>
+    <string name="manage_notifications_btn">Alerts &amp; Notifications Settings</string>
+    <string name="manage_notifications_desc">Configure all app alerts, reminders, and daily check-ins</string>
+
+    <!-- Split Transactions & Receipt Attachment -->
+    <string name="split_transaction_title">Split Transaction</string>
+    <string name="split_transaction_desc">Divide amount across subcategories or track debts owed by others</string>
+    <string name="split_item_header">Split Item #%1$d</string>
+    <string name="add_split_item_btn">+ Add Split Item</string>
+    <string name="split_owed_by_debtor">Owed by someone (Debt)</string>
+    <string name="debtor_person_name">Person who owes this amount</string>
+    <string name="split_total_label">Splits Total: %1$s / %2$s</string>
+    <string name="split_balanced">Balanced</string>
+    <string name="split_difference">Remaining: %1$s</string>
+    <string name="attach_receipt_title">Receipt Photo</string>
+    <string name="attach_receipt_btn">Attach Receipt Photo</string>
+    <string name="change_receipt_btn">Change Photo</string>
+    <string name="delete_receipt_btn">Remove</string>
+    <string name="receipt_attached">Receipt attached</string>
+
+    <!-- Islamic Finance & Tools -->
+    <string name="more_islamic_tools">Islamic Finance &amp; Tools</string>
+    <string name="zakah_calculator_title">Zakah Calculator</string>
+    <string name="zakah_calculator_subtitle">Calculate 2.5% wealth Zakah based on Nisab</string>
+    <string name="zakah_due_label">Zakah Payable</string>
+    <string name="zakah_below_nisab_label">Below Nisab (No Zakah Due)</string>
+    <string name="zakah_nisab_threshold_info">Nisab Threshold (85g Gold): %1$s</string>
+    <string name="record_zakah_payment_btn">Record Zakah Payment</string>
+    <string name="zakah_breakdown_header">Assets &amp; Deductions</string>
+    <string name="prayer_qiblah_title">Prayer Times &amp; Qiblah</string>
+    <string name="prayer_qiblah_subtitle">Accurate offline prayer times &amp; Kaaba compass</string>
+    <string name="select_city_label">Select Location / City</string>
+    <string name="upcoming_prayer_label">Upcoming Prayer</string>
+    <string name="daily_prayer_schedule">Daily Prayer Schedule</string>
+    <string name="qiblah_direction_title">Kaaba / Qiblah Compass</string>
+
+    <!-- Currency Settings -->
+    <string name="currency_settings_title">Currency</string>
+    <string name="currency_settings_desc">Choose your default currency symbol and display</string>
+
+    <!-- AI Financial Insights -->
+    <string name="financial_ai_insights_title">Smart Financial Insights</string>
+    <string name="financial_ai_insights_desc">AI burn-rate pacing and spending velocity</string>
+    <string name="burn_rate_warning">Spending Velocity Alert</string>
+    <string name="burn_rate_safe">Pacing On Track</string>
+    <string name="burn_rate_daily_safe">Safe Daily Spend: %1$s</string>
+    <string name="burn_rate_projected_deficit">Projected Overspend: %1$s</string>
+
+    <!-- Financial Pacing Info Dialog -->
+    <string name="pacing_info_title">Understanding Financial Pacing</string>
+    <string name="pacing_info_subtitle">How our algorithms analyze your cycle, velocity, and daily allowance</string>
+    <string name="pacing_info_cycle_title">Financial Cycle</string>
+    <string name="pacing_info_cycle_desc">Your active financial period (Calendar Month or Salary Cycle). All progress and calculations track your position within this specific date window.</string>
+    <string name="pacing_info_velocity_title">Spending Velocity (Burn Rate)</string>
+    <string name="pacing_info_velocity_desc" formatted="false">The ratio between your spent budget percentage and elapsed cycle time (% Budget Spent ÷ % Time Elapsed). A velocity of 1.0x means you are spending in exact sync with time. Values above 1.1x indicate spending faster than time is passing.</string>
+    <string name="pacing_info_early_cycle_title">Early-Cycle Upfront Expenses</string>
+    <string name="pacing_info_early_cycle_desc">At the beginning of a cycle (e.g. days 1–5), major upfront expenses such as rent, bills, or groceries commonly occur. The system recognizes these lump sums and adapts your safe daily allowance for the remaining days without triggering unrealistic linear projections.</string>
+    <string name="pacing_info_safe_spend_title">Safe Daily Spend</string>
+    <string name="pacing_info_safe_spend_desc">The recommended daily budget allowance for every remaining day in the cycle: (Remaining Budget ÷ Days Left). Spending at or below this target guarantees you finish the cycle with positive savings.</string>
+    <string name="pacing_info_projection_title">Projected Surplus / Deficit</string>
+    <string name="pacing_info_projection_desc">The expected net balance when the cycle concludes, calculated by comparing your baseline budget against current spend and realistic remaining run rate.</string>
+    <string name="pacing_info_close">Understood</string>
 </resources>
 

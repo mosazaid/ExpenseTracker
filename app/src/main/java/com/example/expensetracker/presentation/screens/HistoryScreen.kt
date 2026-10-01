@@ -38,6 +38,7 @@ import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.PeriodBounds
 import com.example.expensetracker.presentation.components.SwipeableTransactionItem
+import com.example.expensetracker.presentation.components.TransactionDetailBottomSheet
 import com.example.expensetracker.presentation.components.TransactionFilterBottomSheet
 import com.example.expensetracker.presentation.navigation.AddTransaction
 import com.example.expensetracker.presentation.navigation.EditTransfer
@@ -203,6 +204,7 @@ fun HistoryScreen(
     }
 
     var deleteTarget by remember { mutableStateOf<Transaction?>(null) }
+    var detailTarget by remember { mutableStateOf<Transaction?>(null) }
     var blockedActionMessage by remember { mutableStateOf<String?>(null) }
 
     if (showFilterSheet) {
@@ -245,6 +247,53 @@ fun HistoryScreen(
             },
             dismissButton = {
                 TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
+
+    var splitsForDetail by remember {
+        mutableStateOf<List<com.example.expensetracker.data.database.entities.TransactionSplit>>(emptyList())
+    }
+    LaunchedEffect(detailTarget) {
+        splitsForDetail = detailTarget?.let { viewModel.getSplitsForTransaction(it.id) } ?: emptyList()
+    }
+
+    if (detailTarget != null) {
+        val target = detailTarget!!
+        TransactionDetailBottomSheet(
+            transaction = target,
+            category = categoryMap[target.categoryId],
+            splits = splitsForDetail,
+            onDismissRequest = { detailTarget = null },
+            onEdit = { transaction ->
+                coroutineScope.launch {
+                    when (transaction.type) {
+                        TransactionType.TRANSFER -> {
+                            navController.navigate(EditTransfer(transaction.id))
+                        }
+                        TransactionType.WALLET_MOVE -> {
+                            if (viewModel.canModifyTransaction(transaction)) {
+                                navController.navigate(EditWallet(transaction.id))
+                            } else {
+                                blockedActionMessage =
+                                    "Wallet moves in closed salary months are read-only."
+                            }
+                        }
+                        else -> {
+                            navController.navigate(AddTransaction(transactionId = transaction.id))
+                        }
+                    }
+                }
+            },
+            onDelete = { transaction ->
+                coroutineScope.launch {
+                    if (viewModel.canModifyTransaction(transaction)) {
+                        deleteTarget = transaction
+                    } else {
+                        blockedActionMessage =
+                            "Wallet moves in closed salary months cannot be deleted."
+                    }
+                }
             }
         )
     }
@@ -618,6 +667,7 @@ fun HistoryScreen(
                         SwipeableTransactionItem(
                             transaction = txn,
                             category = categoryMap[txn.categoryId],
+                            onClick = { detailTarget = it },
                             onDelete = {
                                 coroutineScope.launch {
                                     if (viewModel.canModifyTransaction(it)) {

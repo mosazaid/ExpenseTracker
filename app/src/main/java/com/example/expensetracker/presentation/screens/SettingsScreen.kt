@@ -16,10 +16,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import android.Manifest
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.MyLocation
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.ui.text.font.FontWeight
+import com.example.expensetracker.core.location.LocationHelper
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,6 +48,7 @@ import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.presentation.components.AppTopBar
 import com.example.expensetracker.presentation.navigation.Categories
 import com.example.expensetracker.presentation.navigation.DatabaseBrowser
+import com.example.expensetracker.presentation.navigation.NotificationSettings
 import com.example.expensetracker.presentation.viewModel.ExportFormat
 import com.example.expensetracker.presentation.viewModel.ExportScope
 import com.example.expensetracker.presentation.viewModel.ExportShareRequest
@@ -61,6 +67,7 @@ fun SettingsScreen(
     val themeMode by viewModel.themeMode.collectAsState()
     val themePalette by viewModel.themePalette.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
+    val currencyCode by viewModel.currencyCode.collectAsState()
     val context = LocalContext.current
     val activity = context as? Activity
     val coroutineScope = rememberCoroutineScope()
@@ -74,9 +81,34 @@ fun SettingsScreen(
     var exportFormat by remember { mutableStateOf(ExportFormat.CSV) }
     var importMessage by remember { mutableStateOf<String?>(null) }
     var importFormatExpanded by remember { mutableStateOf(false) }
+    var currencyMenuExpanded by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val locationHelper = remember { LocationHelper(context) }
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (fineGranted || coarseGranted) {
+            val detected = locationHelper.detectLocationInfo()
+            if (detected != null) {
+                viewModel.setCurrencyCode(detected.detectedCurrencyCode)
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Detected: ${detected.detectedCurrencyCode} (${detected.cityName ?: detected.countryCode})")
+                }
+            } else {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Location unavailable. Please select manually.")
+                }
+            }
+        } else {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Location permission denied.")
+            }
+        }
+    }
     var exportDialogRequest by remember { mutableStateOf<ExportShareRequest?>(null) }
     var pendingSaveRequest by remember { mutableStateOf<ExportShareRequest?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
 
     val saveDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("*/*")
@@ -230,6 +262,76 @@ fun SettingsScreen(
                 )
             }
 
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.currency_settings_title), style = MaterialTheme.typography.labelMedium)
+                TextButton(
+                    onClick = {
+                        if (locationHelper.hasLocationPermission()) {
+                            val detected = locationHelper.detectLocationInfo()
+                            if (detected != null) {
+                                viewModel.setCurrencyCode(detected.detectedCurrencyCode)
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("Detected: ${detected.detectedCurrencyCode} (${detected.cityName ?: detected.countryCode})")
+                                }
+                            } else {
+                                locationPermissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                )
+                            }
+                        } else {
+                            locationPermissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        }
+                    },
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Icon(Icons.Outlined.MyLocation, contentDescription = null, modifier = Modifier.size(15.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Auto-detect via GPS", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+            ExposedDropdownMenuBox(
+                expanded = currencyMenuExpanded,
+                onExpandedChange = { currencyMenuExpanded = !currencyMenuExpanded }
+            ) {
+                val activeInfo = CurrencyUtils.getCurrencyInfo(currencyCode)
+                OutlinedTextField(
+                    value = "${activeInfo.code} (${activeInfo.symbol} / ${activeInfo.symbolAr})",
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = currencyMenuExpanded) },
+                    modifier = Modifier
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                        .fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = currencyMenuExpanded,
+                    onDismissRequest = { currencyMenuExpanded = false }
+                ) {
+                    CurrencyUtils.SUPPORTED_CURRENCIES.forEach { curr ->
+                        DropdownMenuItem(
+                            text = { Text("${curr.code} — ${curr.symbol} (${curr.symbolAr})") },
+                            onClick = {
+                                viewModel.setCurrencyCode(curr.code)
+                                currencyMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
             Text("Dark Mode", style = MaterialTheme.typography.labelMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 com.example.expensetracker.data.preferences.ThemeMode.entries.forEach { mode ->
@@ -323,61 +425,11 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            // ── Section 2: App Lock
-            Text("2. App Lock", style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(R.string.biometric_lock_help),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(stringResource(R.string.biometric_lock_enable))
-                Switch(
-                    checked = biometricLockEnabled,
-                    onCheckedChange = { viewModel.setBiometricLockEnabled(it) }
-                )
-            }
-
             HorizontalDivider()
 
-            // ── Section 3: Categories Management
-            Text("3. Categories", style = MaterialTheme.typography.titleMedium)
-            Text(
-                "Manage transaction categories and subcategories",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-            Button(
-                onClick = { navController.navigate(Categories) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Category Management")
-            }
+            // ── Section 2: Currency & Balances
+            Text("2. Currency & Balances", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
 
-            HorizontalDivider()
-
-            // ── Section 4: Database Browser
-            Text("4. Database Browser", style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(R.string.database_browser_desc),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-            Button(
-                onClick = { navController.navigate(DatabaseBrowser) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.database_browser))
-            }
-
-            HorizontalDivider()
-
-            // ── Section 5: Current Balances
-            Text("5. Current Balances", style = MaterialTheme.typography.titleMedium)
             Text(
                 stringResource(R.string.balances_help),
                 style = MaterialTheme.typography.bodySmall,
@@ -425,90 +477,89 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            // ── Section 6: Salary Reminders & Notifications
-            Text("6. Salary Reminders", style = MaterialTheme.typography.titleMedium)
-            var notificationsEnabled by remember { mutableStateOf(viewModel.areNotificationsEnabled()) }
-            val notificationPermissionLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.RequestPermission()
-            ) { isGranted ->
-                notificationsEnabled = isGranted || viewModel.areNotificationsEnabled()
-            }
-            if (!notificationsEnabled) {
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    modifier = Modifier.fillMaxWidth()
+            // ── Section 3: Alerts & Notifications
+            Text("3. Alerts & Notifications", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { navController.navigate(NotificationSettings) }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text(
-                            text = stringResource(R.string.notifications_disabled_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Button(
-                            onClick = {
-                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                                } else {
-                                    val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                        putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                    }
-                                    runCatching { context.startActivity(intent) }
-                                }
-                            }
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            modifier = Modifier.size(42.dp)
                         ) {
-                            Text(stringResource(R.string.enable_notifications_btn))
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Notifications,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
-                    }
-                }
-            } else {
-                OutlinedButton(
-                    onClick = {
-                        viewModel.sendTestSalaryNotification()
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Test notification sent!")
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Send Test Notification")
-                }
-            }
-
-            if (salaryReminders.isEmpty()) {
-                Text(
-                    stringResource(R.string.no_salary_reminder),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            } else {
-                salaryReminders.forEach { reminder ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column {
                             Text(
-                                "${reminder.description} — ${CurrencyUtils.formatCurrency(reminder.amount)}",
-                                style = MaterialTheme.typography.bodyMedium
+                                text = stringResource(R.string.manage_notifications_btn),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Next: ${DateUtils.formatDate(reminder.nextDueDate)}",
+                                text = "Daily 9 PM logging, budget limits, salary rollovers, and loan alerts",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.outline
                             )
-                            TextButton(onClick = { viewModel.deactivateSalaryReminder(reminder.id) }) {
-                                Text(stringResource(R.string.turn_off_reminder), color = MaterialTheme.colorScheme.error)
-                            }
                         }
                     }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
             HorizontalDivider()
 
-            // ── Section 7: Data Export & Import
-            Text("7. Data & Backup", style = MaterialTheme.typography.titleMedium)
+            // ── Section 4: Security & Privacy
+            Text("4. Security & Privacy", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                stringResource(R.string.biometric_lock_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.biometric_lock_enable), fontWeight = FontWeight.Medium)
+                Switch(
+                    checked = biometricLockEnabled,
+                    onCheckedChange = { viewModel.setBiometricLockEnabled(it) }
+                )
+            }
+
+            HorizontalDivider()
+
+            // ── Section 5: Data & Backup
+            Text("5. Data & Backup", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text(stringResource(R.string.export_filter), style = MaterialTheme.typography.labelMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
@@ -572,6 +623,17 @@ fun SettingsScreen(
                 onToggle = { importFormatExpanded = !importFormatExpanded },
                 onDownloadTemplate = { viewModel.exportImportTemplate() }
             )
+
+            HorizontalDivider()
+
+            // ── Section 6: Developer Tools
+            Text("6. Developer Tools", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Button(
+                onClick = { navController.navigate(DatabaseBrowser) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.database_browser))
+            }
 
             HorizontalDivider()
 

@@ -67,6 +67,11 @@ import com.example.expensetracker.presentation.model.MonthSummaryUiState
 import com.example.expensetracker.presentation.theme.*
 import com.example.expensetracker.presentation.viewModel.LoansViewModel
 import com.example.expensetracker.presentation.viewModel.OverviewViewModel
+import com.example.expensetracker.presentation.navigation.Categories
+import com.example.expensetracker.presentation.components.FinancialHealthScoreCard
+import com.example.expensetracker.presentation.components.CategoryBudgetsCard
+import com.example.expensetracker.presentation.components.TransactionDetailBottomSheet
+import com.example.expensetracker.presentation.viewModel.BudgetViewModel
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -75,15 +80,18 @@ import java.util.*
 fun OverviewScreen(
     navController: NavController,
     viewModel: OverviewViewModel = hiltViewModel(),
-    loansViewModel: LoansViewModel = hiltViewModel()
+    loansViewModel: LoansViewModel = hiltViewModel(),
+    budgetViewModel: BudgetViewModel = hiltViewModel()
 ) {
     val monthMode by viewModel.monthMode.collectAsState()
     val allTransactions by viewModel.allTransactions.collectAsState(initial = emptyList())
     val allCategories by viewModel.allCategories.collectAsState(initial = emptyList())
     val categoryMap = remember(allCategories) { allCategories.associateBy { it.id } }
+    val budgetProgressMap by budgetViewModel.budgetProgressMap.collectAsState()
 
     val preservedAmount by loansViewModel.preservedAmount.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    var detailTarget by remember { mutableStateOf<Transaction?>(null) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -91,6 +99,7 @@ fun OverviewScreen(
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.refresh()
                 loansViewModel.loadMonthlyData()
+                budgetViewModel.loadBudgetProgress()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -227,16 +236,41 @@ fun OverviewScreen(
                 )
             }
 
-            // 7. Smart Financial Insights Card
+            // 7. Gamified Financial Health Score Card
+            item(key = "financial-health-score-card") {
+                FinancialHealthScoreCard(
+                    totalIncome = monthSummary.monthIncome,
+                    totalExpense = monthSummary.monthExpense,
+                    budgetAdherenceRatio = if (budgetProgressMap.isNotEmpty()) {
+                        val normalCount = budgetProgressMap.values.count { !it.isOverBudget }
+                        (normalCount.toFloat() / budgetProgressMap.size.toFloat()).coerceIn(0f, 1f)
+                    } else 0.85f,
+                    activeLoansUnpaidCount = monthSummary.dueReminders.size
+                )
+            }
+
+            // 7b. Category Budgets Progress Card
+            item(key = "category-budgets-card") {
+                CategoryBudgetsCard(
+                    budgetProgressMap = budgetProgressMap,
+                    categoryMap = categoryMap,
+                    onManageBudgets = { navController.navigate(Categories) }
+                )
+            }
+
+            // 8. Smart Financial Insights Card
             item(key = "financial-insights-card") {
                 FinancialInsightsCard(
                     totalIncome = monthSummary.monthIncome,
                     totalExpense = monthSummary.monthExpense,
-                    totalWallet = monthSummary.walletBalance
+                    totalWallet = monthSummary.walletBalance,
+                    periodStartDate = monthSummary.monthBounds?.start,
+                    periodEndDate = monthSummary.monthBounds?.end,
+                    cycleLabel = monthSummary.monthBounds?.label
                 )
             }
 
-            // 8. Recent Activity Preview
+            // 9. Recent Activity Preview
             item(key = "recent-activity-preview") {
                 RecentActivityCard(
                     recentTransactions = recentTransactions,
@@ -251,22 +285,12 @@ fun OverviewScreen(
                         }
                     },
                     onTransactionClick = { txn ->
-                        when (txn.type) {
-                            TransactionType.TRANSFER -> {
-                                navController.navigate(EditTransfer(txn.id))
-                            }
-                            TransactionType.WALLET_MOVE -> {
-                                navController.navigate(EditWallet(txn.id))
-                            }
-                            else -> {
-                                navController.navigate(AddTransaction(transactionId = txn.id))
-                            }
-                        }
+                        detailTarget = txn
                     }
                 )
             }
 
-            // 8. Yearly Wallet Summary (Salary mode only)
+            // 10. Yearly Wallet Summary (Salary mode only)
             if (salaryWalletYearSummary.isNotEmpty()) {
                 item(key = "wallet-summary-card") {
                     WalletYearSummaryCard(
@@ -277,6 +301,35 @@ fun OverviewScreen(
                     )
                 }
             }
+        }
+
+        var splitsForDetail by remember {
+            mutableStateOf<List<com.example.expensetracker.data.database.entities.TransactionSplit>>(emptyList())
+        }
+        LaunchedEffect(detailTarget) {
+            splitsForDetail = detailTarget?.let { viewModel.getSplitsForTransaction(it.id) } ?: emptyList()
+        }
+
+        // Transaction Detail Bottom Sheet on click
+        detailTarget?.let { txn ->
+            TransactionDetailBottomSheet(
+                transaction = txn,
+                category = categoryMap[txn.categoryId],
+                splits = splitsForDetail,
+                onDismissRequest = { detailTarget = null },
+                onEdit = { targetTxn ->
+                    detailTarget = null
+                    when (targetTxn.type) {
+                        TransactionType.TRANSFER -> navController.navigate(EditTransfer(targetTxn.id))
+                        TransactionType.WALLET_MOVE -> navController.navigate(EditWallet(targetTxn.id))
+                        else -> navController.navigate(AddTransaction(transactionId = targetTxn.id))
+                    }
+                },
+                onDelete = { targetTxn ->
+                    detailTarget = null
+                    viewModel.deleteTransaction(targetTxn)
+                }
+            )
         }
     }
 }

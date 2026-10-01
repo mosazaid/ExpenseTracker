@@ -32,6 +32,7 @@ class BudgetProgressCalculator @Inject constructor(
         periodEnd: Date
     ): CategoryBudgetProgress? {
         val budget = budgetRepository.getBudgetForCategoryInPeriod(categoryId, periodStart, periodEnd)
+            ?: budgetRepository.getLatestBudgetForCategory(categoryId)
             ?: return null
         val spent = transactionRepository.getTotalAmountByCategoryAndDateRange(
             categoryId,

@@ -336,5 +336,87 @@
     <string name="recurring_error_invalid_amount">يرجى إدخال مبلغ صحيح</string>
     <string name="recurring_banner_title_expense">فاتورة أو اشتراك مستحق</string>
     <string name="recurring_banner_title_income">دخل مستحق</string>
+
+    <!-- Notification & Alert Settings -->
+    <string name="notification_settings_title">التنبيهات والإشعارات</string>
+    <string name="notifications_system_disabled_title">الإشعارات معطلة في النظام</string>
+    <string name="notifications_system_disabled_desc">إذن الإشعارات مغلق في إعدادات الهاتف. قم بتفعيله لاستلام التذكيرات.</string>
+    <string name="enable_system_notifications">تفعيل الإشعارات</string>
+    <string name="active_alerts_inbox">صندوق التنبيهات النشطة</string>
+    <string name="view_active_alerts_desc">عرض ومراجعة التنبيهات الحالية غير المقروءة</string>
+    <string name="alert_categories_header">قنوات التنبيه</string>
+    <string name="alert_loan_title">القروض والأقساط</string>
+    <string name="alert_loan_desc">تذكيرات عند استحقاق دفعات القروض الشهرية بحسب دورة الراتب أو الشهر الميلادي.</string>
+    <string name="alert_debt_title">الديون والالتزامات</string>
+    <string name="alert_debt_desc">تنبيهات للمبالغ المستدانة وتواريخ السداد المحددة.</string>
+    <string name="alert_salary_title">الراتب والفواتير المتكررة</string>
+    <string name="alert_salary_desc">تذكيرات تسجيل نزول الراتب الشهري والاشتراكات الدورية.</string>
+    <string name="alert_budget_title">تحذيرات الميزانية</string>
+    <string name="alert_budget_desc">تحذيرات ذكية عند الاقتراب من الحد الأقصى لميزانية الفئة أو تجاوزه.</string>
+    <string name="alert_daily_title">تذكير التسجيل اليومي</string>
+    <string name="alert_daily_desc">تذكير مسائي هادئ في حال لم تسجل أي مصروف خلال اليوم للحفاظ على عاداتك المالية.</string>
+    <string name="test_notification_sent">تم إرسال إشعار تجريبي</string>
+    <string name="send_test_notification_btn">إرسال إشعار تجريبي</string>
+    <string name="manage_notifications_btn">إعدادات التنبيهات والإشعارات</string>
+    <string name="manage_notifications_desc">التحكم في كافة تنبيهات التطبيق، التذكيرات الدورية والتسجيل اليومي</string>
+
+    <!-- Split Transactions & Receipt Attachment -->
+    <string name="split_transaction_title">تقسيم المعاملة</string>
+    <string name="split_transaction_desc">تقسيم المبلغ على فئات فرعية متعددة أو تسجيل ديون للآخرين</string>
+    <string name="split_item_header">بند التقسيم #%1$d</string>
+    <string name="add_split_item_btn">+ إضافة بند تقسيم</string>
+    <string name="split_owed_by_debtor">مستحق على شخص آخر (دين)</string>
+    <string name="debtor_person_name">اسم الشخص المدين بهذا المبلغ</string>
+    <string name="split_total_label">إجمالي التقسيم: %1$s / %2$s</string>
+    <string name="split_balanced">متطابق</string>
+    <string name="split_difference">المتبقي: %1$s</string>
+    <string name="attach_receipt_title">صورة الفاتورة / الوصل</string>
+    <string name="attach_receipt_btn">إرفاق صورة الفاتورة</string>
+    <string name="change_receipt_btn">تغيير الصورة</string>
+    <string name="delete_receipt_btn">حذف</string>
+    <string name="receipt_attached">تم إرفاق الفاتورة</string>
+
+    <!-- Islamic Finance & Tools -->
+    <string name="more_islamic_tools">المالية الإسلامية والأدوات</string>
+    <string name="zakah_calculator_title">حاسبة الزكاة الشرعية</string>
+    <string name="zakah_calculator_subtitle">حساب زكاة المال بنسبة 2.5% ومقارنتها بالنصاب</string>
+    <string name="zakah_due_label">مقدار الزكاة الواجب إخراجها</string>
+    <string name="zakah_below_nisab_label">دون حد النصاب (لا تجب الزكاة)</string>
+    <string name="zakah_nisab_threshold_info">حد النصاب الشرعي (85غ ذهب): %1$s</string>
+    <string name="record_zakah_payment_btn">تسجيل إخراج الزكاة</string>
+    <string name="zakah_breakdown_header">تفاصيل الأموال والالتزامات</string>
+    <string name="prayer_qiblah_title">مواقيت الصلاة والقبلة</string>
+    <string name="prayer_qiblah_subtitle">مواقيت دقيقة وبوصلة الكعبة دون إنترنت</string>
+    <string name="select_city_label">تحديد المدينة / الموقع</string>
+    <string name="upcoming_prayer_label">الصلاة القادمة</string>
+    <string name="daily_prayer_schedule">مواقيت الصلوات اليومية</string>
+    <string name="qiblah_direction_title">بوصلة اتجاه القبلة (الكعبة المشرفة)</string>
+
+    <!-- Currency Settings -->
+    <string name="currency_settings_title">العملة</string>
+    <string name="currency_settings_desc">اختيار رمز العملة الافتراضية للتطبيق</string>
+
+    <!-- AI Financial Insights -->
+    <string name="financial_ai_insights_title">رؤى مالية ذكية</string>
+    <string name="financial_ai_insights_desc">تنبيهات معدل الإنفاق والتوجيه المالي الذكي</string>
+    <string name="burn_rate_warning">تنبيه سرعة الإنفاق</string>
+    <string name="burn_rate_safe">معدل الإنفاق متزن</string>
+    <string name="burn_rate_daily_safe">الحد اليومي الآمن: %1$s</string>
+    <string name="burn_rate_projected_deficit">العجز المتوقع بنهاية الدورة: %1$s</string>
+
+    <!-- Financial Pacing Info Dialog -->
+    <string name="pacing_info_title">دليل وتيرة الإنفاق والذكاء المالي</string>
+    <string name="pacing_info_subtitle">كيف تقوم الخوارزميات بتحليل دورتك المالية وسرعة الحرق والمخصص اليومي</string>
+    <string name="pacing_info_cycle_title">الدورة المالية</string>
+    <string name="pacing_info_cycle_desc">الفترة المالية النشطة (شهر ميلادي أو دورة راتب). يتم تتبع تقدمك وحساباتك ضمن هذا النطاق الزمني المحدد.</string>
+    <string name="pacing_info_velocity_title">سرعة الإنفاق (معدل الحرق)</string>
+    <string name="pacing_info_velocity_desc" formatted="false">النسبة بين النسبة المئوية للمصروفات والنسبة المئوية للأيام المنقضية (% المصروف ÷ % الأيام). سرعة 1.0x تعني أنك تنفق بالتزامن الدقيق مع مرور الأيام. القيم الأعلى من 1.1x تعني وتيرة إنفاق أسرع من الوقت.</string>
+    <string name="pacing_info_early_cycle_title">المصاريف الكبيرة في بداية الدورة</string>
+    <string name="pacing_info_early_cycle_desc">في الأيام الأولى من الدورة (مثل الأيام 1 إلى 5)، تكون المصاريف الكبيرة مقدماً مثل الإيجار أو الفواتير شائعة وطبيعية. يتعرف النظام على هذه المدفوعات ويحسب المخصص اليومي الآمن للأيام المتبقية دون إصدار توقعات خطية غير واقعية.</string>
+    <string name="pacing_info_safe_spend_title">المصروف اليومي الآمن</string>
+    <string name="pacing_info_safe_spend_desc">الحد الموصى به يومياً لما تبقى من أيام الدورة: (الميزانية المتبقية ÷ الأيام المتبقية). الإنفاق ضمن هذا المعدل يضمن إنهاء الدورة بفائض مالي إيجابي.</string>
+    <string name="pacing_info_projection_title">الفائض أو العجز المتوقع</string>
+    <string name="pacing_info_projection_desc">الرصيد الصافي المتوقع عند انتهاء الدورة المالية، ويُحسب بمقارنة الميزانية بالمصروفات الحالية والمعدل الواقعي للأيام المتبقية.</string>
+    <string name="pacing_info_close">فهمت ذلك</string>
 </resources>
 

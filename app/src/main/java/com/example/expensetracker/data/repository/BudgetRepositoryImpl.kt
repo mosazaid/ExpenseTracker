@@ -25,6 +25,10 @@ class BudgetRepositoryImpl @Inject constructor(
         return budgetDao.getBudgetForCategoryInPeriod(categoryId, periodStart, periodEnd)
     }
 
+    override suspend fun getLatestBudgetForCategory(categoryId: Long): Budget? {
+        return budgetDao.getLatestBudgetForCategory(categoryId)
+    }
+
     override suspend fun upsertBudget(
         categoryId: Long,
         amount: Double,
@@ -32,8 +36,9 @@ class BudgetRepositoryImpl @Inject constructor(
         periodEnd: Date
     ): Long {
         val existing = budgetDao.getBudgetForCategoryInPeriod(categoryId, periodStart, periodEnd)
+            ?: budgetDao.getLatestBudgetForCategory(categoryId)
         return if (existing != null) {
-            budgetDao.updateBudget(existing.copy(amount = amount))
+            budgetDao.updateBudget(existing.copy(amount = amount, periodStart = periodStart, periodEnd = periodEnd))
             existing.id
         } else {
             budgetDao.insertBudget(
@@ -49,6 +54,10 @@ class BudgetRepositoryImpl @Inject constructor(
 
     override suspend fun deleteBudget(budget: Budget) {
         budgetDao.deleteBudget(budget)
+    }
+
+    override suspend fun deleteBudgetsForCategory(categoryId: Long) {
+        budgetDao.deleteAllBudgetsForCategory(categoryId)
     }
 }
 

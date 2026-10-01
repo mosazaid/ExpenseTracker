@@ -36,6 +36,19 @@ interface BudgetDao {
         periodEnd: Date
     ): Budget?
 
+    @Query(
+        """
+        SELECT * FROM budgets
+        WHERE categoryId = :categoryId
+        ORDER BY periodEnd DESC, id DESC
+        LIMIT 1
+        """
+    )
+    suspend fun getLatestBudgetForCategory(categoryId: Long): Budget?
+
+    @Query("DELETE FROM budgets WHERE categoryId = :categoryId")
+    suspend fun deleteAllBudgetsForCategory(categoryId: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBudget(budget: Budget): Long
 

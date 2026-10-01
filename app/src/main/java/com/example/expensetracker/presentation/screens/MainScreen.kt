@@ -49,6 +49,9 @@ import com.example.expensetracker.presentation.navigation.Onboarding
 import com.example.expensetracker.presentation.navigation.Overview
 import com.example.expensetracker.presentation.navigation.Recurring
 import com.example.expensetracker.presentation.navigation.Settings
+import com.example.expensetracker.presentation.navigation.NotificationSettings
+import com.example.expensetracker.presentation.navigation.ZakahCalculator
+import com.example.expensetracker.presentation.navigation.PrayerQiblah
 import com.example.expensetracker.presentation.navigation.Statistics
 import com.example.expensetracker.presentation.navigation.Transfer
 import com.example.expensetracker.presentation.navigation.Wallet
@@ -266,9 +269,12 @@ fun MainScreen(
             composable<Wallet>         { WalletScreen(navController) }
             composable<Categories>     { CategoriesScreen(navController) }
             composable<Settings>       { SettingsScreen(navController) }
+            composable<NotificationSettings> { NotificationSettingsScreen(navController) }
             composable<Recurring>      { RecurringScreen(navController) }
             composable<DatabaseBrowser> { DatabaseBrowserScreen(navController) }
             composable<Onboarding>     { OnboardingScreen(onFinish = { navController.popBackStack() }) }
+            composable<ZakahCalculator> { ZakahCalculatorScreen(navController) }
+            composable<PrayerQiblah>    { PrayerQiblahScreen(navController) }
 
             // ── Parameterised screens ───────────────────────────────────────
             composable<AddTransaction> { backStackEntry ->

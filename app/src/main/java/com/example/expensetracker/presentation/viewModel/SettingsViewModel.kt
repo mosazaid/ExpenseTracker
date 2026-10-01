@@ -88,6 +88,15 @@ class SettingsViewModel @Inject constructor(
     val biometricLockEnabled: StateFlow<Boolean> = userPreferences.biometricLockEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val currencyCode: StateFlow<String> = userPreferences.currencyCode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.example.expensetracker.core.format.CurrencyUtils.detectDefaultCurrency())
+
+    fun setCurrencyCode(code: String) {
+        viewModelScope.launch {
+            userPreferences.setCurrencyCode(code)
+        }
+    }
+
     private val _exportRequest = MutableStateFlow<ExportShareRequest?>(null)
     val exportRequest: StateFlow<ExportShareRequest?> = _exportRequest.asStateFlow()
 

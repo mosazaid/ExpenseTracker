@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.RecurringTransaction
+import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.data.preferences.UserPreferences
 import com.example.expensetracker.domain.BalanceCalculator
@@ -17,6 +18,7 @@ import com.example.expensetracker.domain.repository.ITransactionRepository
 import com.example.expensetracker.presentation.model.MonthSummaryUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +44,16 @@ class OverviewViewModel @Inject constructor(
 
     fun refresh() {
         _refreshTrigger.value += 1
+    }
+
+    fun deleteTransaction(transaction: Transaction) {
+        viewModelScope.launch {
+            transactionRepository.deleteTransaction(transaction)
+        }
+    }
+
+    suspend fun getSplitsForTransaction(transactionId: Long): List<com.example.expensetracker.data.database.entities.TransactionSplit> {
+        return transactionRepository.getSplitsForTransactionSnapshot(transactionId)
     }
 
     val monthMode: StateFlow<MonthMode> = userPreferences.monthMode
