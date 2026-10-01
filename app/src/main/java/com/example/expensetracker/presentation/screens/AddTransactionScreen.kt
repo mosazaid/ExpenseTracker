@@ -49,7 +49,10 @@ import java.util.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.expensetracker.presentation.navigation.Overview
 import com.example.expensetracker.core.format.CurrencyUtils
+import com.example.expensetracker.core.storage.ReceiptStorageHelper
 import com.example.expensetracker.core.time.DateUtils
+import com.example.expensetracker.presentation.components.ReceiptAttachmentSection
+import com.example.expensetracker.presentation.components.SplitTransactionSection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -569,6 +572,20 @@ fun AddTransactionScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
+        // ── 7b. Split Transaction Section (Subcategories & Debts)
+        if (uiState.transactionType == TransactionType.EXPENSE) {
+            SplitTransactionSection(
+                isSplitMode = uiState.isSplitMode,
+                splits = uiState.splits,
+                mainAmountStr = uiState.amount,
+                availableSubCategories = savedSubCategories,
+                onToggleSplitMode = { viewModel.setSplitMode(it) },
+                onAddSplit = { viewModel.addSplitItem() },
+                onUpdateSplit = { idx, item -> viewModel.updateSplitItem(idx, item) },
+                onRemoveSplit = { idx -> viewModel.removeSplitItem(idx) }
+            )
+        }
+
         // ── Budget Warning Banner (if approaching or exceeded)
         budgetWarning?.let { warning ->
             Card(
@@ -647,6 +664,19 @@ fun AddTransactionScreen(
                 Text(timeFormat.format(uiState.selectedDate))
             }
         }
+
+        // ── 9b. Receipt Photo Attachment
+        ReceiptAttachmentSection(
+            receiptImagePath = uiState.receiptImagePath,
+            onReceiptImageSelected = { uri ->
+                val path = ReceiptStorageHelper.saveReceiptImage(context, uri)
+                viewModel.setReceiptImagePath(path)
+            },
+            onRemoveReceipt = {
+                ReceiptStorageHelper.deleteReceiptImage(uiState.receiptImagePath)
+                viewModel.setReceiptImagePath(null)
+            }
+        )
 
         var isDept by remember { mutableStateOf(false) }
         LaunchedEffect(selectedCategory) {

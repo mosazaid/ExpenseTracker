@@ -65,4 +65,9 @@ object DatabaseModule {
     fun provideAppAlertDao(database: AppDatabase): AppAlertDao {
         return database.appAlertDao()
     }
+
+    @Provides
+    fun provideTransactionSplitDao(database: AppDatabase): com.example.expensetracker.data.database.dao.TransactionSplitDao {
+        return database.transactionSplitDao()
+    }
 }

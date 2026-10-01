@@ -38,6 +38,7 @@ data class Transaction(
     val debtType: String? = null,
     val isDebtSettled: Boolean = false,
     val recurringId: Long? = null,
+    val receiptImagePath: String? = null,
     val createdAt: Date = Date(),
     val updatedAt: Date = Date()
 )

@@ -86,6 +86,19 @@ class AddEditTransactionViewModel @Inject constructor(
         if (transaction.type == TransactionType.TRANSFER) return false
         originalTransaction = transaction
         val category = transaction.categoryId?.let { categoryRepository.getCategoryById(it) }
+        val splits = transactionRepository.getSplitsForTransactionSnapshot(id)
+        val splitItems = splits.map {
+            TransactionSplitItem(
+                id = it.id,
+                subCategoryId = it.subCategoryId,
+                subCategoryName = it.subCategoryName,
+                amount = if (it.amount > 0) it.amount.toString() else "",
+                note = it.note.orEmpty(),
+                isDebt = it.isDebt,
+                debtPersonName = it.debtPersonName.orEmpty(),
+                isDebtSettled = it.isDebtSettled
+            )
+        }
         _uiState.value = AddEditTransactionUiState(
             editingTransactionId = id,
             amount = transaction.amount.toString(),
@@ -104,7 +117,10 @@ class AddEditTransactionViewModel @Inject constructor(
             startsNewPeriod = transaction.startsNewPeriod,
             carriedForwardBalance = transaction.carriedForwardBalance,
             allowNegativeBalance = transaction.allowNegativeBalance,
-            createdAt = transaction.createdAt
+            createdAt = transaction.createdAt,
+            receiptImagePath = transaction.receiptImagePath,
+            isSplitMode = splitItems.isNotEmpty(),
+            splits = splitItems
         )
         return true
     }
@@ -122,6 +138,46 @@ class AddEditTransactionViewModel @Inject constructor(
             pendingRecurringId = recurring.id
         )
         return true
+    }
+
+    fun setSplitMode(enabled: Boolean) {
+        _uiState.value = _uiState.value.copy(isSplitMode = enabled)
+        if (enabled && _uiState.value.splits.isEmpty()) {
+            val mainAmount = _uiState.value.amount
+            _uiState.value = _uiState.value.copy(
+                splits = listOf(
+                    TransactionSplitItem(
+                        amount = mainAmount,
+                        note = _uiState.value.subDescription
+                    )
+                )
+            )
+        }
+    }
+
+    fun setReceiptImagePath(path: String?) {
+        _uiState.value = _uiState.value.copy(receiptImagePath = path)
+    }
+
+    fun addSplitItem(split: TransactionSplitItem = TransactionSplitItem()) {
+        val current = _uiState.value.splits
+        _uiState.value = _uiState.value.copy(splits = current + split)
+    }
+
+    fun updateSplitItem(index: Int, split: TransactionSplitItem) {
+        val current = _uiState.value.splits.toMutableList()
+        if (index in current.indices) {
+            current[index] = split
+            _uiState.value = _uiState.value.copy(splits = current)
+        }
+    }
+
+    fun removeSplitItem(index: Int) {
+        val current = _uiState.value.splits.toMutableList()
+        if (index in current.indices) {
+            current.removeAt(index)
+            _uiState.value = _uiState.value.copy(splits = current)
+        }
     }
 
     suspend fun getAvailableBalanceForAccount(account: AccountType, excludeId: Long?): Double {
@@ -162,21 +218,48 @@ class AddEditTransactionViewModel @Inject constructor(
 
     suspend fun saveTransaction(transaction: Transaction): Long {
         val recurringId = _uiState.value.pendingRecurringId
-        val txn = if (recurringId != null && transaction.recurringId == null) {
-            transaction.copy(recurringId = recurringId)
-        } else {
-            transaction
-        }
+        val receiptPath = _uiState.value.receiptImagePath
+        val txn = transaction.copy(
+            recurringId = recurringId ?: transaction.recurringId,
+            receiptImagePath = receiptPath
+        )
+
+        val splitEntities = if (_uiState.value.isSplitMode) {
+            _uiState.value.splits.mapNotNull { item ->
+                val amt = item.amount.toDoubleOrNull() ?: 0.0
+                if (amt > 0) {
+                    com.example.expensetracker.data.database.entities.TransactionSplit(
+                        id = item.id,
+                        transactionId = txn.id,
+                        subCategoryId = item.subCategoryId,
+                        subCategoryName = item.subCategoryName,
+                        amount = amt,
+                        note = item.note.takeIf { it.isNotBlank() },
+                        isDebt = item.isDebt,
+                        debtPersonName = item.debtPersonName.takeIf { it.isNotBlank() },
+                        isDebtSettled = item.isDebtSettled
+                    )
+                } else null
+            }
+        } else emptyList()
+
         val savedId = if (txn.id == 0L) {
-            transactionRepository.insertTransaction(txn)
+            if (splitEntities.isNotEmpty()) {
+                transactionRepository.insertTransactionWithSplits(txn, splitEntities)
+            } else {
+                transactionRepository.insertTransaction(txn)
+            }
         } else {
             val preserved = originalTransaction
-            transactionRepository.updateTransaction(
-                txn.copy(
-                    createdAt = preserved?.createdAt ?: txn.createdAt,
-                    updatedAt = Date()
-                )
+            val updatedTxn = txn.copy(
+                createdAt = preserved?.createdAt ?: txn.createdAt,
+                updatedAt = Date()
             )
+            if (splitEntities.isNotEmpty()) {
+                transactionRepository.updateTransactionWithSplits(updatedTxn, splitEntities)
+            } else {
+                transactionRepository.updateTransaction(updatedTxn)
+            }
             txn.id
         }
 
@@ -392,6 +475,17 @@ class AddEditTransactionViewModel @Inject constructor(
     }
 }
 
+data class TransactionSplitItem(
+    val id: Long = 0,
+    val subCategoryId: Long? = null,
+    val subCategoryName: String? = null,
+    val amount: String = "",
+    val note: String = "",
+    val isDebt: Boolean = false,
+    val debtPersonName: String = "",
+    val isDebtSettled: Boolean = false
+)
+
 data class AddEditTransactionUiState(
     val editingTransactionId: Long? = null,
     val amount: String = "",
@@ -411,7 +505,10 @@ data class AddEditTransactionUiState(
     val carriedForwardBalance: Double? = null,
     val allowNegativeBalance: Boolean = false,
     val createdAt: Date? = null,
-    val pendingRecurringId: Long? = null
+    val pendingRecurringId: Long? = null,
+    val receiptImagePath: String? = null,
+    val isSplitMode: Boolean = false,
+    val splits: List<TransactionSplitItem> = emptyList()
 )
 
 sealed interface AddEditUiEvent {

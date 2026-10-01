@@ -470,3 +470,46 @@ val MIGRATION_14_15 = Migration(14, 15) { db ->
     db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_recurringId ON transactions(recurringId)")
 }
 
+val MIGRATION_15_16 = Migration(15, 16) { db ->
+    val cursor = db.query("SELECT id FROM categories WHERE name = 'Groceries & Shopping' LIMIT 1")
+    if (cursor.moveToFirst()) {
+        val catId = cursor.getLong(0)
+        val now = System.currentTimeMillis()
+        val newSubs = listOf("Chicken & Meat", "Snacks & Sweets")
+        newSubs.forEach { sub ->
+            db.execSQL(
+                """
+                INSERT INTO sub_categories (categoryId, name, createdAt)
+                SELECT $catId, '$sub', $now
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM sub_categories WHERE categoryId = $catId AND name = '$sub'
+                )
+                """.trimIndent()
+            )
+        }
+    }
+    cursor.close()
+}
+
+val MIGRATION_16_17 = Migration(16, 17) { db ->
+    db.execSQL("ALTER TABLE transactions ADD COLUMN receiptImagePath TEXT")
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS transaction_splits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            transactionId INTEGER NOT NULL,
+            subCategoryId INTEGER,
+            subCategoryName TEXT,
+            amount REAL NOT NULL,
+            note TEXT,
+            isDebt INTEGER NOT NULL DEFAULT 0,
+            debtPersonName TEXT,
+            isDebtSettled INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY(transactionId) REFERENCES transactions(id) ON DELETE CASCADE
+        )
+        """.trimIndent()
+    )
+    db.execSQL("CREATE INDEX IF NOT EXISTS index_transaction_splits_transactionId ON transaction_splits(transactionId)")
+    db.execSQL("CREATE INDEX IF NOT EXISTS index_transaction_splits_subCategoryId ON transaction_splits(subCategoryId)")
+}
+

@@ -54,4 +54,17 @@ interface ITransactionRepository {
         description: String,
         type: TransactionType
     ): Flow<List<Transaction>>
+
+    fun getSplitsForTransaction(transactionId: Long): Flow<List<com.example.expensetracker.data.database.entities.TransactionSplit>>
+    suspend fun getSplitsForTransactionSnapshot(transactionId: Long): List<com.example.expensetracker.data.database.entities.TransactionSplit>
+    suspend fun insertTransactionWithSplits(
+        transaction: Transaction,
+        splits: List<com.example.expensetracker.data.database.entities.TransactionSplit>
+    ): Long
+    suspend fun updateTransactionWithSplits(
+        transaction: Transaction,
+        splits: List<com.example.expensetracker.data.database.entities.TransactionSplit>
+    )
+    suspend fun setDebtSplitSettled(splitId: Long, settled: Boolean)
+    fun getUnsettledDebtSplitsFlow(): Flow<List<com.example.expensetracker.data.database.entities.TransactionSplit>>
 }

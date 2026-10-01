@@ -12,6 +12,7 @@ import com.example.expensetracker.data.database.dao.ConfiguredLoanDao
 import com.example.expensetracker.data.database.dao.MonthlyLoanPaymentDao
 import com.example.expensetracker.data.database.dao.RecurringTransactionDao
 import com.example.expensetracker.data.database.dao.TransactionDao
+import com.example.expensetracker.data.database.dao.TransactionSplitDao
 import com.example.expensetracker.data.database.dao.SubCategoryDao
 import com.example.expensetracker.data.database.entities.AppAlert
 import com.example.expensetracker.data.database.entities.Budget
@@ -21,10 +22,12 @@ import com.example.expensetracker.data.database.entities.MonthlyLoanPayment
 import com.example.expensetracker.data.database.entities.RecurringTransaction
 import com.example.expensetracker.data.database.entities.SubCategory
 import com.example.expensetracker.data.database.entities.Transaction
+import com.example.expensetracker.data.database.entities.TransactionSplit
 
 @Database(
     entities = [
         Transaction::class,
+        TransactionSplit::class,
         Category::class,
         Budget::class,
         RecurringTransaction::class,
@@ -33,13 +36,14 @@ import com.example.expensetracker.data.database.entities.Transaction
         MonthlyLoanPayment::class,
         AppAlert::class
     ],
-    version = 15,
+    version = 17,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun transactionDao(): TransactionDao
+    abstract fun transactionSplitDao(): TransactionSplitDao
     abstract fun categoryDao(): CategoryDao
     abstract fun budgetDao(): BudgetDao
     abstract fun recurringTransactionDao(): RecurringTransactionDao
@@ -63,7 +67,7 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
                         MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
                         MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
-                        MIGRATION_13_14, MIGRATION_14_15
+                        MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17
                     )
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
@@ -121,7 +125,7 @@ abstract class AppDatabase : RoomDatabase() {
 
             // Seed default subcategories
             val defaultSubCats = listOf(
-                Pair("Groceries & Shopping", listOf("Groceries", "Shopping")),
+                Pair("Groceries & Shopping", listOf("Groceries", "Shopping", "Chicken & Meat", "Snacks & Sweets")),
                 Pair("Education & Learning", listOf("Education", "Learning", "Courses", "Books")),
                 Pair("Car & Transportation", listOf("Transportation", "Fuel", "Car", "Maintenance")),
                 Pair("Restaurants & Cafés", listOf("Restaurants", "Cafés", "Fast Food")),

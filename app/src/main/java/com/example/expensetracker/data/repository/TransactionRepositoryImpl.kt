@@ -7,6 +7,9 @@ import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.domain.repository.ITransactionRepository
 import kotlinx.coroutines.flow.Flow
+import com.example.expensetracker.data.database.dao.TransactionSplitDao
+import com.example.expensetracker.data.database.entities.TransactionSplit
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
 import java.util.Date
 import javax.inject.Inject
@@ -15,8 +18,16 @@ import javax.inject.Singleton
 @Singleton
 class TransactionRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
+    private val transactionSplitDao: TransactionSplitDao? = null,
     private val monthlyLoanPaymentDao: MonthlyLoanPaymentDao? = null
 ) : ITransactionRepository {
+
+    constructor(transactionDao: TransactionDao) : this(transactionDao, null, null)
+
+    constructor(
+        transactionDao: TransactionDao,
+        monthlyLoanPaymentDao: MonthlyLoanPaymentDao?
+    ) : this(transactionDao, null, monthlyLoanPaymentDao)
 
     override fun getAllTransactions(): Flow<List<Transaction>> {
         return transactionDao.getAllTransactions()
@@ -202,6 +213,46 @@ class TransactionRepositoryImpl @Inject constructor(
         type: TransactionType
     ): Flow<List<Transaction>> {
         return transactionDao.getTransactionsForRecurringFlow(recurringId, description, type)
+    }
+
+    override fun getSplitsForTransaction(transactionId: Long): Flow<List<TransactionSplit>> {
+        return transactionSplitDao?.getSplitsForTransaction(transactionId) ?: flowOf(emptyList())
+    }
+
+    override suspend fun getSplitsForTransactionSnapshot(transactionId: Long): List<TransactionSplit> {
+        return transactionSplitDao?.getSplitsForTransactionSnapshot(transactionId) ?: emptyList()
+    }
+
+    override suspend fun insertTransactionWithSplits(
+        transaction: Transaction,
+        splits: List<TransactionSplit>
+    ): Long {
+        val txnId = transactionDao.insertTransaction(transaction)
+        if (splits.isNotEmpty()) {
+            val splitsWithTxnId = splits.map { it.copy(transactionId = txnId) }
+            transactionSplitDao?.insertSplits(splitsWithTxnId)
+        }
+        return txnId
+    }
+
+    override suspend fun updateTransactionWithSplits(
+        transaction: Transaction,
+        splits: List<TransactionSplit>
+    ) {
+        transactionDao.updateTransaction(transaction)
+        transactionSplitDao?.deleteSplitsForTransaction(transaction.id)
+        if (splits.isNotEmpty()) {
+            val splitsWithTxnId = splits.map { it.copy(transactionId = transaction.id) }
+            transactionSplitDao?.insertSplits(splitsWithTxnId)
+        }
+    }
+
+    override suspend fun setDebtSplitSettled(splitId: Long, settled: Boolean) {
+        transactionSplitDao?.setDebtSettled(splitId, settled)
+    }
+
+    override fun getUnsettledDebtSplitsFlow(): Flow<List<TransactionSplit>> {
+        return transactionSplitDao?.getUnsettledDebtSplits() ?: flowOf(emptyList())
     }
 }
 
