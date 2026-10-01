@@ -75,8 +75,27 @@ class BudgetProgressCalculatorTest {
         val end = Date(2000L)
 
         Mockito.`when`(budgetRepository.getBudgetForCategoryInPeriod(10L, start, end)).thenReturn(null)
+        Mockito.`when`(budgetRepository.getLatestBudgetForCategory(10L)).thenReturn(null)
 
         val result = calculator.getProgressForCategory(10L, start, end)
         assertNull(result)
+    }
+
+    @Test
+    fun testGetProgressForCategory_fallsBackToLatestBudget() = runTest {
+        val start = Date(1000L)
+        val end = Date(2000L)
+        val oldBudget = Budget(id = 1L, categoryId = 10L, amount = 400.0, periodStart = Date(500L), periodEnd = Date(900L))
+
+        Mockito.`when`(budgetRepository.getBudgetForCategoryInPeriod(10L, start, end)).thenReturn(null)
+        Mockito.`when`(budgetRepository.getLatestBudgetForCategory(10L)).thenReturn(oldBudget)
+        Mockito.`when`(transactionRepository.getTotalAmountByCategoryAndDateRange(10L, start, end)).thenReturn(100.0)
+
+        val result = calculator.getProgressForCategory(10L, start, end)
+
+        assertNotNull(result)
+        assertEquals(400.0, result!!.limit, 0.001)
+        assertEquals(100.0, result.spent, 0.001)
+        assertEquals(0.25f, result.percent, 0.001f)
     }
 }

@@ -1,6 +1,6 @@
 # ExpenseTracker Implementation and Architecture Guide
 
-This document is the technical and business reference for the current app state after Phase 2, Phase 3, Phase 4, and Phase 5 feature work (through DB version **13**, September 2026).
+This document is the technical and business reference for the current app state through Room DB version **17** (October 2026).
 
 ## 1. Project Purpose (Business View)
 
@@ -11,11 +11,19 @@ ExpenseTracker helps a user manage personal money with:
 - **monthly wallet** (pocket money) moves scoped to the open salary month
 - salary-cycle aware history (not only calendar month)
 - reimbursement and debt tracking (**Lent vs Borrowed / Repayment**)
+- **multi-item transaction splitting** across subcategories and individual debtors (`TransactionSplit`)
+- **offline receipt attachments** with full image zoom viewer (`ReceiptStorageHelper`)
+- **persistent category budgets** across month rollovers with visual progress bars
+- **AI spending pacing analysis** (`SpendingPacingCalculator`) with daily burn rates and safe daily allowances
+- **gamified financial health score** (`FinancialHealthScoreCard`) tracking savings, debt, and budget adherence
+- **offline Islamic finance tools**: Zakah calculator with 85g gold Nisab comparison, 5 daily prayer times, and Qiblah compass
+- **location intelligence** (`LocationHelper`) for GPS-based auto-currency and nearest preset cities
 - category budgets with real-time in-app warnings and push alerts (at 85% and 100% capacity)
 - **daily 9:00 PM expense reminder** with dual scheduling (**AlarmManager** + **WorkManager**)
 - **configured recurring loans** with once-per-day bottom sheet reminders and salary preservation
 - persistent **in-app notification center** (`app_alerts`) with real-time badge count on the top app bar
-- **"More" hub navigation screen** consolidating Debts, Loans, Categories, DB Browser, and Settings
+- **notification settings** with individual toggle controls for each alert channel
+- **"More" hub navigation screen** consolidating Debts, Loans, Categories, DB Browser, Settings, Prayer & Zakah
 - **time picker** support alongside date selection for exact timestamp logging
 - **CSV import** and **styled CSV/PDF export** for backup/share
 - **Arabic and English** UI with RTL layout support

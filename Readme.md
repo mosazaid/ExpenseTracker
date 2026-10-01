@@ -4,9 +4,63 @@ A modern Android expense tracking app built with **Kotlin**, **Jetpack Compose**
 
 ## Overview
 
-ExpenseTracker helps you track personal money with salary-aware months, Cash/Bank/Wallet accounts, reimbursements, budgets, and local backup via import/export.
+ExpenseTracker helps you track personal money with salary-aware months, Cash/Bank/Wallet accounts, reimbursements, multi-split transactions, category budgets, AI spending pacing, offline Islamic finance tools (Zakah & Prayer/Qiblah), and local backup via import/export.
 
-## Features (Current)
+---
+
+## What's New (Phase 0 – Phase 5 Releases)
+
+### 1. Complex Transactions & Splitting
+- **Transaction Splitting**: Split any single expense into multiple items across different subcategories or debtors (e.g. at a grocery store, allocate an amount to Chicken & Meat, an amount to Snacks & Sweets, and record a debt portion for a friend).
+- **Multi-Debtor Tracking on Split**: Each split line item can individually mark debt type (`LENT`) and debtor name.
+- **Offline Receipt Attachments**: Capture or select receipt photos saved safely in private internal app storage (`files/receipts/`). View full zoom preview in the transaction details bottom sheet.
+- **Transaction Details Bottom Sheet (`TransactionDetailBottomSheet`)**: Tap any transaction to open an interactive modal displaying splits, receipt previews, formatted account badges, and quick edit/delete actions.
+- **Swipe-to-Delete Overlap Fix**: Fixed swipe gesture layout on Transfer and Wallet moves so delete icons only appear upon active swiping.
+
+### 2. Shopping Categories & Arabic Subcategories
+- **New Shopping Subcategories**: Added `Chicken & Meat` and unified `Snacks & Sweets` (replacing separate chips, biscuits, cookies, treats; in Arabic: "أشياء زاكية").
+- **Room DB Migration 15 → 16**: Automatically populates default shopping subcategories if missing.
+
+### 3. Category Budgets & Persistent Spending Limits
+- **Budget Persistence Across Months**: Budgets no longer disappear when transitioning into a new salary or calendar month; system gracefully falls back to the latest configured category budget limit.
+- **Redesigned Categories & Budgets Screen**:
+  - Segmented control tabs: **Categories** vs **Monthly Budgets**.
+  - Visual indicators: Progress bar with percentage and remaining balance for categories with active budgets.
+  - Dedicated **+ Set Budget** outline chip for categories without limits.
+  - Clean modal dialogs for adding/editing categories and budgets (no cluttered top forms).
+- **Persistent Overview Budget Card (`CategoryBudgetsCard`)**: Always visible on the Overview screen, providing spending progress and a direct CTA to configure limits.
+
+### 4. AI Financial Intelligence & Gamification
+- **Spending Pacing Engine (`SpendingPacingCalculator`)**:
+  - Analyzes current elapsed days vs total days in period.
+  - Calculates daily burn rate, projected month-end total, and safe daily allowance.
+  - Provides actionable status badges: **ON TRACK**, **MODERATE SPENDING**, and **OVERSPENDING WARNING**.
+- **Smart AI Insights Card (`FinancialInsightsCard`)**: Rendered directly on the Overview dashboard with dual progress indicators (elapsed time vs spent budget).
+- **Financial Health Score Card (`FinancialHealthScoreCard`)**:
+  - Gamified score (0 to 100) evaluating savings ratio, budget adherence, and debt load.
+  - Tiers: *Financial Novice*, *Budget Builder*, *Wealth Strategist*, *Financial Master*.
+  - Expandable actionable tips for financial improvement.
+
+### 5. Offline Islamic Finance & Location Intelligence
+- **Location Auto-Detection (`LocationHelper`)**:
+  - Runtime permissions (`ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`) with dialogs and fallback to nearest preset capital cities.
+  - Auto-selects user local currency based on GPS country code (JOD, SAR, AED, KWD, QAR, BHD, OMR, EGP, USD, EUR, GBP, TRY).
+- **Offline Prayer Times & Qiblah Compass (`PrayerQiblahScreen`)**:
+  - Pure offline astronomical calculations (`PrayerTimesCalculator`) — Fajr, Dhuhr, Asr, Maghrib, Isha.
+  - Live countdown to next prayer.
+  - Sensor-driven Qiblah compass with bearing to the Kaaba in Mecca.
+- **Zakah Calculator (`ZakahCalculatorScreen`)**:
+  - 85g gold Nisab threshold comparison.
+  - Categorized breakdown: cash/bank balances, gold/jewelry, business inventory, minus immediate deductible debts.
+  - Exact 2.5% Zakah obligation calculation.
+
+### 6. Notification Center Management
+- **Notification Preferences (`NotificationSettingsScreen`)**:
+  - Fine-grained channel toggles in Settings: Daily 9:00 PM Reminders, Budget Threshold Alerts, Loan Due Date Alerts, and Salary Day Rollovers.
+
+---
+
+## Core Features
 
 ### Transactions
 - **Add / edit income and expense** — streamlined bottom nav **Add** tab (+ icon) focused purely on Income/Expense
@@ -24,17 +78,16 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 - **Three tabs**: Overview | Transactions | Filters
 - **Overview**:
   - Detailed balance cards: Cash, Bank, and total available (centered amounts and currency)
-  - **Remaining Breakdown**:
-  - 
-  - Clarifies **Remaining This Month** vs **Remaining Carried Over from Last Month** totaling **Total Remaining**
+  - **Remaining Breakdown**: Clarifies **Remaining This Month** vs **Remaining Carried Over from Last Month** totaling **Total Remaining**
   - Collapsible month summary, salary reminder, wallet year timeline (salary mode)
+  - **Financial Health Score Card** & **AI Spending Insights Card**
+  - **Category Budgets Card** with interactive progress and direct navigation to budget manager
 - **Transactions**:
-  - Grouped list, swipe-left to delete (trash icon hidden to prevent visual clutter), tap to edit
+  - Grouped list, swipe-left to delete (trash icon hidden to prevent visual clutter), tap to view full details
   - **Structured Item Rows**: Row 1 (description + Cash/Bank badge), Row 2 (category in darker grey `onSurfaceVariant` / Medium + dot • + date in lighter grey `outline`), Row 3 (subcategory chip + formatted amount)
 - **Filters**:
   - Calendar/salary mode, period (Day/Week/Month/Year), type, category + budget progress
   - **Subcategory filter**: filter by specific subcategories or choose **"Other"** for transactions without assigned subcategories
-- Account badge (Cash/Bank) and subcategory chip on each row
 
 ### Statistics
 - Period filters: Day, Week, Month, Year
@@ -46,38 +99,19 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
   - Top category spend comparison with percentage labels and legends
 - Totals: Income, Expense, **Wallet**, Balance
 
-### Reminders & Notifications
-- **Daily 9:00 PM Expense Reminder**: Dual scheduling (`AlarmManager` exact/inexact fallback + `WorkManager` backup) prompts the user to log expenses if no expenses were added today.
-- **Category Budget Alerts**: Real-time threshold monitoring with in-app banner warnings (85%) and push notifications (100% budget reached).
-- **In-App Notification Center (`app_alerts`)**: Notification bell icon with live badge counter on `AppTopBar` linking to `AlertsScreen`.
-
 ### Debts & Loans
 - **Debt Tracking & Directional Separation**:
   - Expense + Debt: Money lent to someone (debtor owes user).
   - Income + Debt: Repayment to user OR borrowed debt from someone.
   - Dedicated `DebtsScreen` with debtor grouping, settle actions, and month rollover.
 - **Configured Recurring Loans**: Track car, mortgage, and personal loans in `LoansScreen`; once-per-day prompt bottom sheet (`LoanReminderBottomSheet`) on salary month rollover with salary balance preservation.
-- **Paid Loan Overview Card**: Shows in `OverviewScreen` for any paid loans during the month, dynamically highlighting whether deducted from income or accounted in monthly expenses.
-- **Recurring Transaction Execution History**: Dedicated history bottom sheet (`RecurringHistoryBottomSheet`) for every recurring item displaying past recorded occurrences with exact time and amount.
-- **Loan Payment History**: Dedicated history bottom sheet (`LoanHistoryBottomSheet`) for every loan displaying monthly installments, exact paid date/time, and status.
+- **Salary Month Periods**: Accurate loan period tracking (`"salary-yyyy-MM-dd"`) prevents early loan notification triggers.
 
-### Settings & More Hub
-- **"More" Hub**: 4th bottom nav tab grouping Debts, Loans, Categories, Database Browser, Settings, and **App Guide & Walkthrough**.
-- **Interactive Onboarding Walkthrough**: 3-step carousel guide on first app launch and accessible anytime from More tab.
-- **Color Themes**: Dynamic switching between 12 curated, accessible palettes: Emerald Green, Luxury Blue/Gold, Warm Earth, Cool Slate/Teal, Amethyst & Violet, Crimson & Burgundy, Midnight Ocean, Forest & Sage Mint, Rose Gold & Champagne, Obsidian & Amber Gold, Nordic Frost & Glacier, and Espresso & Warm Mocha. Full WCAG contrast guaranteed across all selected chips and dark/light modes.
-- **Material 3 Recurring & Subscriptions Cards**: Redesigned spacious layout eliminating text truncation, featuring dedicated category rows, distinct frequency badges, and accessible 40dp+ touch targets.
-- **Tactile Haptic Feedback**: Subtle vibration feedback on transaction deletion and recording.
-- **Monthly Spending Comparison**: Benchmarks current month vs previous month with deltas and 3-month average in Statistics.
-- **Language**: English / Arabic (RTL)
-- **App lock**: Biometric / device PIN required on open (toggle in Settings)
-- **Balances**: recalibrate current cash/bank to match reality
-- **Export**: filter (all / current month) + format (**CSV** styled spreadsheet or **PDF** report)
-- **Import CSV**: documented format + download import template
-- **Database browser**: inspect Room tables with column filters
+---
 
 ## Navigation (Type-Safe Compose Navigation)
 
-The app utilizes **Type-Safe Jetpack Compose Navigation** powered by `kotlinx.serialization` (no error-prone raw route strings or bundle arguments):
+The app utilizes **Type-Safe Jetpack Compose Navigation** powered by `kotlinx.serialization`:
 
 | Bottom tab | Destination Type | Purpose |
 |------------|------------------|---------|
@@ -85,7 +119,7 @@ The app utilizes **Type-Safe Jetpack Compose Navigation** powered by `kotlinx.se
 | History | `History` | Transaction list, overview breakdown & filters |
 | **Add** (FAB) | `AddTransaction(...)` | Add/edit income & expense with optional params (`transactionId`, `recurringId`) |
 | Stats | `Statistics` | Interactive multi-charts & 3-month category pie charts |
-| More | `More` | Hub for Debts, Loans, Categories, Database Browser, Settings |
+| More | `More` | Hub for Debts, Loans, Categories, Database Browser, Settings, Zakah & Prayer |
 
 Secondary & Push Destinations:
 - `Transfer`: Cash ↔ Bank transfer screen
@@ -95,150 +129,70 @@ Secondary & Push Destinations:
 - `Debts`: Debt tracking & settlements
 - `Recurring`: Recurring transaction templates
 - `Categories`: Category and subcategory management
-- `Settings`: Preferences, themes, exports, and security lock
+- `Settings`: Preferences, themes, exports, notification toggles, and security lock
+- `NotificationSettings`: Granular alert channel toggles
+- `PrayerQiblah`: Offline prayer times & Qiblah compass
+- `ZakahCalculator`: 85g gold Nisab & wealth calculator
 - `DatabaseBrowser`: In-app Room database inspector
 - `Onboarding`: Multi-step onboarding carousel
-- Parameterized edit screens: `EditTransfer(transactionId)`, `EditWallet(transactionId)`
 
-Universal `AppTopBar` present across screens with live unread alert badge count.
+---
 
-## Security
-
-- **Biometric app lock** (enabled by default): fingerprint or device PIN/pattern required before any financial data is shown.
-- Failed or cancelled authentication shows an error on the lock screen; data stays hidden.
-- App re-locks when sent to background.
-- Screenshots blocked while locked (`FLAG_SECURE`).
-- Disable in **Settings → App lock** if needed.
-
-## Architecture
-
-- **MVVM** — Compose UI + ViewModels + StateFlow
-- **Repository pattern** — Room DAOs behind repository abstractions
-- **Hilt** — dependency injection
-- **Domain calculators** — `PeriodCalculator`, `BalanceCalculator`, `WalletCalculator`, `BudgetProgressCalculator`
-- **Offline-first** — all data in local Room DB (version **11**)
-
-### Clean Architecture & Project Structure
-
-The project strictly follows Clean Architecture principles with decoupled layers and dependency inversion:
-
-```
-app/src/main/java/com/example/expensetracker/
-├── core/
-│   ├── export/ (CsvExporter, CsvImporter, PdfTransactionExporter, StyledExcelExporter, TransactionExportLoader)
-│   ├── format/ (CurrencyUtils)
-│   ├── locale/ (LocaleHelper)
-│   ├── security/ (BiometricAuthManager)
-│   └── time/ (DateUtils)
-├── data/
-│   ├── database/ (entities, dao, Migrations.kt, AppDatabase.kt)
-│   ├── debug/ (DatabaseInspector)
-│   ├── di/ (DatabaseModule, RepositoryModule)
-│   ├── preferences/ (UserPreferences, MonthMode)
-│   ├── receiver/ (DailyExpenseReminderReceiver)
-│   ├── repository/ (*Impl repositories implementing domain interfaces)
-│   └── worker/ (DailyExpenseReminderWorker, LoanReminderWorker, SalaryReminderWorker)
-├── domain/
-│   ├── model/ (MonthlyLoanItem)
-│   ├── repository/ (ITransactionRepository, ICategoryRepository, IBudgetRepository, etc.)
-│   └── (Pure calculators: BalanceCalculator, WalletCalculator, PeriodCalculator, BudgetProgressCalculator)
-├── presentation/
-│   ├── components/ (TransactionItem, MultiTypeChart, CategoryMonthPieChart, BiometricGate, etc.)
-│   ├── model/ (MonthSummaryUiState)
-│   ├── navigation/ (AppRoutes.kt, AppNavigation.kt)
-│   ├── screens/ (Overview, History, AddTransaction, Stats, Categories, Settings, Transfer, etc.)
-│   ├── theme/ (Color, Theme, Type, ThemePalette)
-│   └── viewModel/ (Dedicated OverviewViewModel, HistoryViewModel, LoansViewModel, etc.)
-└── MainActivity.kt, App.kt
-```
-
-## Database (Room v11)
+## Database (Room v17)
 
 ### Entities
-- `Transaction` — amount, description, **subDescription**, date, type, categoryId, **subCategoryId**, accountType, toAccountType, startsNewPeriod, **carriedForwardBalance**, reimbursement fields, etc.
-- `Category` — name, icon, color, isExpense, isDefault
+- `Transaction` — amount, description, subDescription, date, type, categoryId, subCategoryId, accountType, toAccountType, startsNewPeriod, carriedForwardBalance, receiptImagePath, debt fields, etc.
+- `TransactionSplit` — id, transactionId, subCategoryId, amount, note, debtType, debtorNote
+- `Category` — name, icon, color, type, isDefault
 - `SubCategory` — name, categoryId, isDefault
-- `Budget`, `RecurringTransaction`
-
-### Transaction types
-`INCOME`, `EXPENSE`, `TRANSFER`, `WALLET_MOVE`
-
-### Account types
-`CASH`, `BANK`, `WALLET`
+- `Budget` — id, categoryId, amount, periodStart, periodEnd
+- `ConfiguredLoan`, `MonthlyLoanPayment`, `AppAlert`, `RecurringTransaction`
 
 ### Key migrations
 | Version | Change |
 |---------|--------|
-| 6→7 | Default existing transactions to BANK |
-| 7→8 | Extra default expense categories |
-| 8→9 | `carriedForwardBalance` |
-| 9→10 | `subDescription` |
-| 10→11 | `SubCategory` table + `subCategoryId` column on `Transaction` + category consolidations |
+| 11→12 | Added `ConfiguredLoan` and `MonthlyLoanPayment` tables |
+| 12→13 | Added `AppAlert` table for persistent in-app notifications |
+| 13→14 | Recurring transactions template support |
+| 14→15 | Added `debtType` and `isDebtSettled` to `transactions` |
+| 15→16 | Added default shopping subcategories (`Chicken & Meat`, `Snacks & Sweets`) |
+| 16→17 | Added `transaction_splits` table and `receiptImagePath` column |
 
-## Unit Testing
+---
 
-The project includes a test suite covering domain financial calculation logic, transaction grouping, filter edge cases, 3-month statistics aggregation, and overview balance reconciliation.
+## Testing & Verification
 
+### Unit Tests (`app/src/test/java/com/example/expensetracker/`)
 Run all unit tests via Gradle:
 ```bash
 ./gradlew testDebugUnitTest
 ```
+- **`PeriodCalculatorTest`**: Calendar and salary-month interval calculations, salary period keys.
+- **`BalanceCalculatorTest`**: Internal transfers, carried-forward balances, cash/bank balances.
+- **`BudgetProgressCalculatorTest`**: Budget limits, percentages, fallback to latest budget.
+- **`SpendingPacingCalculatorTest`**: Daily burn rate, safe daily allowance, and pacing status.
+- **`PrayerTimesCalculatorTest`**: Astronomical solar coordinates, 5 prayer times, and Kaaba bearing.
+- **`ZakahCalculatorTest`**: Nisab threshold comparisons and 2.5% wealth obligation.
+- **`LocationHelperTest`**: Nearest preset city resolution and country code to currency mapping.
+- **`ThemeContrastTest`**: Automated WCAG contrast across all 12 themes.
 
-### Test Suites (`app/src/test/java/com/example/expensetracker/`)
-1. **`domain/PeriodCalculatorTest`**: Day, week, calendar month, custom salary day intervals, and boundary roll-overs.
-2. **`domain/BalanceCalculatorTest`**: Total income/expense, internal transfer neutrality, wallet moves, and carried forward balance.
-3. **`domain/WalletCalculatorTest`**: Validates moves between CASH/BANK and WALLET, preventing invalid wallet-to-wallet moves.
-4. **`domain/BudgetProgressCalculatorTest`**: Budget limits, percentage calculation, near-limit flags, and over-budget detection.
-5. **`presentation/HistoryGroupingComprehensiveTest`**: Filter combinations (Income, Expense, Transfer, All), ASC/DESC date sorting, and category filtering.
-6. **`HistoryGroupingOtherSubcategoryTest`**: Subcategory filtering with the dedicated "Other" option for unassigned subcategory transactions.
-7. **`MonthSummaryRemainingTest`**: Overview balance breakdown reconciliation (Remaining This Month vs Carried Over vs Total Remaining).
-8. **`presentation/StatisticsCalculationsTest`**: 3-month stats aggregation, MoM spending change, and category expense share percentages.
-9. **`core/CoreUtilsTest`**: Currency formatting with 3 decimals and thousands grouping (`#,##0.000 JOD`), DateUtils custom pattern formatting (`PATTERN_FULL_DATE`, `PATTERN_ISO`), safe parsing, invalid rejection, month/year boundaries, and keys.
-10. **`presentation/navigation/AppDestinationsTest`**: Validates `kotlinx.serialization` contract, default parameters, and round-trip encode/decode of all Compose destinations.
-11. **`ThemeContrastTest`**: Automated WCAG contrast and distinct foreground/background container color verification across all 12 theme palettes in Light and Dark modes.
-
-### Instrumented Tests (`app/src/androidTest/java/com/example/expensetracker/`)
-Run instrumented tests on an emulator/device:
+### Instrumented UI Tests (`app/src/androidTest/java/com/example/expensetracker/`)
+Run on connected device/emulator:
 ```bash
 ./gradlew connectedDebugAndroidTest
 ```
-- **`AppDatabaseInstrumentedTest`**: In-memory Room database initialization, entity lifecycle, and DAO query verification.
-- **`ComposeUiInstrumentedTest`**: Compose UI test rule testing `ExpenseTrackerTheme` and component tree hierarchy.
-
-## Import / Export
-
-### Export (Settings → Data)
-- **Scope**: All transactions | Current salary/calendar month
-- **CSV**: Styled `.xls` (HTML Excel) — app icon, title, blue headers, type-colored values
-- **PDF**: Styled report — same branding, paginated table
-- **Import template**: Plain `.csv` for editing and re-import
-
-### Import (Settings → Import CSV)
-Required columns: `date`, `type`, `amount`, `account`, `description`  
-Date format: `yyyy-MM-dd HH:mm:ss`  
-Types: `INCOME`, `EXPENSE`, `TRANSFER`, `WALLET_MOVE`  
-Accounts: `CASH`, `BANK`, `WALLET`  
-Lines starting with `#` are ignored.
-
-Full spec shown in Settings → **Accepted CSV import format** (expandable card).
-
-## Localization
-
-- `res/values/strings.xml` — English
-- `res/values-ar/strings.xml` — Arabic
-- Preference stored in DataStore + SharedPreferences; `App.attachBaseContext` applies locale via `LocaleHelper`
-
-## Build
-
-- **Min SDK**: 26 | **Target SDK**: 35
-- Open in Android Studio, sync Gradle, run `assembleDebug`
-
-## Related docs
-
-- **[PROJECT_IMPLEMENTATION_AND_ARCHITECTURE_GUIDE.md](PROJECT_IMPLEMENTATION_AND_ARCHITECTURE_GUIDE.md)** — comprehensive architecture evaluation, business rules, test catalog, and file map
-- **[RELEASE_NOTES.md](RELEASE_NOTES.md)** — version changelog
-- **[QA_CHECKLIST.md](QA_CHECKLIST.md)** — manual test checklist
+- **`NewFeaturesUiTest`**:
+  - `CategoryRow`: Verifies budget progress bar and `+ Set Budget` chip.
+  - `CategoryBudgetsCard`: Verifies active category spending progress and empty state CTA.
+  - `FinancialInsightsCard`: Verifies AI spending pacing badges and metrics.
+  - `FinancialHealthScoreCard`: Verifies gamified tier and score calculation.
+  - `TransactionDetailBottomSheet`: Verifies full transaction item details display.
 
 ---
 
-*For architecture decisions and edge cases, update `PROJECT_IMPLEMENTATION_AND_ARCHITECTURE_GUIDE.md` first, then code.*
+## Build Requirements
+
+- **Min SDK**: 26 | **Target SDK**: 35
+- **Java**: 17+
+- **Gradle**: 8.13+
+- Compile with `./gradlew assembleDebug`
