@@ -491,7 +491,7 @@ fun AddTransactionScreen(
         }
 
         // ── 6. Subcategory / Sub-description Picker & Suggestion
-        if (selectedCategory != null) {
+        if (selectedCategory != null && !uiState.isSplitMode) {
             ExposedDropdownMenuBox(
                 expanded = subCategoryMenuExpanded && savedSubCategories.isNotEmpty(),
                 onExpandedChange = { subCategoryMenuExpanded = !subCategoryMenuExpanded }
@@ -866,7 +866,7 @@ fun AddTransactionScreen(
 
                     // Save subcategory if checked
                     val subDescTrimmed = uiState.subDescription.trim()
-                    if (saveAsSubCategoryChecked && subDescTrimmed.isNotBlank()) {
+                    if (!uiState.isSplitMode && saveAsSubCategoryChecked && subDescTrimmed.isNotBlank()) {
                         viewModel.saveSubCategory(category.id, subDescTrimmed)
                     }
 
@@ -881,7 +881,7 @@ fun AddTransactionScreen(
                         id = uiState.editingTransactionId ?: 0L,
                         amount = amountDouble,
                         description = uiState.description,
-                        subDescription = uiState.subDescription.takeIf { it.isNotBlank() },
+                        subDescription = if (uiState.isSplitMode) null else uiState.subDescription.takeIf { it.isNotBlank() },
                         categoryId = category.id,
                         type = uiState.transactionType,
                         accountType = uiState.accountType,

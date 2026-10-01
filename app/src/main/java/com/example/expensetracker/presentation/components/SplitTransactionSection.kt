@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -272,12 +273,17 @@ private fun SplitItemCard(
 
             // Subcategory Selection (Chips)
             if (availableSubCategories.isNotEmpty()) {
-                Text("Subcategory", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                Row(
+                Text(
+                    text = "Subcategory",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    availableSubCategories.take(4).forEach { sub ->
+                    availableSubCategories.forEach { sub ->
                         val isSelected = item.subCategoryId == sub.id || item.subCategoryName == sub.name
                         FilterChip(
                             selected = isSelected,
@@ -288,7 +294,16 @@ private fun SplitItemCard(
                                     onUpdate(item.copy(subCategoryId = sub.id, subCategoryName = sub.name))
                                 }
                             },
-                            label = { Text(sub.name, style = MaterialTheme.typography.bodySmall) }
+                            label = { Text(sub.name, style = MaterialTheme.typography.bodySmall) },
+                            leadingIcon = if (isSelected) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            } else null
                         )
                     }
                 }
