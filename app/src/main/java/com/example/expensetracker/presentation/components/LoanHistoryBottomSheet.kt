@@ -248,7 +248,7 @@ fun LoanHistoryBottomSheet(
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = item.monthKey,
+                                        text = formatLoanMonthKey(item.monthKey),
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
@@ -307,6 +307,25 @@ fun LoanHistoryBottomSheet(
                     }
                 }
             }
+        }
+    }
+}
+
+private fun formatLoanMonthKey(monthKey: String): String {
+    return if (monthKey.startsWith("salary-")) {
+        val datePart = monthKey.removePrefix("salary-")
+        val parsed = DateUtils.parse(datePart, "yyyy-MM-dd")
+        if (parsed != null) {
+            "Salary: ${DateUtils.formatDate(parsed)}"
+        } else {
+            monthKey
+        }
+    } else {
+        val parsed = DateUtils.parse(monthKey, "yyyy-MM")
+        if (parsed != null) {
+            DateUtils.formatMonthYear(parsed)
+        } else {
+            monthKey
         }
     }
 }

@@ -9,11 +9,13 @@ import com.example.expensetracker.domain.BalanceCalculator
 import com.example.expensetracker.domain.model.MonthlyLoanItem
 import com.example.expensetracker.domain.repository.ILoanRepository
 import com.example.expensetracker.core.format.CurrencyUtils
+import com.example.expensetracker.domain.PeriodCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -25,10 +27,9 @@ import javax.inject.Inject
 class LoansViewModel @Inject constructor(
     private val loanRepository: ILoanRepository,
     private val userPreferences: UserPreferences,
-    private val balanceCalculator: BalanceCalculator
+    private val balanceCalculator: BalanceCalculator,
+    private val periodCalculator: PeriodCalculator
 ) : ViewModel() {
-
-    private val currentMonthKey: String = SimpleDateFormat("yyyy-MM", Locale.US).format(Date())
 
     val lastLoanSheetDate: StateFlow<String?> = userPreferences.lastLoanSheetDate
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -50,12 +51,18 @@ class LoansViewModel @Inject constructor(
     val preservedAmount: StateFlow<Double> = _preservedAmount.asStateFlow()
 
     init {
-        loadMonthlyData()
+        viewModelScope.launch {
+            userPreferences.monthMode.collect {
+                loadMonthlyData()
+            }
+        }
     }
 
     fun loadMonthlyData() {
         viewModelScope.launch {
-            val items = loanRepository.getMonthlyLoanItems(currentMonthKey)
+            val mode = userPreferences.monthMode.first()
+            val monthKey = periodCalculator.getMonthKey(Date(), mode)
+            val items = loanRepository.getMonthlyLoanItems(monthKey)
             _monthlyItems.value = items
             _preservedAmount.value = items.filter { !it.payment.isPaid }.sumOf { it.payment.amount }
         }
