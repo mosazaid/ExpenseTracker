@@ -135,9 +135,43 @@
 - [ ] Settings allows switching between 12 curated palettes (Emerald Green, Blue & Gold Luxury, Warm Earth, Cool Slate & Teal, Amethyst & Violet, Crimson & Burgundy, Midnight Ocean, Forest & Sage Mint, Rose Gold & Champagne, Obsidian & Amber Gold, Nordic Frost & Glacier, Espresso & Warm Mocha) with full WCAG contrast and visible text on selected chips.
 - [ ] Time picker in `AddTransactionScreen` allows specifying custom hour/minute.
 
+## Multi-Split Transactions & Receipts
+- [ ] In `AddTransactionScreen`, enabling "Split Transaction into Items" allows adding multiple line items.
+- [ ] Each split line item tracks subcategory, amount, note, and optional debtor name (`LENT`).
+- [ ] Real-time remaining balance recalculates dynamically and "Auto-Fill Balance" button works.
+- [ ] Receipt photo can be captured from Camera or picked from Gallery; file is saved to private app storage (`files/receipts/`).
+- [ ] Tapping a transaction in `HistoryScreen` opens `TransactionDetailBottomSheet`.
+- [ ] `TransactionDetailBottomSheet` displays all split line items, debtor details, and receipt thumbnail.
+- [ ] Tapping receipt thumbnail opens high-resolution zoom dialog with pan/zoom.
+
+## AI Spending Pacing & Financial Insights
+- [ ] `FinancialInsightsCard` on `OverviewScreen` displays day progress, budget consumed, velocity status, and safe daily spend.
+- [ ] Early in the cycle (days 1–5), large upfront payments (rent, bills) engage early-cycle damping; safe daily allowance adapts without absurd linear multipliers.
+- [ ] Tapping info (`i`) icon opens `FinancialInsightsInfoDialog`.
+- [ ] Info dialog clearly explains Financial Cycle, Spending Velocity, Safe Daily Spend, and Projected Surplus/Deficit.
+- [ ] `FinancialHealthScoreCard` shows 0–100 score, tier badge, and expandable financial advice.
+
+## Offline Islamic Finance & Location Intelligence
+- [ ] `ZakahCalculatorScreen` calculates 2.5% Zakah obligation with live gold Nisab comparison (85 grams of gold).
+- [ ] `PrayerQiblahScreen` calculates 5 daily prayer times purely offline with next prayer countdown.
+- [ ] Qiblah compass points accurately to the Kaaba with bearing degrees.
+- [ ] Auto-detect location prompts for `ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION` runtime permissions.
+- [ ] Location successfully resolves city name and auto-selects local currency (e.g. Jordan → JOD, Saudi Arabia → SAR, UAE → AED, Egypt → EGP, Turkey → TRY).
+
+## Category Budgets & Categories Screen
+- [ ] Categories screen features Segmented tabs: **Categories** vs **Monthly Budgets**.
+- [ ] Categories in both tabs are sorted from most used to least used.
+- [ ] Setting a category budget persists across salary/calendar month rollovers without disappearing.
+- [ ] `CategoryBudgetsCard` on `OverviewScreen` remains permanently visible with progress bars and quick CTA.
+
+## Notification Settings Screen
+- [ ] Dedicated `NotificationSettingsScreen` accessible from Settings and More tab.
+- [ ] Toggles work for Loan Reminders, Debt Reminders, Salary & Recurring, Budget Warnings, and Daily 9 PM Reminder.
+- [ ] "Send Test Notification" dispatches test notification successfully.
+
 ## Regression Checks
 - [ ] Categories and Subcategories CRUD still works.
-- [ ] Existing historical data remains readable after v14 → v15 migration.
-- [ ] Currency numbers formatted with 3 decimal places across all screens.
-- [ ] Database browser includes `configured_loans`, `monthly_loan_payments`, and `app_alerts`.
+- [ ] Existing historical data remains readable after v16 → v17 migration.
+- [ ] Currency numbers formatted with proper decimal places across all screens.
+- [ ] Database browser includes `transaction_splits`, `configured_loans`, `monthly_loan_payments`, and `app_alerts`.
 

@@ -1,5 +1,37 @@
 # Release Notes
 
+## Version: Feature Expansion Phase 8 — Multi-Split Transactions, AI Financial Intelligence, Offline Islamic Finance & Persistent Budgets (October 2026)
+
+### Highlights
+- **Multi-Item Split Transactions & Debtor Allocations (Room v17)**:
+  - Users can divide any expense into multiple sub-items across different subcategories and individual debtors.
+  - Interactive split editor in `AddTransactionScreen` featuring real-time remaining balance calculations, quick auto-fill buttons, and per-split debtor assignment (`LENT`).
+  - Added `transaction_splits` table and `TransactionSplitDao` with foreign-key cascade deletion.
+- **Offline Receipt Image Storage**:
+  - Secure offline camera capture and gallery selection saved in private app storage (`files/receipts/`).
+  - `TransactionDetailBottomSheet` displays interactive receipt thumbnails with full-screen zoom dialogs.
+  - Zero cloud dependencies; 100% private and persistent.
+- **AI Spending Intelligence & Interactive Info Dialog**:
+  - `SpendingPacingCalculator` calculates cycle-aware velocity (`% Budget Spent ÷ % Time Elapsed`), daily burn rates, and safe daily allowances (`Remaining Budget ÷ Days Left`).
+  - Implemented early-cycle damping recognizing that upfront lump-sum payments (e.g. rent or bills on days 1–5) are normal, preventing unrealistic linear multipliers.
+  - Added an interactive Info (`i`) button on `FinancialInsightsCard` opening `FinancialInsightsInfoDialog` explaining the financial cycle, burn rate, safe spend, and projected outcomes in plain English and Arabic.
+- **Gamified Financial Health Score**:
+  - `FinancialHealthScoreCard` dynamically scores financial performance (0 to 100) across savings ratio, budget adherence, and debt load.
+  - Features gamified tiers (*Financial Novice*, *Budget Builder*, *Wealth Strategist*, *Financial Master*) with expandable actionable financial tips.
+- **Offline Islamic Finance & Location Intelligence**:
+  - **Zakah Calculator (`ZakahCalculatorScreen`)**: Computes exact 2.5% Zakah obligation with live gold Nisab threshold comparisons (85 grams of gold).
+  - **Offline Prayer Times & Qiblah Compass (`PrayerQiblahScreen`)**: Pure mathematical astronomical solar calculations (`PrayerTimesCalculator`) showing 5 daily prayer schedules with live countdowns and a sensor-driven Kaaba compass.
+  - **Location Auto-Detection (`LocationHelper`)**: Requests runtime permissions (`ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`), performs reverse geocoding with fallback to nearest preset cities, and automatically selects the local currency.
+- **Persistent Category Budgets & Categories Screen Redesign**:
+  - Solved budget disappearance on month rollover: `BudgetProgressCalculator` now falls back to the latest configured category budget limit if no entry exists for the exact period boundary.
+  - Redesigned `CategoriesScreen` with Segmented tabs (**Categories** vs **Monthly Budgets**), clean modal dialogs, and usage-based sorting from most used to least used.
+  - Prominent `CategoryBudgetsCard` permanently displayed on `OverviewScreen`.
+- **Global Currency Support & Settings Organization**:
+  - Expanded `CurrencyUtils` to support Arab nations (IQD, LBP, SYP, ILS, LYD, TND, DZD, MAD, YER, SDG), Turkey (TRY), and European/Global currencies (EUR, GBP, CHF, SEK, NOK, DKK, PLN, CAD, AUD, JPY, CNY, INR, PKR, MYR, SGD).
+  - Cleanly organized `SettingsScreen` into 5 logical cards and decoupled all alert toggles into a dedicated `NotificationSettingsScreen`.
+
+---
+
 ## Version: Feature Expansion Phase 7 - Type-Safe Navigation, Performance Architecture & Test Hardening (September 2026)
 
 ### Highlights
