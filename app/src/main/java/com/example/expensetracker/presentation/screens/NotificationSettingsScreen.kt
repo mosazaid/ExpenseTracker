@@ -27,8 +27,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import android.app.Activity
+import androidx.core.app.ActivityCompat
 import com.example.expensetracker.R
+import com.example.expensetracker.core.permission.PermissionHelper
 import com.example.expensetracker.presentation.components.AppTopBar
+import com.example.expensetracker.presentation.components.PermissionRationaleDialog
+import com.example.expensetracker.presentation.components.PermissionType
 import com.example.expensetracker.presentation.navigation.Alerts
 import com.example.expensetracker.presentation.viewModel.NotificationSettingsViewModel
 import kotlinx.coroutines.launch
@@ -52,11 +57,36 @@ fun NotificationSettingsScreen(
     var systemNotificationsEnabled by remember {
         mutableStateOf(viewModel.areSystemNotificationsEnabled())
     }
+    var showNotificationRationaleDialog by remember { mutableStateOf(false) }
+    var isPermanentlyDeniedNotification by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         systemNotificationsEnabled = isGranted || viewModel.areSystemNotificationsEnabled()
+        if (!isGranted) {
+            val isPermanently = (context as? Activity)?.let {
+                !ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.POST_NOTIFICATIONS)
+            } ?: false
+            isPermanentlyDeniedNotification = isPermanently
+            showNotificationRationaleDialog = true
+        }
+    }
+
+    val requestNotificationPermission: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val shouldShowRationale = (context as? Activity)?.let {
+                ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.POST_NOTIFICATIONS)
+            } ?: false
+            if (shouldShowRationale) {
+                isPermanentlyDeniedNotification = false
+                showNotificationRationaleDialog = true
+            } else {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        } else {
+            PermissionHelper.openNotificationSettings(context)
+        }
     }
 
     Scaffold(
@@ -120,16 +150,7 @@ fun NotificationSettingsScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
-                                onClick = {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    } else {
-                                        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                        }
-                                        runCatching { context.startActivity(intent) }
-                                    }
-                                },
+                                onClick = requestNotificationPermission,
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.error,
                                     contentColor = MaterialTheme.colorScheme.onError
@@ -280,6 +301,26 @@ fun NotificationSettingsScreen(
                 Text(stringResource(R.string.send_test_notification_btn))
             }
         }
+    }
+
+    if (showNotificationRationaleDialog) {
+        PermissionRationaleDialog(
+            permissionType = PermissionType.NOTIFICATIONS,
+            isPermanentlyDenied = isPermanentlyDeniedNotification,
+            onConfirm = {
+                showNotificationRationaleDialog = false
+                if (isPermanentlyDeniedNotification) {
+                    PermissionHelper.openNotificationSettings(context)
+                } else {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        PermissionHelper.openNotificationSettings(context)
+                    }
+                }
+            },
+            onDismiss = { showNotificationRationaleDialog = false }
+        )
     }
 }
 

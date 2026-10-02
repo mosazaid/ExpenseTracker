@@ -298,13 +298,7 @@ fun TransactionDetailBottomSheet(
             // Attached receipt image
             val receiptPath = transaction.receiptImagePath
             val receiptBitmap: ImageBitmap? = remember(receiptPath) {
-                if (!receiptPath.isNullOrBlank() && File(receiptPath).exists()) {
-                    try {
-                        BitmapFactory.decodeFile(receiptPath)?.asImageBitmap()
-                    } catch (_: Exception) {
-                        null
-                    }
-                } else null
+                com.example.expensetracker.core.storage.ReceiptStorageHelper.loadReceiptBitmap(receiptPath)?.asImageBitmap()
             }
 
             var showFullscreenReceipt by remember { mutableStateOf(false) }
@@ -346,37 +340,12 @@ fun TransactionDetailBottomSheet(
             }
 
             if (showFullscreenReceipt && receiptBitmap != null) {
-                Dialog(onDismissRequest = { showFullscreenReceipt = false }) {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Image(
-                                bitmap = receiptBitmap,
-                                contentDescription = "Full Receipt",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(max = 500.dp)
-                                    .clip(RoundedCornerShape(12.dp)),
-                                contentScale = ContentScale.Fit
-                            )
-                            Button(
-                                onClick = { showFullscreenReceipt = false },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Close")
-                            }
-                        }
-                    }
-                }
+                ZoomableImageDialog(
+                    bitmap = receiptBitmap,
+                    contentDescription = "Full Receipt",
+                    title = "Receipt Photo - ${transaction.description}",
+                    onDismissRequest = { showFullscreenReceipt = false }
+                )
             }
 
             // Action Buttons

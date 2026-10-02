@@ -7,10 +7,19 @@
   - Users can divide any expense into multiple sub-items across different subcategories and individual debtors.
   - Interactive split editor in `AddTransactionScreen` featuring real-time remaining balance calculations, quick auto-fill buttons, and per-split debtor assignment (`LENT`).
   - Added `transaction_splits` table and `TransactionSplitDao` with foreign-key cascade deletion.
-- **Offline Receipt Image Storage**:
-  - Secure offline camera capture and gallery selection saved in private app storage (`files/receipts/`).
-  - `TransactionDetailBottomSheet` displays interactive receipt thumbnails with full-screen zoom dialogs.
-  - Zero cloud dependencies; 100% private and persistent.
+- **Offline Receipt Photo Capture & Interactive Pinch-to-Zoom Viewer**:
+  - Added camera photo capture via `ActivityResultContracts.TakePicture()` alongside the existing system PhotoPicker.
+  - Interactive **Image Source Bottom Sheet** allowing users to choose between capturing a photo with their camera or selecting an existing image from their gallery.
+  - **Automatic EXIF Orientation Correction**: Solved vertical photos appearing horizontally by reading EXIF metadata (`ExifInterface.TAG_ORIENTATION`) directly from camera/gallery streams and rotating the bitmap upright before saving to disk.
+  - Added `ZoomableImageDialog` with finger pinch-to-zoom (up to 5x), pan gestures bounded to viewport, double-tap toggle, a 90° manual rotation button (`RotateRight`), and zoom percentage readout.
+  - Tapping attached receipts in `TransactionDetailBottomSheet` or `ReceiptAttachmentSection` opens the full-screen zoomable viewer.
+- **Centralized Runtime Permission Architecture & Rationale UI**:
+  - Implemented `PermissionHelper` managing `CAMERA`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `POST_NOTIFICATIONS` (Android 13+), and `SCHEDULE_EXACT_ALARM` (Android 12+).
+  - Built `PermissionRationaleDialog` adhering to UI/UX Pro Max guidelines with visible hierarchy, clear explanations, and direct navigation to system App Settings when permanently denied.
+  - Integrated across `ReceiptAttachmentSection` (Camera), `SettingsScreen` (Location), `PrayerQiblahScreen` (Location), `NotificationSettingsScreen` (Notifications), and `MainActivity`.
+- **Split Transaction UI Enhancements**:
+  - In `AddTransactionScreen`, the main subcategory input is automatically hidden when Split Mode is active, preventing confusion since each split item designates its own subcategory.
+  - Replaced single-row subcategory chips with responsive multi-line `FlowRow` in each split item, allowing all subcategories to be visible with checkmark selection indicators.
 - **AI Spending Intelligence & Interactive Info Dialog**:
   - `SpendingPacingCalculator` calculates cycle-aware velocity (`% Budget Spent ÷ % Time Elapsed`), daily burn rates, and safe daily allowances (`Remaining Budget ÷ Days Left`).
   - Implemented early-cycle damping recognizing that upfront lump-sum payments (e.g. rent or bills on days 1–5) are normal, preventing unrealistic linear multipliers.

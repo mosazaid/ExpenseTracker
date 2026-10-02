@@ -13,7 +13,10 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 ### 1. Complex Transactions & Splitting
 - **Transaction Splitting**: Split any single expense into multiple items across different subcategories or debtors (e.g. at a grocery store, allocate an amount to Chicken & Meat, an amount to Snacks & Sweets, and record a debt portion for a friend).
 - **Multi-Debtor Tracking on Split**: Each split line item can individually mark debt type (`LENT`) and debtor name.
-- **Offline Receipt Attachments**: Capture or select receipt photos saved safely in private internal app storage (`files/receipts/`). View full zoom preview in the transaction details bottom sheet.
+- **Subcategory Auto-Hiding & Multi-Line Flow**: When Split Mode is activated, the main single-category subcategory dropdown is automatically hidden. In the split items list, subcategory chips wrap responsively using multi-line `FlowRow` with checkmark selection indicators.
+- **Offline Receipt Attachments & Camera Photo Capture**: Choose between taking a photo with the camera (`TakePicture`) or selecting an image from the gallery (`PickVisualMedia`). Captured photos are processed with automatic EXIF orientation correction to prevent sideways/rotated photos and saved securely in private app storage (`files/receipts/`).
+- **Interactive Pinch-to-Zoom Receipt Viewer (`ZoomableImageDialog`)**: Fullscreen high-resolution receipt modal featuring smooth pinch-to-zoom (up to 5x), viewport-bounded panning gestures, double-tap zoom toggle (1x ↔ 2.5x), zoom percentage readout with tabular numbers, and a 90° manual rotation tool.
+- **Centralized Runtime Permissions (`PermissionHelper` & `PermissionRationaleDialog`)**: Unified permission architecture handling Camera, Location, Notifications, and Exact Alarms with UI/UX Pro Max rationale dialogs, permanent denial detection, and direct navigation to system App Settings.
 - **Transaction Details Bottom Sheet (`TransactionDetailBottomSheet`)**: Tap any transaction to open an interactive modal displaying splits, receipt previews, formatted account badges, and quick edit/delete actions.
 - **Swipe-to-Delete Overlap Fix**: Fixed swipe gesture layout on Transfer and Wallet moves so delete icons only appear upon active swiping.
 

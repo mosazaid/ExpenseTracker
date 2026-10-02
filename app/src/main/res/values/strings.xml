@@ -375,6 +375,12 @@
     <string name="change_receipt_btn">Change Photo</string>
     <string name="delete_receipt_btn">Remove</string>
     <string name="receipt_attached">Receipt attached</string>
+    <string name="choose_image_source">Select Image Source</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="take_photo_desc">Use camera to capture receipt photo</string>
+    <string name="choose_from_gallery">Choose from Gallery</string>
+    <string name="choose_from_gallery_desc">Select receipt from device storage</string>
+    <string name="camera_permission_required">Camera permission is required to capture photos</string>
 
     <!-- Islamic Finance & Tools -->
     <string name="more_islamic_tools">Islamic Finance &amp; Tools</string>

@@ -87,10 +87,7 @@ private fun NotificationPermissionRequester() {
         ) { /* Granted state handled by system */ }
 
         LaunchedEffect(Unit) {
-            val isGranted = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
+            val isGranted = com.example.expensetracker.core.permission.PermissionHelper.hasNotificationPermission(context)
             if (!isGranted) {
                 launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }

@@ -23,8 +23,11 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.ui.text.font.FontWeight
 import com.example.expensetracker.core.location.LocationHelper
+import com.example.expensetracker.core.permission.PermissionHelper
+import com.example.expensetracker.presentation.components.PermissionRationaleDialog
+import com.example.expensetracker.presentation.components.PermissionType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -84,6 +87,9 @@ fun SettingsScreen(
     var currencyMenuExpanded by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val locationHelper = remember { LocationHelper(context) }
+    var showLocationRationaleDialog by remember { mutableStateOf(false) }
+    var isPermanentlyDeniedLocation by remember { mutableStateOf(false) }
+
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -102,9 +108,11 @@ fun SettingsScreen(
                 }
             }
         } else {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Location permission denied.")
-            }
+            val isPermanently = (context as? android.app.Activity)?.let {
+                !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.ACCESS_FINE_LOCATION)
+            } ?: false
+            isPermanentlyDeniedLocation = isPermanently
+            showLocationRationaleDialog = true
         }
     }
     var exportDialogRequest by remember { mutableStateOf<ExportShareRequest?>(null) }
@@ -271,7 +279,7 @@ fun SettingsScreen(
                 Text(stringResource(R.string.currency_settings_title), style = MaterialTheme.typography.labelMedium)
                 TextButton(
                     onClick = {
-                        if (locationHelper.hasLocationPermission()) {
+                        if (PermissionHelper.hasLocationPermission(context)) {
                             val detected = locationHelper.detectLocationInfo()
                             if (detected != null) {
                                 viewModel.setCurrencyCode(detected.detectedCurrencyCode)
@@ -279,20 +287,20 @@ fun SettingsScreen(
                                     snackbarHostState.showSnackbar("Detected: ${detected.detectedCurrencyCode} (${detected.cityName ?: detected.countryCode})")
                                 }
                             } else {
-                                locationPermissionLauncher.launch(
-                                    arrayOf(
-                                        Manifest.permission.ACCESS_FINE_LOCATION,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                    )
-                                )
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("Location unavailable. Please select manually.")
+                                }
                             }
                         } else {
-                            locationPermissionLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
-                            )
+                            val shouldShowRationale = (context as? android.app.Activity)?.let {
+                                androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.ACCESS_FINE_LOCATION)
+                            } ?: false
+                            if (shouldShowRationale) {
+                                isPermanentlyDeniedLocation = false
+                                showLocationRationaleDialog = true
+                            } else {
+                                locationPermissionLauncher.launch(PermissionHelper.LOCATION_PERMISSIONS)
+                            }
                         }
                     },
                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
@@ -643,6 +651,22 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.outline
             )
         }
+    }
+
+    if (showLocationRationaleDialog) {
+        PermissionRationaleDialog(
+            permissionType = PermissionType.LOCATION,
+            isPermanentlyDenied = isPermanentlyDeniedLocation,
+            onConfirm = {
+                showLocationRationaleDialog = false
+                if (isPermanentlyDeniedLocation) {
+                    PermissionHelper.openAppSettings(context)
+                } else {
+                    locationPermissionLauncher.launch(PermissionHelper.LOCATION_PERMISSIONS)
+                }
+            },
+            onDismiss = { showLocationRationaleDialog = false }
+        )
     }
 }
 

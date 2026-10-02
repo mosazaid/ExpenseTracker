@@ -137,12 +137,19 @@
 
 ## Multi-Split Transactions & Receipts
 - [ ] In `AddTransactionScreen`, enabling "Split Transaction into Items" allows adding multiple line items.
+- [ ] In `AddTransactionScreen`, the top single-category subcategory dropdown is hidden when Split Mode is active.
+- [ ] In split items list, subcategory chips wrap on multiple lines (`FlowRow`) with selection checkmarks and no horizontal clipping.
 - [ ] Each split line item tracks subcategory, amount, note, and optional debtor name (`LENT`).
 - [ ] Real-time remaining balance recalculates dynamically and "Auto-Fill Balance" button works.
-- [ ] Receipt photo can be captured from Camera or picked from Gallery; file is saved to private app storage (`files/receipts/`).
+- [ ] Tapping "Attach Receipt" presents bottom sheet choice: "Take Photo" (Camera) vs "Choose from Gallery" (Gallery).
+- [ ] Camera launch checks runtime `CAMERA` permission; shows `PermissionRationaleDialog` if rationale needed or directs to App Settings if permanently denied.
+- [ ] Photos taken in vertical/portrait orientation save upright (EXIF orientation properly respected, avoiding horizontal sideways orientation).
+- [ ] Receipt file is securely saved to private app storage (`files/receipts/`).
 - [ ] Tapping a transaction in `HistoryScreen` opens `TransactionDetailBottomSheet`.
 - [ ] `TransactionDetailBottomSheet` displays all split line items, debtor details, and receipt thumbnail.
-- [ ] Tapping receipt thumbnail opens high-resolution zoom dialog with pan/zoom.
+- [ ] Tapping receipt thumbnail in `TransactionDetailBottomSheet` or `ReceiptAttachmentSection` opens `ZoomableImageDialog`.
+- [ ] `ZoomableImageDialog` supports finger pinch-to-zoom (1x to 5x), viewport-bounded panning, double-tap zoom toggle, zoom % readout with tabular numbers, and manual 90° rotation button.
+- [ ] Centralized `PermissionHelper` handles Camera, Location (Settings & Prayer/Qiblah), Notifications, and Alarms consistently.
 
 ## AI Spending Pacing & Financial Insights
 - [ ] `FinancialInsightsCard` on `OverviewScreen` displays day progress, budget consumed, velocity status, and safe daily spend.

@@ -29,9 +29,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.expensetracker.R
 import com.example.expensetracker.core.location.LocationHelper
+import com.example.expensetracker.core.permission.PermissionHelper
 import com.example.expensetracker.domain.CityLocation
 import com.example.expensetracker.domain.PrayerTimesCalculator
 import com.example.expensetracker.presentation.components.AppTopBar
+import com.example.expensetracker.presentation.components.PermissionRationaleDialog
+import com.example.expensetracker.presentation.components.PermissionType
 import com.example.expensetracker.presentation.theme.FinancePositive
 import com.example.expensetracker.presentation.theme.withTabularNums
 import java.util.Date
@@ -49,6 +52,8 @@ fun PrayerQiblahScreen(
     var cityMenuExpanded by remember { mutableStateOf(false) }
     var isUsingGps by remember { mutableStateOf(false) }
     var gpsStatusMessage by remember { mutableStateOf<String?>(null) }
+    var showLocationRationaleDialog by remember { mutableStateOf(false) }
+    var isPermanentlyDeniedLocation by remember { mutableStateOf(false) }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -74,6 +79,11 @@ fun PrayerQiblahScreen(
             }
         } else {
             gpsStatusMessage = "Location permission denied. You can select a city manually."
+            val isPermanently = (context as? android.app.Activity)?.let {
+                !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.ACCESS_FINE_LOCATION)
+            } ?: false
+            isPermanentlyDeniedLocation = isPermanently
+            showLocationRationaleDialog = true
         }
     }
 
@@ -131,7 +141,7 @@ fun PrayerQiblahScreen(
                         // GPS Button
                         TextButton(
                             onClick = {
-                                if (locationHelper.hasLocationPermission()) {
+                                if (PermissionHelper.hasLocationPermission(context)) {
                                     val detected = locationHelper.detectLocationInfo()
                                     if (detected != null) {
                                         val tzOffset = (TimeZone.getDefault().rawOffset / 3600000.0)
@@ -145,20 +155,18 @@ fun PrayerQiblahScreen(
                                         isUsingGps = true
                                         gpsStatusMessage = "GPS active: ${String.format(java.util.Locale.US, "%.3f", detected.latitude)}, ${String.format(java.util.Locale.US, "%.3f", detected.longitude)}"
                                     } else {
-                                        locationPermissionLauncher.launch(
-                                            arrayOf(
-                                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                                Manifest.permission.ACCESS_COARSE_LOCATION
-                                            )
-                                        )
+                                        gpsStatusMessage = "GPS signal weak or unavailable. Using preset city."
                                     }
                                 } else {
-                                    locationPermissionLauncher.launch(
-                                        arrayOf(
-                                            Manifest.permission.ACCESS_FINE_LOCATION,
-                                            Manifest.permission.ACCESS_COARSE_LOCATION
-                                        )
-                                    )
+                                    val shouldShowRationale = (context as? android.app.Activity)?.let {
+                                        androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.ACCESS_FINE_LOCATION)
+                                    } ?: false
+                                    if (shouldShowRationale) {
+                                        isPermanentlyDeniedLocation = false
+                                        showLocationRationaleDialog = true
+                                    } else {
+                                        locationPermissionLauncher.launch(PermissionHelper.LOCATION_PERMISSIONS)
+                                    }
                                 }
                             },
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
@@ -431,5 +439,21 @@ fun PrayerQiblahScreen(
                 }
             }
         }
+    }
+
+    if (showLocationRationaleDialog) {
+        PermissionRationaleDialog(
+            permissionType = PermissionType.LOCATION,
+            isPermanentlyDenied = isPermanentlyDeniedLocation,
+            onConfirm = {
+                showLocationRationaleDialog = false
+                if (isPermanentlyDeniedLocation) {
+                    PermissionHelper.openAppSettings(context)
+                } else {
+                    locationPermissionLauncher.launch(PermissionHelper.LOCATION_PERMISSIONS)
+                }
+            },
+            onDismiss = { showLocationRationaleDialog = false }
+        )
     }
 }

@@ -375,6 +375,12 @@
     <string name="change_receipt_btn">تغيير الصورة</string>
     <string name="delete_receipt_btn">حذف</string>
     <string name="receipt_attached">تم إرفاق الفاتورة</string>
+    <string name="choose_image_source">اختر مصدر الصورة</string>
+    <string name="take_photo">التقاط صورة بالكاميرا</string>
+    <string name="take_photo_desc">استخدام الكاميرا لتصوير الفاتورة أو الوصل</string>
+    <string name="choose_from_gallery">اختيار من المعرض</string>
+    <string name="choose_from_gallery_desc">تحديد صورة محفوظة من ذاكرة الجهاز</string>
+    <string name="camera_permission_required">إذن الكاميرا مطلوب لالتقاط صور الفواتير</string>
 
     <!-- Islamic Finance & Tools -->
     <string name="more_islamic_tools">المالية الإسلامية والأدوات</string>
