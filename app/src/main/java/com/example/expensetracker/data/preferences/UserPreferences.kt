@@ -54,6 +54,58 @@ class UserPreferences @Inject constructor(
     private val budgetAlertsKey = booleanPreferencesKey("alert_budget_enabled")
     private val dailyReminderKey = booleanPreferencesKey("alert_daily_reminder_enabled")
     private val currencyCodeKey = stringPreferencesKey("app_currency_code")
+    private val prayerCalculationMethodKey = stringPreferencesKey("prayer_calculation_method")
+    private val prayerAlertsEnabledKey = booleanPreferencesKey("prayer_alerts_enabled")
+    private val fajrAlertKey = booleanPreferencesKey("alert_fajr_enabled")
+    private val dhuhrAlertKey = booleanPreferencesKey("alert_dhuhr_enabled")
+    private val asrAlertKey = booleanPreferencesKey("alert_asr_enabled")
+    private val maghribAlertKey = booleanPreferencesKey("alert_maghrib_enabled")
+    private val ishaAlertKey = booleanPreferencesKey("alert_isha_enabled")
+    private val prayerSavedCityEnKey = stringPreferencesKey("prayer_saved_city_en")
+    private val prayerSavedCityArKey = stringPreferencesKey("prayer_saved_city_ar")
+    private val prayerSavedLatKey = stringPreferencesKey("prayer_saved_lat")
+    private val prayerSavedLngKey = stringPreferencesKey("prayer_saved_lng")
+    private val prayerSavedTzKey = stringPreferencesKey("prayer_saved_tz")
+
+    val prayerCalculationMethod: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[prayerCalculationMethodKey]
+    }
+
+    suspend fun setPrayerCalculationMethod(methodKey: String?) {
+        context.dataStore.edit { prefs ->
+            if (methodKey != null) {
+                prefs[prayerCalculationMethodKey] = methodKey
+            } else {
+                prefs.remove(prayerCalculationMethodKey)
+            }
+        }
+    }
+
+    val prayerAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[prayerAlertsEnabledKey] ?: true
+    }
+
+    suspend fun setPrayerAlertsEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[prayerAlertsEnabledKey] = enabled }
+    }
+
+    val fajrAlertEnabled: Flow<Boolean> = context.dataStore.data.map { prefs -> prefs[fajrAlertKey] ?: true }
+    val dhuhrAlertEnabled: Flow<Boolean> = context.dataStore.data.map { prefs -> prefs[dhuhrAlertKey] ?: true }
+    val asrAlertEnabled: Flow<Boolean> = context.dataStore.data.map { prefs -> prefs[asrAlertKey] ?: true }
+    val maghribAlertEnabled: Flow<Boolean> = context.dataStore.data.map { prefs -> prefs[maghribAlertKey] ?: true }
+    val ishaAlertEnabled: Flow<Boolean> = context.dataStore.data.map { prefs -> prefs[ishaAlertKey] ?: true }
+
+    suspend fun setPrayerReminderEnabled(prayerName: String, enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            when (prayerName.lowercase(java.util.Locale.US)) {
+                "fajr" -> prefs[fajrAlertKey] = enabled
+                "dhuhr" -> prefs[dhuhrAlertKey] = enabled
+                "asr" -> prefs[asrAlertKey] = enabled
+                "maghrib" -> prefs[maghribAlertKey] = enabled
+                "isha" -> prefs[ishaAlertKey] = enabled
+            }
+        }
+    }
 
     val currencyCode: Flow<String> = context.dataStore.data.map { prefs ->
         val code = prefs[currencyCodeKey] ?: com.example.expensetracker.core.format.CurrencyUtils.detectDefaultCurrency()

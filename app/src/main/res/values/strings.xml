@@ -397,6 +397,22 @@
     <string name="upcoming_prayer_label">Upcoming Prayer</string>
     <string name="daily_prayer_schedule">Daily Prayer Schedule</string>
     <string name="qiblah_direction_title">Kaaba / Qiblah Compass</string>
+    <string name="prayer_calculation_method">Calculation Method</string>
+    <string name="prayer_method_auto">Auto-detected</string>
+    <string name="prayer_change_method">Change Method</string>
+    <string name="qiblah_aligned">Facing Al-Kaaba (Qiblah)</string>
+    <string name="qiblah_turn_right">Turn phone right by %1$d°</string>
+    <string name="qiblah_turn_left">Turn phone left by %1$d°</string>
+    <string name="qiblah_calibrate_hint">Accuracy low: wave phone in ∞ pattern to calibrate</string>
+    <string name="qiblah_level_phone_hint">Hold phone flat for highest precision</string>
+    <string name="prayer_reminders_title">Prayer Reminders</string>
+    <string name="prayer_reminders_desc">Receive notifications at prayer times</string>
+    <string name="prayer_fajr">Fajr</string>
+    <string name="prayer_sunrise">Sunrise</string>
+    <string name="prayer_dhuhr">Dhuhr</string>
+    <string name="prayer_asr">Asr</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isha</string>
 
     <!-- Currency Settings -->
     <string name="currency_settings_title">Currency</string>

@@ -22,7 +22,8 @@ data class PrayerSchedule(
     val isha: String,
     val nextPrayerName: String,
     val nextPrayerTime: String,
-    val qiblahBearingDegrees: Float
+    val qiblahBearingDegrees: Float,
+    val calculationMethod: PrayerCalculationMethod = PrayerCalculationMethod.MWL
 )
 
 object PrayerTimesCalculator {
@@ -73,7 +74,8 @@ object PrayerTimesCalculator {
 
     fun calculateDaySchedule(
         city: CityLocation,
-        date: Date = Date()
+        date: Date = Date(),
+        method: PrayerCalculationMethod = PrayerCalculationMethod.MWL
     ): PrayerSchedule {
         val cal = Calendar.getInstance().apply { time = date }
         val dayOfYear = cal.get(Calendar.DAY_OF_YEAR)
@@ -102,13 +104,18 @@ object PrayerTimesCalculator {
         val sunriseHours = solarNoonUtc - sunRiseSetHa
         val sunsetHours = solarNoonUtc + sunRiseSetHa
 
-        // Fajr (18° below horizon)
-        val fajrHa = hourAngle(-18.0)
+        // Fajr (based on calculation method angle)
+        val fajrHa = hourAngle(-method.fajrAngle)
         val fajrHours = solarNoonUtc - fajrHa
 
-        // Isha (17° below horizon)
-        val ishaHa = hourAngle(-17.0)
-        val ishaHours = solarNoonUtc + ishaHa
+        // Isha (based on method angle or fixed interval after Maghrib)
+        val ishaHours = if (method.ishaIntervalMinutes != null) {
+            sunsetHours + (method.ishaIntervalMinutes / 60.0)
+        } else {
+            val ishaAngle = method.ishaAngle ?: 17.0
+            val ishaHa = hourAngle(-ishaAngle)
+            solarNoonUtc + ishaHa
+        }
 
         // Asr (Shafi'i / standard: shadow length = object + noon shadow)
         val noonShadow = tan(abs(latRad - declinationRad))
@@ -163,7 +170,8 @@ object PrayerTimesCalculator {
             isha = ishaStr,
             nextPrayerName = next.first,
             nextPrayerTime = nextTimeStr,
-            qiblahBearingDegrees = qiblah
+            qiblahBearingDegrees = qiblah,
+            calculationMethod = method
         )
     }
 }

@@ -397,6 +397,22 @@
     <string name="upcoming_prayer_label">الصلاة القادمة</string>
     <string name="daily_prayer_schedule">مواقيت الصلوات اليومية</string>
     <string name="qiblah_direction_title">بوصلة اتجاه القبلة (الكعبة المشرفة)</string>
+    <string name="prayer_calculation_method">طريقة حساب المواقيت</string>
+    <string name="prayer_method_auto">تحديد تلقائي</string>
+    <string name="prayer_change_method">تغيير الطريقة</string>
+    <string name="qiblah_aligned">أنت تواجه القبلة المشرفة مباشرة</string>
+    <string name="qiblah_turn_right">أدر الهاتف يميناً بمقدار %1$d°</string>
+    <string name="qiblah_turn_left">أدر الهاتف يساراً بمقدار %1$d°</string>
+    <string name="qiblah_calibrate_hint">دقة الحساس منخفضة: حرك الهاتف بحركة 8 لمعايرة البوصلة</string>
+    <string name="qiblah_level_phone_hint">اجعل الهاتف في وضع أفقي مستوٍ لأعلى دقة</string>
+    <string name="prayer_reminders_title">تنبيهات الأذان والصلوات</string>
+    <string name="prayer_reminders_desc">إشعارات عند حلول أوقات الصلاة</string>
+    <string name="prayer_fajr">الفجر</string>
+    <string name="prayer_sunrise">الشروق</string>
+    <string name="prayer_dhuhr">الظهر</string>
+    <string name="prayer_asr">العصر</string>
+    <string name="prayer_maghrib">المغرب</string>
+    <string name="prayer_isha">العشاء</string>
 
     <!-- Currency Settings -->
     <string name="currency_settings_title">العملة</string>
