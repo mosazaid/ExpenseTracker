@@ -22,6 +22,7 @@ import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.presentation.components.AppTopBar
 import com.example.expensetracker.presentation.components.CategoryPieChart
 import com.example.expensetracker.presentation.components.StatisticsBarChart
+import com.example.expensetracker.presentation.components.SubcategoryComparisonCard
 import com.example.expensetracker.presentation.components.ThreeMonthMultiChart
 import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.presentation.theme.FinanceNegative
@@ -218,6 +219,14 @@ fun StatisticsScreen(
 
             // ── 3-Month Category Expense Comparison Donut/Pie Chart
             CategoryPieChart(stats = state.threeMonthStats)
+
+            // ── Subcategory Comparison & Trends (Within Month & Cross-Month)
+            SubcategoryComparisonCard(
+                comparisonData = state.subCategoryComparison,
+                availableCategories = state.expenseCategories,
+                selectedCategoryId = state.selectedSubCategoryId,
+                onSelectCategory = { viewModel.selectCategoryForSubCategoryComparison(it) }
+            )
 
             Spacer(modifier = Modifier.height(72.dp))
         }

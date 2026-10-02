@@ -28,6 +28,29 @@ data class CategoryExpenseShare(
     val percentage: Float
 )
 
+data class SubCategoryShare(
+    val name: String,
+    val amount: Double,
+    val percentageOfCategory: Float
+)
+
+data class SubCategoryMonthlyTrend(
+    val subCategoryName: String,
+    val monthlyAmounts: List<Double>, // [Month 1, Month 2, Month 3]
+    val deltaPercent: Float? // difference between current and previous month
+)
+
+data class SubCategoryComparisonData(
+    val categoryId: Long,
+    val categoryName: String,
+    val categoryIcon: String,
+    val categoryColor: String,
+    val totalCategoryExpenseCurrent: Double,
+    val currentPeriodSubCategories: List<SubCategoryShare> = emptyList(),
+    val monthlyTrends: List<SubCategoryMonthlyTrend> = emptyList(),
+    val monthLabels: List<String> = emptyList()
+)
+
 data class MonthlyBreakdown(
     val monthLabel: String,
     val startDate: Date,
@@ -55,7 +78,10 @@ data class StatisticsState(
     val balance: Double = 0.0,
     val periodLabel: String = "",
     val isLoading: Boolean = false,
-    val threeMonthStats: ThreeMonthStats = ThreeMonthStats()
+    val threeMonthStats: ThreeMonthStats = ThreeMonthStats(),
+    val expenseCategories: List<com.example.expensetracker.data.database.entities.Category> = emptyList(),
+    val selectedSubCategoryId: Long? = null,
+    val subCategoryComparison: SubCategoryComparisonData? = null
 )
 
 @HiltViewModel
@@ -73,6 +99,11 @@ class StatisticsViewModel @Inject constructor(
 
     val monthMode: StateFlow<MonthMode> = userPreferences.monthMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MonthMode.CALENDAR)
+
+    private var cachedExpenseTxnsByPeriod: List<List<com.example.expensetracker.data.database.entities.Transaction>> = emptyList()
+    private var cachedMonthLabels: List<String> = emptyList()
+    private var cachedSplitsByTxnId: Map<Long, List<com.example.expensetracker.data.database.entities.TransactionSplit>> = emptyMap()
+    private var cachedCategories: Map<Long, com.example.expensetracker.data.database.entities.Category> = emptyMap()
 
     fun loadStatisticsForPeriod(period: HistoryPeriod, referenceDate: Date = Date()) {
         viewModelScope.launch {
@@ -94,6 +125,17 @@ class StatisticsViewModel @Inject constructor(
 
             val threeMonthStats = calculateThreeMonthStats(referenceDate, monthMode.value)
 
+            val expenseCats = categoryRepository.getAllCategoriesSnapshot().filter { it.type == TransactionType.EXPENSE }
+            val currentSelectedId = _statisticsState.value.selectedSubCategoryId
+            val defaultTargetId = if (currentSelectedId != null && expenseCats.any { it.id == currentSelectedId }) {
+                currentSelectedId
+            } else {
+                threeMonthStats.months.lastOrNull()?.categoryBreakdown?.firstOrNull()?.categoryId
+                    ?: expenseCats.firstOrNull()?.id
+            }
+
+            val subCategoryComparison = defaultTargetId?.let { buildSubCategoryComparison(it) }
+
             _statisticsState.value = _statisticsState.value.copy(
                 totalIncome = totalIncome,
                 totalExpense = totalExpense,
@@ -101,9 +143,94 @@ class StatisticsViewModel @Inject constructor(
                 balance = totalIncome - totalExpense,
                 periodLabel = bounds.label,
                 threeMonthStats = threeMonthStats,
+                expenseCategories = expenseCats,
+                selectedSubCategoryId = defaultTargetId,
+                subCategoryComparison = subCategoryComparison,
                 isLoading = false
             )
         }
+    }
+
+    fun selectCategoryForSubCategoryComparison(categoryId: Long) {
+        val comparison = buildSubCategoryComparison(categoryId)
+        _statisticsState.value = _statisticsState.value.copy(
+            selectedSubCategoryId = categoryId,
+            subCategoryComparison = comparison
+        )
+    }
+
+    private fun buildSubCategoryComparison(categoryId: Long): SubCategoryComparisonData? {
+        val cat = cachedCategories[categoryId] ?: return null
+        if (cachedExpenseTxnsByPeriod.isEmpty()) return null
+
+        val currentPeriodTxns = cachedExpenseTxnsByPeriod.lastOrNull().orEmpty()
+        val currentSubSpend = extractSubCategorySpend(currentPeriodTxns, categoryId, cachedSplitsByTxnId)
+        val totalCatCurrent = currentSubSpend.values.sum()
+
+        val currentSubShares = currentSubSpend.map { (name, amt) ->
+            SubCategoryShare(
+                name = name,
+                amount = amt,
+                percentageOfCategory = if (totalCatCurrent > 0) ((amt / totalCatCurrent) * 100f).toFloat() else 0f
+            )
+        }.sortedByDescending { it.amount }
+
+        val periodSubSpends = cachedExpenseTxnsByPeriod.map { txns ->
+            extractSubCategorySpend(txns, categoryId, cachedSplitsByTxnId)
+        }
+
+        val allSubNames = periodSubSpends.flatMap { it.keys }.distinct()
+
+        val monthlyTrends = allSubNames.map { name ->
+            val amounts = periodSubSpends.map { it[name] ?: 0.0 }
+            val prevAmt = if (amounts.size >= 2) amounts[amounts.size - 2] else 0.0
+            val currAmt = amounts.lastOrNull() ?: 0.0
+            val deltaPercent = if (prevAmt > 0) {
+                (((currAmt - prevAmt) / prevAmt) * 100f).toFloat()
+            } else null
+
+            SubCategoryMonthlyTrend(
+                subCategoryName = name,
+                monthlyAmounts = amounts,
+                deltaPercent = deltaPercent
+            )
+        }.sortedByDescending { it.monthlyAmounts.lastOrNull() ?: 0.0 }
+
+        return SubCategoryComparisonData(
+            categoryId = categoryId,
+            categoryName = cat.name,
+            categoryIcon = cat.icon,
+            categoryColor = cat.color,
+            totalCategoryExpenseCurrent = totalCatCurrent,
+            currentPeriodSubCategories = currentSubShares,
+            monthlyTrends = monthlyTrends,
+            monthLabels = cachedMonthLabels
+        )
+    }
+
+    private fun extractSubCategorySpend(
+        expenseTxns: List<com.example.expensetracker.data.database.entities.Transaction>,
+        categoryId: Long,
+        allSplitsByTxnId: Map<Long, List<com.example.expensetracker.data.database.entities.TransactionSplit>>
+    ): Map<String, Double> {
+        val map = mutableMapOf<String, Double>()
+        val catTxns = expenseTxns.filter { it.categoryId == categoryId }
+
+        for (txn in catTxns) {
+            val splits = allSplitsByTxnId[txn.id].orEmpty()
+            if (splits.isNotEmpty()) {
+                for (split in splits) {
+                    val rawName = split.subCategoryName?.trim()
+                    val key = if (!rawName.isNullOrBlank()) rawName else "Other"
+                    map[key] = (map[key] ?: 0.0) + split.amount
+                }
+            } else {
+                val rawName = txn.subDescription?.trim()
+                val key = if (!rawName.isNullOrBlank()) rawName else "Other"
+                map[key] = (map[key] ?: 0.0) + txn.amount
+            }
+        }
+        return map
     }
 
     private suspend fun calculateThreeMonthStats(
@@ -121,6 +248,7 @@ class StatisticsViewModel @Inject constructor(
         }
 
         val allThreeMonthExpenses = mutableListOf<com.example.expensetracker.data.database.entities.Transaction>()
+        val periodExpenseList = mutableListOf<List<com.example.expensetracker.data.database.entities.Transaction>>()
 
         val monthlyBreakdowns = periods.map { bounds ->
             val txns = transactionRepository.getTransactionsBetweenDates(bounds.start, bounds.end).first()
@@ -137,6 +265,7 @@ class StatisticsViewModel @Inject constructor(
             val wallet = walletCalculator.getWalletBalance(bounds.start, bounds.end)
 
             allThreeMonthExpenses.addAll(expenseTxns)
+            periodExpenseList.add(expenseTxns)
 
             val catBreakdown = expenseTxns
                 .groupBy { it.categoryId ?: 0L }
@@ -166,6 +295,12 @@ class StatisticsViewModel @Inject constructor(
                 categoryBreakdown = catBreakdown
             )
         }
+
+        val splits = transactionRepository.getAllSplitsSnapshot()
+        cachedExpenseTxnsByPeriod = periodExpenseList
+        cachedMonthLabels = periods.map { it.label }
+        cachedSplitsByTxnId = splits.groupBy { it.transactionId }
+        cachedCategories = catMap
 
         val totalIncome = monthlyBreakdowns.sumOf { it.income }
         val totalExpense = monthlyBreakdowns.sumOf { it.expense }
