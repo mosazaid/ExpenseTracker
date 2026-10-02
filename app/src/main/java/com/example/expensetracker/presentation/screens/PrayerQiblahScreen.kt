@@ -19,6 +19,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -84,7 +85,7 @@ fun PrayerQiblahScreen(
     val compassReading by compassManager.reading.collectAsState()
 
     var showMethodDialog by remember { mutableStateOf(false) }
-    var cityMenuExpanded by remember { mutableStateOf(false) }
+    var showCityDialog by remember { mutableStateOf(false) }
     var showLocationRationaleDialog by remember { mutableStateOf(false) }
     var isPermanentlyDeniedLocation by remember { mutableStateOf(false) }
 
@@ -169,12 +170,7 @@ fun PrayerQiblahScreen(
                 cityNameAr = uiState.selectedCity.nameAr,
                 isUsingGps = uiState.isUsingGps,
                 gpsStatusMessage = uiState.gpsStatusMessage,
-                cityMenuExpanded = cityMenuExpanded,
-                onMenuExpandChange = { cityMenuExpanded = it },
-                onSelectCity = { city ->
-                    viewModel.selectCity(city)
-                    cityMenuExpanded = false
-                },
+                onOpenCityPicker = { showCityDialog = true },
                 onGpsClick = {
                     if (PermissionHelper.hasLocationPermission(context)) {
                         val detected = locationHelper.detectLocationInfo()
@@ -237,6 +233,18 @@ fun PrayerQiblahScreen(
         }
     }
 
+    // Searchable City Picker Dialog
+    if (showCityDialog) {
+        SearchableCityPickerDialog(
+            currentCity = uiState.selectedCity,
+            onSelectCity = { city ->
+                viewModel.selectCity(city)
+                showCityDialog = false
+            },
+            onDismiss = { showCityDialog = false }
+        )
+    }
+
     // Calculation Method Selection Dialog
     if (showMethodDialog) {
         CalculationMethodDialog(
@@ -278,9 +286,7 @@ private fun LocationSelectorCard(
     cityNameAr: String,
     isUsingGps: Boolean,
     gpsStatusMessage: String?,
-    cityMenuExpanded: Boolean,
-    onMenuExpandChange: (Boolean) -> Unit,
-    onSelectCity: (com.example.expensetracker.domain.CityLocation) -> Unit,
+    onOpenCityPicker: () -> Unit,
     onGpsClick: () -> Unit
 ) {
     Surface(
@@ -326,39 +332,48 @@ private fun LocationSelectorCard(
                 }
             }
 
-            ExposedDropdownMenuBox(
-                expanded = cityMenuExpanded,
-                onExpandedChange = onMenuExpandChange
+            // Clickable City Field that opens SearchableCityPickerDialog
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenCityPicker() }
             ) {
-                OutlinedTextField(
-                    value = "$cityNameEn • $cityNameAr",
-                    onValueChange = {},
-                    readOnly = true,
-                    leadingIcon = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         Icon(
                             imageVector = if (isUsingGps) Icons.Outlined.GpsFixed else Icons.Outlined.LocationOn,
                             contentDescription = null,
-                            tint = if (isUsingGps) FinancePositive else MaterialTheme.colorScheme.primary
+                            tint = if (isUsingGps) FinancePositive else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
                         )
-                    },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = cityMenuExpanded)
-                    },
-                    modifier = Modifier
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
-                        .fillMaxWidth()
-                )
-
-                ExposedDropdownMenu(
-                    expanded = cityMenuExpanded,
-                    onDismissRequest = { onMenuExpandChange(false) }
-                ) {
-                    PrayerTimesCalculator.PRESET_CITIES.forEach { city ->
-                        DropdownMenuItem(
-                            text = { Text("${city.nameEn} • ${city.nameAr}") },
-                            onClick = { onSelectCity(city) }
-                        )
+                        Column {
+                            Text(
+                                text = "$cityNameEn • $cityNameAr",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
+
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = "Search Location",
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
@@ -371,6 +386,158 @@ private fun LocationSelectorCard(
             }
         }
     }
+}
+
+// -------------------------------------------------------------
+// Searchable City Picker Dialog with Region Chips
+// -------------------------------------------------------------
+@Composable
+private fun SearchableCityPickerDialog(
+    currentCity: com.example.expensetracker.domain.CityLocation,
+    onSelectCity: (com.example.expensetracker.domain.CityLocation) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedRegion by remember { mutableStateOf("All") }
+
+    val regions = listOf("All", "Europe & Austria", "Southeast Asia", "Arab World", "Americas & Others")
+
+    val filteredCities = remember(searchQuery, selectedRegion) {
+        PrayerTimesCalculator.PRESET_CITIES.filter { city ->
+            val matchesSearch = searchQuery.isBlank() ||
+                city.nameEn.contains(searchQuery, ignoreCase = true) ||
+                city.nameAr.contains(searchQuery, ignoreCase = true)
+
+            val matchesRegion = when (selectedRegion) {
+                "Europe & Austria" -> listOf("Austria", "Germany", "France", "UK", "Spain", "Italy", "Netherlands", "Belgium", "Switzerland", "Sweden", "Norway", "Denmark", "Ireland", "Bosnia", "Greece", "Portugal", "Poland", "Czech", "Hungary", "Romania", "Albania", "Kosovo", "Finland", "Turkey", "Russia")
+                    .any { city.nameEn.contains(it, ignoreCase = true) }
+                "Southeast Asia" -> listOf("Philippines", "Malaysia", "Singapore", "Indonesia", "Thailand")
+                    .any { city.nameEn.contains(it, ignoreCase = true) }
+                "Arab World" -> listOf("Jordan", "Palestine", "Saudi", "UAE", "Kuwait", "Qatar", "Bahrain", "Oman", "Yemen", "Egypt", "Lebanon", "Syria", "Iraq", "Libya", "Tunisia", "Algeria", "Morocco", "Sudan", "Somalia", "Mauritania")
+                    .any { city.nameEn.contains(it, ignoreCase = true) }
+                "Americas & Others" -> listOf("USA", "Canada", "Brazil", "Australia", "New Zealand", "South Africa", "Pakistan", "India", "Bangladesh", "Japan", "South Korea", "China")
+                    .any { city.nameEn.contains(it, ignoreCase = true) }
+                else -> true
+            }
+
+            matchesSearch && matchesRegion
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Select Location",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search city or country...") },
+                    leadingIcon = {
+                        Icon(Icons.Outlined.Search, contentDescription = null)
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Outlined.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 440.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(regions) { region ->
+                        FilterChip(
+                            selected = selectedRegion == region,
+                            onClick = { selectedRegion = region },
+                            label = { Text(region, style = MaterialTheme.typography.labelSmall) }
+                        )
+                    }
+                }
+
+                Text(
+                    text = "${filteredCities.size} cities available",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(filteredCities) { city ->
+                        val isSelected = city.nameEn == currentCity.nameEn
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            else MaterialTheme.colorScheme.surfaceContainerLow,
+                            border = BorderStroke(
+                                width = if (isSelected) 1.5.dp else 1.dp,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelectCity(city) }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(
+                                        text = city.nameEn,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = city.nameAr,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                }
+
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Check,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
 }
 
 // -------------------------------------------------------------

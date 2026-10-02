@@ -48,6 +48,10 @@ object CurrencyUtils {
         CurrencyInfo("NOK", "kr", "kr", 2),
         CurrencyInfo("DKK", "kr", "kr", 2),
         CurrencyInfo("PLN", "zł", "zł", 2),
+        CurrencyInfo("BAM", "KM", "KM", 2),
+        CurrencyInfo("CZK", "Kč", "Kč", 2),
+        CurrencyInfo("HUF", "Ft", "Ft", 0),
+        CurrencyInfo("RON", "lei", "lei", 2),
 
         // Americas, Asia & Oceania
         CurrencyInfo("USD", "$", "$", 2),
@@ -58,7 +62,12 @@ object CurrencyUtils {
         CurrencyInfo("INR", "₹", "₹", 2),
         CurrencyInfo("PKR", "₨", "₨", 2),
         CurrencyInfo("MYR", "RM", "RM", 2),
-        CurrencyInfo("SGD", "S$", "S$", 2)
+        CurrencyInfo("SGD", "S$", "S$", 2),
+        CurrencyInfo("PHP", "₱", "₱", 2),
+        CurrencyInfo("IDR", "Rp", "Rp", 0),
+        CurrencyInfo("THB", "฿", "฿", 2),
+        CurrencyInfo("BRL", "R$", "R$", 2),
+        CurrencyInfo("ZAR", "R", "R", 2)
     )
 
     @Volatile
@@ -101,6 +110,15 @@ object CurrencyUtils {
                 "PK" -> "PKR"
                 "MY" -> "MYR"
                 "SG" -> "SGD"
+                "PH" -> "PHP"
+                "ID" -> "IDR"
+                "TH" -> "THB"
+                "BA" -> "BAM"
+                "CZ" -> "CZK"
+                "HU" -> "HUF"
+                "RO" -> "RON"
+                "BR" -> "BRL"
+                "ZA" -> "ZAR"
                 "FR", "DE", "IT", "ES", "NL", "BE", "AT", "PT", "FI", "IE", "GR" -> "EUR"
                 else -> if (Locale.getDefault().language == "ar") "JOD" else "USD"
             }

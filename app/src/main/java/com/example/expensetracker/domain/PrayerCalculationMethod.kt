@@ -68,7 +68,7 @@ enum class PrayerCalculationMethod(
         ishaIntervalMinutes = 90
     ),
     SINGAPORE(
-        displayName = "MUIS (Singapore)",
+        displayName = "MUIS / JAKIM (Southeast Asia: Singapore, Malaysia, Indonesia, Philippines)",
         description = "Fajr: 20.0°, Isha: 18.0°",
         fajrAngle = 20.0,
         ishaAngle = 18.0
@@ -93,7 +93,7 @@ enum class PrayerCalculationMethod(
                 "AE" -> DUBAI
                 "KW" -> KUWAIT
                 "QA" -> QATAR
-                "SG", "MY", "ID" -> SINGAPORE
+                "SG", "MY", "ID", "PH", "BN", "TH" -> SINGAPORE
                 "IR" -> TEHRAN
                 else -> MWL
             }

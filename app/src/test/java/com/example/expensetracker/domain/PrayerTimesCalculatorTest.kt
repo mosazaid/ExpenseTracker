@@ -37,9 +37,53 @@ class PrayerTimesCalculatorTest {
         assertEquals(PrayerCalculationMethod.QATAR, PrayerCalculationMethod.autoDetect("QA"))
         assertEquals(PrayerCalculationMethod.SINGAPORE, PrayerCalculationMethod.autoDetect("SG"))
         assertEquals(PrayerCalculationMethod.SINGAPORE, PrayerCalculationMethod.autoDetect("MY"))
+        assertEquals(PrayerCalculationMethod.SINGAPORE, PrayerCalculationMethod.autoDetect("PH"))
+        assertEquals(PrayerCalculationMethod.SINGAPORE, PrayerCalculationMethod.autoDetect("ID"))
+        assertEquals(PrayerCalculationMethod.MWL, PrayerCalculationMethod.autoDetect("AT"))
+        assertEquals(PrayerCalculationMethod.MWL, PrayerCalculationMethod.autoDetect("DE"))
+        assertEquals(PrayerCalculationMethod.MWL, PrayerCalculationMethod.autoDetect("FR"))
         assertEquals(PrayerCalculationMethod.TEHRAN, PrayerCalculationMethod.autoDetect("IR"))
         assertEquals(PrayerCalculationMethod.MWL, PrayerCalculationMethod.autoDetect("GB"))
         assertEquals(PrayerCalculationMethod.MWL, PrayerCalculationMethod.autoDetect(null))
+    }
+
+    @Test
+    fun testAustriaViennaCalculation() {
+        val vienna = PrayerTimesCalculator.PRESET_CITIES.first { it.nameEn.contains("Vienna, Austria") }
+        val schedule = PrayerTimesCalculator.calculateDaySchedule(vienna, Date(), PrayerCalculationMethod.MWL)
+        assertNotNull(schedule.fajr)
+        assertNotNull(schedule.dhuhr)
+        assertNotNull(schedule.asr)
+        assertNotNull(schedule.maghrib)
+        assertNotNull(schedule.isha)
+        // Vienna Qiblah is South-East towards Makkah (~130° - 145°)
+        assertTrue(schedule.qiblahBearingDegrees in 125f..150f)
+    }
+
+    @Test
+    fun testPhilippinesManilaCalculation() {
+        val manila = PrayerTimesCalculator.PRESET_CITIES.first { it.nameEn.contains("Manila, Philippines") }
+        val schedule = PrayerTimesCalculator.calculateDaySchedule(manila, Date(), PrayerCalculationMethod.SINGAPORE)
+        assertNotNull(schedule.fajr)
+        assertNotNull(schedule.dhuhr)
+        assertNotNull(schedule.asr)
+        assertNotNull(schedule.maghrib)
+        assertNotNull(schedule.isha)
+        // Manila Qiblah is West-Northwest towards Makkah (~285° - 300°)
+        assertTrue(schedule.qiblahBearingDegrees in 280f..305f)
+    }
+
+    @Test
+    fun testMalaysiaKualaLumpurCalculation() {
+        val kl = PrayerTimesCalculator.PRESET_CITIES.first { it.nameEn.contains("Kuala Lumpur, Malaysia") }
+        val schedule = PrayerTimesCalculator.calculateDaySchedule(kl, Date(), PrayerCalculationMethod.SINGAPORE)
+        assertNotNull(schedule.fajr)
+        assertNotNull(schedule.dhuhr)
+        assertNotNull(schedule.asr)
+        assertNotNull(schedule.maghrib)
+        assertNotNull(schedule.isha)
+        // Kuala Lumpur Qiblah is West-Northwest towards Makkah (~290° - 300°)
+        assertTrue(schedule.qiblahBearingDegrees in 285f..305f)
     }
 
     @Test
