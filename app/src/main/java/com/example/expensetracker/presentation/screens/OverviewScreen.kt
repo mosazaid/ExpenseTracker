@@ -141,11 +141,69 @@ fun OverviewScreen(
     val totalAvailable = (cashBal + bankBal)
     val recentTransactions = remember(allTransactions) { allTransactions.take(4) }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val locationPermissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[android.Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarseGranted = permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (fineGranted || coarseGranted) {
+            val locHelper = com.example.expensetracker.core.location.LocationHelper(context)
+            val loc = locHelper.detectLocationInfo()
+            coroutineScope.launch {
+                if (loc != null) {
+                    snackbarHostState.showSnackbar(
+                        message = "📍 Location Synced: ${loc.cityName ?: "GPS Active"} (${loc.countryCode ?: ""})",
+                        duration = SnackbarDuration.Short
+                    )
+                } else {
+                    snackbarHostState.showSnackbar("Location detected via device services.")
+                }
+            }
+        } else {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Location permission required to sync GPS.")
+            }
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.app_name),
-                navController = navController
+                navController = navController,
+                actions = {
+                    IconButton(
+                        onClick = {
+                            if (com.example.expensetracker.core.permission.PermissionHelper.hasLocationPermission(context)) {
+                                val locHelper = com.example.expensetracker.core.location.LocationHelper(context)
+                                val loc = locHelper.detectLocationInfo()
+                                coroutineScope.launch {
+                                    if (loc != null) {
+                                        snackbarHostState.showSnackbar(
+                                            message = "📍 Location Synced: ${loc.cityName ?: "GPS Active"} (${loc.countryCode ?: ""})",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    } else {
+                                        snackbarHostState.showSnackbar("GPS signal acquired via network.")
+                                    }
+                                }
+                            } else {
+                                locationPermissionLauncher.launch(com.example.expensetracker.core.permission.PermissionHelper.LOCATION_PERMISSIONS)
+                            }
+                        },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.GpsFixed,
+                            contentDescription = "Sync GPS Location",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
             )
         }
     ) { padding ->

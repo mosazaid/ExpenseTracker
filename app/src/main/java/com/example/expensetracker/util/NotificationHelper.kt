@@ -205,6 +205,42 @@ class NotificationHelper @Inject constructor(
         NotificationManagerCompat.from(context).notify(9999, notification)
     }
 
+    fun showPrayerReminderNotification(prayerName: String, prayerTime: String) {
+        if (!hasPermission()) return
+        createChannels()
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("nav_destination", "prayer_qiblah")
+        }
+        val notifId = when (prayerName.lowercase(java.util.Locale.US)) {
+            "fajr" -> 11001
+            "dhuhr" -> 11002
+            "asr" -> 11003
+            "maghrib" -> 11004
+            "isha" -> 11005
+            else -> 11000
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            notifId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_PRAYER)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Time for $prayerName prayer")
+            .setContentText("It is now $prayerTime, time to perform $prayerName prayer.")
+            .setStyle(NotificationCompat.BigTextStyle().bigText("It is now $prayerTime, time to perform $prayerName prayer."))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(notifId, notification)
+    }
+
     private fun createChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = context.getSystemService(NotificationManager::class.java)
@@ -233,8 +269,14 @@ class NotificationHelper @Inject constructor(
                 NotificationManager.IMPORTANCE_HIGH
             )
 
+            val prayerChannel = NotificationChannel(
+                CHANNEL_PRAYER,
+                "Prayer time reminders",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+
             manager.createNotificationChannels(
-                listOf(salaryChannel, dailyChannel, budgetChannel, loansChannel)
+                listOf(salaryChannel, dailyChannel, budgetChannel, loansChannel, prayerChannel)
             )
         }
     }
@@ -244,6 +286,7 @@ class NotificationHelper @Inject constructor(
         const val CHANNEL_DAILY = "daily_expense_reminders"
         const val CHANNEL_BUDGET = "budget_alerts"
         const val CHANNEL_LOANS = "loan_reminders"
+        const val CHANNEL_PRAYER = "prayer_reminders"
 
         const val NOTIFICATION_DAILY_ID = 10001
     }

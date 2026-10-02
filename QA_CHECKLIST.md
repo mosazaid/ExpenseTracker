@@ -176,6 +176,42 @@
 - [ ] Toggles work for Loan Reminders, Debt Reminders, Salary & Recurring, Budget Warnings, and Daily 9 PM Reminder.
 - [ ] "Send Test Notification" dispatches test notification successfully.
 
+## Phase 9 Enhancements & Bug Fixes
+- [ ] **Split Subcategory Spend Attribution & History Display**:
+  - [ ] Add a split transaction (e.g. Category: Shopping, Split 1: Grocery 5.00 JOD, Split 2: Sweets 7.00 JOD).
+  - [ ] In `HistoryScreen`, verify the transaction displays `Grocery 5.000 JOD • Sweets 7.000 JOD` badges instead of a generic subcategory.
+  - [ ] In Category Filter / Breakdown, verify 5.00 JOD is counted under Grocery and 7.00 JOD is counted under Sweets (not under "Others").
+- [ ] **Financial Insights & Salary Cycle Verification**:
+  - [ ] Configure total balance 540 JOD and wallet 1160 JOD; verify wallet funds are treated as reserved savings and NOT added to total expenses in `FinancialInsightsCard`.
+  - [ ] Verify safe daily spend matches `(Remaining Budget) / (Days Left in Cycle)`.
+  - [ ] Receive a salary 8 days ago in salary cycle mode; verify the cycle period does not show "1 day remaining", correctly computing days remaining to the next monthly cycle anchor.
+- [ ] **Statistics Screen Subcategory Comparison**:
+  - [ ] Open `StatisticsScreen` and locate `SubcategoryComparisonCard` below the category pie chart.
+  - [ ] Select a category from the dropdown (e.g. Shopping).
+  - [ ] Verify "This Period" section displays subcategories with exact spent amounts, tabular figures, and proportional percentage progress bars.
+  - [ ] Verify "3-Month Trend" section displays the current month, previous month, and 2 months ago in a clean tabular view.
+  - [ ] Verify Month-over-Month (MoM) delta percentages (+/- %) and color badges display correctly.
+- [ ] **Real-Time Sensor-Driven Qiblah Compass**:
+  - [ ] Open `PrayerQiblahScreen` and rotate the phone physically.
+  - [ ] Verify the compass dial rotates smoothly in real-time matching the device's physical heading.
+  - [ ] Verify True North (Red line) remains pointing towards real North.
+  - [ ] Turn phone toward the Kaaba needle direction.
+  - [ ] When aligned within ±3.5°, verify:
+    - [ ] Outer ring illuminates with emerald green glow (`#10B981`).
+    - [ ] Status banner displays "Facing Al-Kaaba (Qiblah)!".
+    - [ ] Tactile haptic vibration triggers upon entering alignment.
+  - [ ] When unaligned, verify turn guidance arrow and degree text (e.g. "Turn phone right by 24°").
+  - [ ] Holding phone tilted vertically displays "Hold phone flat for highest precision" warning.
+- [ ] **Prayer Calculation Methods**:
+  - [ ] Verify active calculation method card displays method name and sun angles.
+  - [ ] Tap "Change Method" and select from 12 global calculation methods (Jordan, Umm al-Qura, Egypt, Turkey, Karachi, ISNA, MWL, Dubai, Kuwait, Qatar, Singapore, Tehran).
+  - [ ] Verify prayer times recalculate immediately upon selecting a different method.
+  - [ ] Select "Auto-detect by Location" and verify it maps country code to local authority (e.g. JO -> Jordan, SA -> Umm al-Qura).
+- [ ] **Salah Reminders & Overview GPS Sync**:
+  - [ ] Tap bell toggle icons for Fajr, Dhuhr, Asr, Maghrib, and Isha in `PrayerQiblahScreen` to enable/disable specific reminders.
+  - [ ] Open `OverviewScreen` and tap the GPS Location Sync icon button in the top bar.
+  - [ ] Verify runtime location permission prompt is triggered (if not granted) or location is refreshed with a confirmation snackbar.
+
 ## Regression Checks
 - [ ] Categories and Subcategories CRUD still works.
 - [ ] Existing historical data remains readable after v16 → v17 migration.

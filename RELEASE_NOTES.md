@@ -1,5 +1,47 @@
 # Release Notes
 
+## Version: Feature Expansion Phase 9 — Split Subcategory Attribution, Financial Pacing Fixes, Subcategory Stats Comparison, Real-Time Sensor Qiblah Compass & Multi-Method Prayer Calculation (October 2026)
+
+### Highlights
+- **Split Subcategory Breakdown & History Display**:
+  - Solved split expense amounts collapsing into "Others": `subCategorySpendMap` now parses all `TransactionSplit` items, accurately mapping each split amount to its designated subcategory (e.g. Shopping -> Grocery 5.00 JOD, Sweets 7.00 JOD).
+  - Enriched transaction items in `HistoryScreen` to display individual subcategory badges with exact split amounts (`Grocery 5.00 JOD • Sweets 7.00 JOD`) alongside debtor attribution chips.
+- **Financial Insights Wallet Calculation & Salary Cycle Anchor Fix**:
+  - **Wallet Reserved Balance**: Fixed calculation in `FinancialInsightsCard` where `totalWallet` was previously added to `totalExpense`, creating an artificial expense spike. Wallet funds are now passed as `walletReserved` and subtracted from `baselineBudget = max(0.0, totalIncome - walletReserved)` in `SpendingPacingCalculator`.
+  - **Salary Cycle Period Boundary**: Fixed `PeriodCalculator` where cycles without a future salary anchor previously truncated the period end date to today, creating a false "1 day remaining" warning for a salary received 8 days prior. Natural end now extends a full month minus one day from the salary anchor.
+- **Statistics Screen Subcategory Comparison & 3-Month Trends**:
+  - Added interactive `SubcategoryComparisonCard` on `StatisticsScreen` below the category pie chart.
+  - **Within-Period Breakdown**: Category selector dropdown displaying all subcategories with spent amounts and visual percentage progress bars.
+  - **Cross-Month Trend (3-Month Comparative Table)**: Analyzes subcategory expenses across current month, previous month, and 2 months ago, displaying tabular month-over-month (MoM) delta percentage badges (+/- %).
+- **Real-Time Sensor-Driven Qiblah Compass (`PrayerQiblahScreen`)**:
+  - Built `CompassSensorManager` using `Sensor.TYPE_ROTATION_VECTOR` with seamless fallback to `TYPE_ACCELEROMETER` + `TYPE_MAGNETIC_FIELD`, featuring shortest-circular-path exponential smoothing for responsive and jitter-free dial rotation.
+  - Interactive compass dial rotating by `-azimuth` so True North aligns with physical room North.
+  - Kaaba needle pointing to Mecca relative to device orientation with golden/emerald spearhead and Kaaba emblem.
+  - **Alignment State**: Outer ring glows with an animated emerald green pulse (`#10B981`) and triggers tactile haptic feedback when the user points their phone within ±3.5° of Al-Kaaba.
+  - Real-time turn guidance: displays "Facing Al-Kaaba (Qiblah)!" or "Turn phone right/left by X°" with directional navigation arrows.
+  - Device tilt warning (advising user to hold phone flat) and sensor accuracy badge with figure-8 calibration hint.
+- **12 International Prayer Calculation Methods & Auto-Detection**:
+  - Added `PrayerCalculationMethod` supporting 12 global calculation standards:
+    - Jordan (General Iftaa' Department - 18.0° / 18.0°)
+    - Umm al-Qura (Makkah, Saudi Arabia - 18.5° / 90 min)
+    - Egyptian General Authority of Survey (19.5° / 17.5°)
+    - Diyanet İşleri Başkanlığı (Turkey - 18.0° / 17.0°)
+    - University of Islamic Sciences (Karachi - 18.0° / 18.0°)
+    - Islamic Society of North America (ISNA - 15.0° / 15.0°)
+    - Muslim World League (MWL - 18.0° / 17.0°)
+    - Dubai UAE Islamic Affairs (18.2° / 18.2°)
+    - Kuwait Ministry of Awqaf (18.0° / 17.5°)
+    - Qatar Ministry of Awqaf (18.0° / 90 min)
+    - MUIS (Singapore / Malaysia / Indonesia - 20.0° / 18.0°)
+    - Institute of Geophysics (Tehran - 17.7° / 14.0°)
+  - Automatic detection based on device country code with manual override dialog.
+- **Salah Reminders & Overview Quick GPS Sync**:
+  - Created `PrayerReminderReceiver` and updated `AlarmScheduler` with `CHANNEL_PRAYER` notification channel and per-prayer alarm scheduling.
+  - Individual notification bell toggles for Fajr, Dhuhr, Asr, Maghrib, and Isha.
+  - Added GPS Location Sync button to the top bar of `OverviewScreen`, detecting user location on demand and presenting immediate feedback via `SnackbarHost`.
+
+---
+
 ## Version: Feature Expansion Phase 8 — Multi-Split Transactions, AI Financial Intelligence, Offline Islamic Finance & Persistent Budgets (October 2026)
 
 ### Highlights

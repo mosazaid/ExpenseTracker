@@ -61,6 +61,15 @@
                 <action android:name="com.example.expensetracker.ACTION_DAILY_ALARM" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".data.receiver.PrayerReminderReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="com.example.expensetracker.ACTION_PRAYER_ALARM" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

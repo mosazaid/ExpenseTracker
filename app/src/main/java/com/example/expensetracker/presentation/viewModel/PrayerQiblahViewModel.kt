@@ -9,6 +9,7 @@ import com.example.expensetracker.domain.CityLocation
 import com.example.expensetracker.domain.PrayerCalculationMethod
 import com.example.expensetracker.domain.PrayerSchedule
 import com.example.expensetracker.domain.PrayerTimesCalculator
+import com.example.expensetracker.util.AlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +44,8 @@ data class PrayerUiState(
 @HiltViewModel
 class PrayerQiblahViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val alarmScheduler: AlarmScheduler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PrayerUiState())
@@ -112,6 +114,7 @@ class PrayerQiblahViewModel @Inject constructor(
                 maghribAlertEnabled = maghrib,
                 ishaAlertEnabled = isha
             )
+            syncAllAlarms()
         }
     }
 
@@ -127,6 +130,7 @@ class PrayerQiblahViewModel @Inject constructor(
             gpsStatusMessage = null,
             schedule = newSchedule
         )
+        syncAllAlarms()
     }
 
     fun onGpsLocationDetected(lat: Double, lng: Double, cityName: String?, countryCode: String?) {
@@ -160,6 +164,7 @@ class PrayerQiblahViewModel @Inject constructor(
             detectedCountryCode = countryCode,
             schedule = newSchedule
         )
+        syncAllAlarms()
     }
 
     fun setCalculationMethod(method: PrayerCalculationMethod, isAuto: Boolean = false) {
@@ -181,6 +186,7 @@ class PrayerQiblahViewModel @Inject constructor(
                 isAutoMethod = isAuto,
                 schedule = newSchedule
             )
+            syncAllAlarms()
         }
     }
 
@@ -188,6 +194,7 @@ class PrayerQiblahViewModel @Inject constructor(
         viewModelScope.launch {
             userPreferences.setPrayerAlertsEnabled(enabled)
             _uiState.value = _uiState.value.copy(prayerAlertsEnabled = enabled)
+            syncAllAlarms()
         }
     }
 
@@ -202,6 +209,47 @@ class PrayerQiblahViewModel @Inject constructor(
                 "isha" -> _uiState.value.copy(ishaAlertEnabled = enabled)
                 else -> _uiState.value
             }
+
+            if (enabled && _uiState.value.prayerAlertsEnabled) {
+                val timeStr = when (prayerName.lowercase(java.util.Locale.US)) {
+                    "fajr" -> _uiState.value.schedule.fajr
+                    "dhuhr" -> _uiState.value.schedule.dhuhr
+                    "asr" -> _uiState.value.schedule.asr
+                    "maghrib" -> _uiState.value.schedule.maghrib
+                    "isha" -> _uiState.value.schedule.isha
+                    else -> ""
+                }
+                schedulePrayerAlarm(prayerName, timeStr)
+            } else {
+                alarmScheduler.cancelPrayerAlarm(prayerName)
+            }
         }
+    }
+
+    private fun schedulePrayerAlarm(prayerName: String, timeStr: String) {
+        try {
+            val parts = timeStr.split(":")
+            if (parts.size >= 2) {
+                val hour = parts[0].trim().toInt()
+                val minute = parts[1].trim().toInt()
+                alarmScheduler.schedulePrayerAlarm(prayerName, hour, minute)
+            }
+        } catch (_: Exception) {}
+    }
+
+    fun syncAllAlarms() {
+        val state = _uiState.value
+        if (!state.prayerAlertsEnabled) {
+            listOf("Fajr", "Dhuhr", "Asr", "Maghrib", "Isha").forEach {
+                alarmScheduler.cancelPrayerAlarm(it)
+            }
+            return
+        }
+
+        if (state.fajrAlertEnabled) schedulePrayerAlarm("Fajr", state.schedule.fajr) else alarmScheduler.cancelPrayerAlarm("Fajr")
+        if (state.dhuhrAlertEnabled) schedulePrayerAlarm("Dhuhr", state.schedule.dhuhr) else alarmScheduler.cancelPrayerAlarm("Dhuhr")
+        if (state.asrAlertEnabled) schedulePrayerAlarm("Asr", state.schedule.asr) else alarmScheduler.cancelPrayerAlarm("Asr")
+        if (state.maghribAlertEnabled) schedulePrayerAlarm("Maghrib", state.schedule.maghrib) else alarmScheduler.cancelPrayerAlarm("Maghrib")
+        if (state.ishaAlertEnabled) schedulePrayerAlarm("Isha", state.schedule.isha) else alarmScheduler.cancelPrayerAlarm("Isha")
     }
 }

@@ -8,7 +8,39 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 
 ---
 
-## What's New (Phase 0 – Phase 5 Releases)
+## What's New (Phase 9 Releases)
+
+### 1. Real-Time Sensor Qiblah Compass & Multi-Method Prayer Calculations
+- **Interactive Sensor-Driven Qiblah Compass (`PrayerQiblahScreen`)**:
+  - Leverages Android hardware sensors (`Sensor.TYPE_ROTATION_VECTOR` with accelerometer + magnetometer fallback) and exponential shortest-path circular smoothing for a real-time, jitter-free rotating compass dial.
+  - Aligns True North with physical North in real time as the device turns.
+  - Kaaba indicator needle points directly to Mecca with an elegant gold/emerald spearhead and Kaaba emblem.
+  - **Tactile Alignment & Glowing Feedback**: When the user rotates their phone within ±3.5° of Al-Kaaba, the dial illuminates with an animated emerald green halo (`#10B981`), provides turn guidance, and triggers a tactile haptic vibration.
+  - Interactive turn guidance ("Turn phone right/left by X°") and tilt warnings if the phone is held unevenly.
+- **12 Global Prayer Calculation Standards**:
+  - Offline solar calculation engine supporting: Jordan General Iftaa', Umm al-Qura (Makkah), Egyptian Survey Authority, Turkey Diyanet, Karachi, ISNA, Muslim World League (MWL), Dubai, Kuwait, Qatar, Singapore MUIS, and Tehran.
+  - Automatic country detection via device GPS with manual override dialog.
+- **Salah Reminders & Overview Quick GPS Sync**:
+  - Per-prayer notification bell toggles (Fajr, Dhuhr, Asr, Maghrib, Isha) scheduled via Android `AlarmScheduler` and `PrayerReminderReceiver`.
+  - Instant GPS Location Sync button in the top bar of `OverviewScreen` with real-time feedback via `SnackbarHost`.
+
+### 2. Statistics Subcategory Comparison & 3-Month Trends
+- **Interactive Subcategory Comparison Card (`SubcategoryComparisonCard`)**:
+  - Located on `StatisticsScreen` below the category pie chart.
+  - **This Period Breakdown**: Pick any category to inspect all its active subcategories with exact spent amounts, tabular figures, and proportional percentage progress bars.
+  - **Cross-Month Trend (3-Month Table)**: Side-by-side comparison across current month, previous month, and 2 months ago with visual Month-over-Month (MoM) delta percentages (+/- %).
+
+### 3. Split Subcategory Fixes & History Badges
+- **Accurate Subcategory Attribution**: Fixed issue where split expense items were attributed to "Others"; `subCategorySpendMap` now correctly maps each split item to its chosen subcategory.
+- **Rich Badges in History**: Split transactions in `HistoryScreen` now display individual subcategory badges with exact split amounts (e.g. `Grocery 5.00 JOD • Sweets 7.00 JOD`).
+
+### 4. Financial Insights & Cycle Anchor Fixes
+- **Wallet Reserved Funds**: Fixed `FinancialInsightsCard` adding wallet balances to expenses; wallet funds are now preserved as savings and subtracted from the baseline budget.
+- **Salary Cycle Period Boundary**: Fixed `PeriodCalculator` end-date truncation so active salary cycles accurately compute days remaining without showing false "1 day remaining" alerts.
+
+---
+
+## What's New (Phase 0 – Phase 8 Releases)
 
 ### 1. Complex Transactions & Splitting
 - **Transaction Splitting**: Split any single expense into multiple items across different subcategories or debtors (e.g. at a grocery store, allocate an amount to Chicken & Meat, an amount to Snacks & Sweets, and record a debt portion for a friend).
