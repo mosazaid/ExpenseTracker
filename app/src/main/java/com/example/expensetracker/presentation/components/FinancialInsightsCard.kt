@@ -57,7 +57,8 @@ fun FinancialInsightsCard(
     val analysis = remember(totalIncome, totalExpense, totalWallet, periodStartDate, periodEndDate, cycleLabel) {
         SpendingPacingCalculator.analyze(
             totalIncome = totalIncome,
-            totalExpense = totalExpense + totalWallet,
+            totalExpense = totalExpense,
+            walletReserved = totalWallet,
             periodStartDate = periodStartDate,
             periodEndDate = periodEndDate,
             cycleLabel = cycleLabel

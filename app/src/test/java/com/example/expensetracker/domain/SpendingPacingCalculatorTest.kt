@@ -72,4 +72,35 @@ class SpendingPacingCalculatorTest {
         assertNotNull(analysis)
         assertTrue(analysis.dailySpendRate > 0)
     }
+
+    @Test
+    fun testPacingAnalysis_WithWalletReserved() {
+        val cal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 2, 12, 0, 0)
+        }
+        val startCal = Calendar.getInstance().apply {
+            set(2026, Calendar.SEPTEMBER, 24, 0, 0, 0)
+        }
+        val endCal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 23, 23, 59, 59)
+        }
+
+        // Total income 1700, wallet 1160, bank+cash spendable = 540, expense = 150
+        val analysis = SpendingPacingCalculator.analyze(
+            totalIncome = 1700.0,
+            totalExpense = 150.0,
+            walletReserved = 1160.0,
+            currentDate = cal.time,
+            periodStartDate = startCal.time,
+            periodEndDate = endCal.time
+        )
+
+        assertEquals(540.0, analysis.baselineBudget, 0.001)
+        assertEquals(30, analysis.totalPeriodDays) // Sep 24 to Oct 23 is 30 days
+        assertEquals(9, analysis.dayOfPeriod)      // Day 9
+        assertEquals(21, analysis.daysRemaining)   // 21 days remaining
+        // remaining budget is 540 - 150 = 390. safe daily spend = 390 / 21 ≈ 18.57
+        assertEquals(390.0 / 21, analysis.safeDailySpendRemaining, 0.01)
+        assertTrue("Safe daily spend should be around 18.57, not hundreds", analysis.safeDailySpendRemaining < 30.0)
+    }
 }

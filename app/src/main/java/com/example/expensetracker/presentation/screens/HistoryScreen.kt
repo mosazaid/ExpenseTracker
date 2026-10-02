@@ -88,6 +88,7 @@ fun HistoryScreen(
     var periodUiState by remember { mutableStateOf(HistoryViewModel.PeriodUiState()) }
 
     val allTransactions by viewModel.allTransactions.collectAsState(initial = emptyList())
+    val splitsMap by viewModel.splitsMap.collectAsState()
 
     LaunchedEffect(selectedPeriod, monthMode) {
         periodBounds = viewModel.getPeriodBounds(selectedPeriod, monthMode, now)
@@ -144,31 +145,54 @@ fun HistoryScreen(
         }
     }
 
-    val subCategorySpendMap = remember(transactions, selectedCategoryFilter) {
+    val subCategorySpendMap = remember(transactions, selectedCategoryFilter, splitsMap) {
         val catId = selectedCategoryFilter?.id ?: return@remember emptyMap<String, Double>()
         val catExpenses = transactions.filter { it.categoryId == catId && it.type == TransactionType.EXPENSE }
-        val map = catExpenses
-            .filter { !it.subDescription.isNullOrBlank() && !it.subDescription.equals(HistoryGrouping.SUBCATEGORY_OTHER, ignoreCase = true) }
-            .groupBy { it.subDescription!!.trim().lowercase() }
-            .mapValues { (_, txns) -> txns.sumOf { it.amount } }
-            .toMutableMap()
-        val otherSum = catExpenses
-            .filter { it.subDescription.isNullOrBlank() || it.subDescription.equals(HistoryGrouping.SUBCATEGORY_OTHER, ignoreCase = true) }
-            .sumOf { it.amount }
+        val map = mutableMapOf<String, Double>()
+        var otherSum = 0.0
+
+        for (txn in catExpenses) {
+            val splits = splitsMap[txn.id].orEmpty()
+            if (splits.isNotEmpty()) {
+                for (split in splits) {
+                    val name = split.subCategoryName?.trim()
+                    if (!name.isNullOrBlank() && !name.equals(HistoryGrouping.SUBCATEGORY_OTHER, ignoreCase = true)) {
+                        val key = name.lowercase()
+                        map[key] = (map[key] ?: 0.0) + split.amount
+                    } else {
+                        otherSum += split.amount
+                    }
+                }
+            } else {
+                val subDesc = txn.subDescription?.trim()
+                if (!subDesc.isNullOrBlank() && !subDesc.equals(HistoryGrouping.SUBCATEGORY_OTHER, ignoreCase = true)) {
+                    val key = subDesc.lowercase()
+                    map[key] = (map[key] ?: 0.0) + txn.amount
+                } else {
+                    otherSum += txn.amount
+                }
+            }
+        }
         map[HistoryGrouping.SUBCATEGORY_OTHER.lowercase()] = otherSum
         map
     }
 
-    val filteredTransactions = remember(transactions, searchQuery, categoryMap) {
+    val filteredTransactions = remember(transactions, searchQuery, categoryMap, splitsMap) {
         if (searchQuery.isBlank()) {
             transactions
         } else {
             val q = searchQuery.trim().lowercase()
             transactions.filter { txn ->
+                val splits = splitsMap[txn.id].orEmpty()
                 txn.description.lowercase().contains(q) ||
                 (txn.subDescription?.lowercase()?.contains(q) == true) ||
                 (categoryMap[txn.categoryId]?.name?.lowercase()?.contains(q) == true) ||
-                txn.amount.toString().contains(q)
+                txn.amount.toString().contains(q) ||
+                splits.any {
+                    it.subCategoryName?.lowercase()?.contains(q) == true ||
+                    it.note?.lowercase()?.contains(q) == true ||
+                    it.debtPersonName?.lowercase()?.contains(q) == true
+                }
             }
         }
     }
@@ -183,7 +207,8 @@ fun HistoryScreen(
         periodBounds,
         reimbursedExpenseIds,
         monthMode,
-        salaryWalletYearSummary
+        salaryWalletYearSummary,
+        splitsMap
     ) {
         HistoryGrouping.group(
             transactions = filteredTransactions,
@@ -194,7 +219,8 @@ fun HistoryScreen(
             sortOrder = selectedSortOrder,
             reimbursedExpenseIds = reimbursedExpenseIds,
             monthMode = monthMode,
-            salaryPeriods = salaryWalletYearSummary
+            salaryPeriods = salaryWalletYearSummary,
+            splitsMap = splitsMap
         )
     }
 
@@ -710,7 +736,8 @@ fun HistoryScreen(
                             isOwed = txn.type == TransactionType.EXPENSE &&
                                 txn.awaitingReimbursement &&
                                 txn.id !in reimbursedExpenseIds,
-                            linkedExpenseDescription = linkedExpenseDescriptions[txn.id]
+                            linkedExpenseDescription = linkedExpenseDescriptions[txn.id],
+                            splits = splitsMap[txn.id].orEmpty()
                         )
                     }
                 }

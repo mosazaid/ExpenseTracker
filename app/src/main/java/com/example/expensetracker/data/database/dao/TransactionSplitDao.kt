@@ -21,6 +21,12 @@ interface TransactionSplitDao {
     @Query("SELECT * FROM transaction_splits WHERE isDebt = 1 AND isDebtSettled = 0")
     fun getUnsettledDebtSplits(): Flow<List<TransactionSplit>>
 
+    @Query("SELECT * FROM transaction_splits")
+    fun getAllSplitsFlow(): Flow<List<TransactionSplit>>
+
+    @Query("SELECT * FROM transaction_splits")
+    suspend fun getAllSplitsSnapshot(): List<TransactionSplit>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSplit(split: TransactionSplit): Long
 

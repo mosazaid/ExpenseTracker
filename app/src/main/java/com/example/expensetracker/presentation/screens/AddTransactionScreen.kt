@@ -877,11 +877,21 @@ fun AddTransactionScreen(
                         else "REPAYMENT"
                     } else uiState.debtType
 
+                    val splitSummary = if (uiState.isSplitMode) {
+                        uiState.splits.filter { (it.amount.toDoubleOrNull() ?: 0.0) > 0 }
+                            .joinToString(", ") { item ->
+                                val name = item.subCategoryName?.takeIf { it.isNotBlank() }
+                                    ?: item.note?.takeIf { it.isNotBlank() }
+                                    ?: "Other"
+                                "$name: ${item.amount}"
+                            }.takeIf { it.isNotBlank() }
+                    } else null
+
                     val transaction = Transaction(
                         id = uiState.editingTransactionId ?: 0L,
                         amount = amountDouble,
                         description = uiState.description,
-                        subDescription = if (uiState.isSplitMode) null else uiState.subDescription.takeIf { it.isNotBlank() },
+                        subDescription = if (uiState.isSplitMode) splitSummary else uiState.subDescription.takeIf { it.isNotBlank() },
                         categoryId = category.id,
                         type = uiState.transactionType,
                         accountType = uiState.accountType,

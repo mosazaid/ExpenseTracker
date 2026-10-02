@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.SwapHoriz
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.Transaction
+import com.example.expensetracker.data.database.entities.TransactionSplit
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.domain.CategorySystemKey
 import com.example.expensetracker.domain.matchesSystemKey
@@ -49,7 +50,8 @@ fun TransactionItem(
     onClick: (Transaction) -> Unit = onEdit,
     isReimbursed: Boolean = false,
     isOwed: Boolean = false,
-    linkedExpenseDescription: String? = null
+    linkedExpenseDescription: String? = null,
+    splits: List<TransactionSplit> = emptyList()
 ) {
     when (transaction.type) {
         TransactionType.TRANSFER -> TransferItem(transaction, onDelete, onEdit, onClick)
@@ -62,7 +64,8 @@ fun TransactionItem(
             onClick = onClick,
             isReimbursed = isReimbursed,
             isOwed = isOwed,
-            linkedExpenseDescription = linkedExpenseDescription
+            linkedExpenseDescription = linkedExpenseDescription,
+            splits = splits
         )
     }
 }
@@ -360,7 +363,8 @@ private fun StandardTransactionItem(
     onClick: (Transaction) -> Unit = onEdit,
     isReimbursed: Boolean,
     isOwed: Boolean,
-    linkedExpenseDescription: String?
+    linkedExpenseDescription: String?,
+    splits: List<TransactionSplit> = emptyList()
 ) {
     val amountColor = when {
         isOwed -> OwedAccent
@@ -522,23 +526,63 @@ private fun StandardTransactionItem(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val subDesc = transaction.subDescription?.takeIf { it.isNotBlank() }
-                    if (subDesc != null) {
-                        Surface(
-                            shape = MaterialTheme.shapes.extraSmall,
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    if (splits.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.weight(1f, fill = false),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = subDesc,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                            splits.take(2).forEach { split ->
+                                val label = (split.subCategoryName?.takeIf { it.isNotBlank() } ?: split.note?.takeIf { it.isNotBlank() } ?: "Item") +
+                                    " " + CurrencyUtils.formatCurrency(split.amount)
+                                Surface(
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                                ) {
+                                    Text(
+                                        text = label,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                            if (splits.size > 2) {
+                                Surface(
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                                ) {
+                                    Text(
+                                        text = "+${splits.size - 2}",
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
+                        Spacer(modifier = Modifier.width(6.dp))
                     } else {
-                        Spacer(modifier = Modifier.weight(1f))
+                        val subDesc = transaction.subDescription?.takeIf { it.isNotBlank() }
+                        if (subDesc != null) {
+                            Surface(
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            ) {
+                                Text(
+                                    text = subDesc,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -577,7 +621,8 @@ fun SwipeableTransactionItem(
     onClick: (Transaction) -> Unit = onEdit,
     isReimbursed: Boolean = false,
     isOwed: Boolean = false,
-    linkedExpenseDescription: String? = null
+    linkedExpenseDescription: String? = null,
+    splits: List<TransactionSplit> = emptyList()
 ) {
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val dismissState = rememberSwipeToDismissBoxState(
@@ -632,7 +677,8 @@ fun SwipeableTransactionItem(
             onClick = onClick,
             isReimbursed = isReimbursed,
             isOwed = isOwed,
-            linkedExpenseDescription = linkedExpenseDescription
+            linkedExpenseDescription = linkedExpenseDescription,
+            splits = splits
         )
     }
 }

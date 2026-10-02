@@ -67,4 +67,6 @@ interface ITransactionRepository {
     )
     suspend fun setDebtSplitSettled(splitId: Long, settled: Boolean)
     fun getUnsettledDebtSplitsFlow(): Flow<List<com.example.expensetracker.data.database.entities.TransactionSplit>>
+    fun getAllSplitsFlow(): Flow<List<com.example.expensetracker.data.database.entities.TransactionSplit>>
+    suspend fun getAllSplitsSnapshot(): List<com.example.expensetracker.data.database.entities.TransactionSplit>
 }

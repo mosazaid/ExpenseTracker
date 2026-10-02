@@ -38,6 +38,7 @@ object SpendingPacingCalculator {
     fun analyze(
         totalIncome: Double,
         totalExpense: Double,
+        walletReserved: Double = 0.0,
         currentDate: Date = Date(),
         periodStartDate: Date? = null,
         periodEndDate: Date? = null,
@@ -63,8 +64,9 @@ object SpendingPacingCalculator {
 
         val timeElapsedRatio = (dayOfPeriod.toFloat() / totalPeriodDays.toFloat()).coerceIn(0.01f, 1f)
 
-        // Baseline budget is total income, or fallback to sensible floor if income not yet entered
-        val baselineBudget = if (totalIncome > 0) totalIncome else (totalExpense * 1.15).coerceAtLeast(100.0)
+        // Baseline spendable budget is income minus wallet reserves, or fallback to sensible floor
+        val spendableBudget = max(0.0, totalIncome - walletReserved)
+        val baselineBudget = if (spendableBudget > 0) spendableBudget else if (totalIncome > 0) totalIncome else (totalExpense * 1.15).coerceAtLeast(100.0)
         val budgetConsumedRatio = if (baselineBudget > 0) (totalExpense / baselineBudget).toFloat() else 0f
         val velocityRatio = if (timeElapsedRatio > 0) (budgetConsumedRatio / timeElapsedRatio) else 1f
 

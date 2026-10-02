@@ -3,6 +3,7 @@ package com.example.expensetracker.presentation.screens
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
+import com.example.expensetracker.data.database.entities.TransactionSplit
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.SalaryWalletPeriodSummary
@@ -43,7 +44,8 @@ object HistoryGrouping {
         sortOrder: TransactionSortOrder = TransactionSortOrder.DESC,
         reimbursedExpenseIds: Set<Long> = emptySet(),
         monthMode: MonthMode = MonthMode.CALENDAR,
-        salaryPeriods: List<SalaryWalletPeriodSummary> = emptyList()
+        salaryPeriods: List<SalaryWalletPeriodSummary> = emptyList(),
+        splitsMap: Map<Long, List<TransactionSplit>> = emptyMap()
     ): List<HistorySection> {
         var filtered = when (typeFilter) {
             TransactionTypeFilter.ALL -> transactions
@@ -63,9 +65,23 @@ object HistoryGrouping {
 
         if (!subCategoryFilter.isNullOrBlank()) {
             filtered = if (subCategoryFilter.equals(SUBCATEGORY_OTHER, ignoreCase = true)) {
-                filtered.filter { it.subDescription.isNullOrBlank() || it.subDescription.equals(SUBCATEGORY_OTHER, ignoreCase = true) }
+                filtered.filter { txn ->
+                    val splits = splitsMap[txn.id].orEmpty()
+                    if (splits.isNotEmpty()) {
+                        splits.any { it.subCategoryName.isNullOrBlank() || it.subCategoryName.equals(SUBCATEGORY_OTHER, ignoreCase = true) }
+                    } else {
+                        txn.subDescription.isNullOrBlank() || txn.subDescription.equals(SUBCATEGORY_OTHER, ignoreCase = true)
+                    }
+                }
             } else {
-                filtered.filter { it.subDescription.equals(subCategoryFilter, ignoreCase = true) }
+                filtered.filter { txn ->
+                    val splits = splitsMap[txn.id].orEmpty()
+                    if (splits.isNotEmpty()) {
+                        splits.any { it.subCategoryName.equals(subCategoryFilter, ignoreCase = true) }
+                    } else {
+                        txn.subDescription.equals(subCategoryFilter, ignoreCase = true)
+                    }
+                }
             }
         }
 

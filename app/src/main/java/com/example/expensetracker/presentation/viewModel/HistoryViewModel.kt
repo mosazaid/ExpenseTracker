@@ -22,6 +22,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -42,6 +43,11 @@ class HistoryViewModel @Inject constructor(
 
     val allTransactions = transactionRepository.getAllTransactions()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val splitsMap: StateFlow<Map<Long, List<com.example.expensetracker.data.database.entities.TransactionSplit>>> =
+        transactionRepository.getAllSplitsFlow()
+            .map { splits -> splits.groupBy { it.transactionId } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     val allCategories = categoryRepository.getCategoriesSortedByUsage()
 

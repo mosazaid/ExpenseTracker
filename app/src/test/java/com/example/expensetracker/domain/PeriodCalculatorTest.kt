@@ -98,4 +98,52 @@ class PeriodCalculatorTest {
         assertEquals(DateUtils.getStartOfMonth(refDate), bounds.start)
         assertEquals(DateUtils.getEndOfMonth(refDate), bounds.end)
     }
+
+    @Test
+    fun testSalaryMonthBoundsProjectsFullCycleWhenNoNextAnchor() = runTest {
+        val salaryCategory = com.example.expensetracker.data.database.entities.Category(
+            id = 1L,
+            name = CategorySystemKey.SALARY.displayName,
+            icon = "💵",
+            color = "#4CAF50",
+            type = CategorySystemKey.SALARY.type
+        )
+        Mockito.`when`(categoryRepository.getCategoryByName(CategorySystemKey.SALARY.displayName, CategorySystemKey.SALARY.type))
+            .thenReturn(salaryCategory)
+
+        // Salary received on Sep 24
+        val anchorCal = Calendar.getInstance().apply {
+            set(2026, Calendar.SEPTEMBER, 24, 9, 0, 0)
+        }
+        val anchorTxn = com.example.expensetracker.data.database.entities.Transaction(
+            id = 10L,
+            amount = 1700.0,
+            description = "Monthly Salary",
+            categoryId = salaryCategory.id,
+            type = com.example.expensetracker.data.database.entities.TransactionType.INCOME,
+            accountType = com.example.expensetracker.data.database.entities.AccountType.BANK,
+            date = anchorCal.time,
+            startsNewPeriod = true
+        )
+        Mockito.`when`(transactionRepository.getSalaryPeriodAnchors(salaryCategory.id))
+            .thenReturn(listOf(anchorTxn))
+
+        // Reference date is Oct 2 (8 days later)
+        val refCal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 2, 14, 0, 0)
+        }
+        val bounds = periodCalculator.getBounds(HistoryPeriod.MONTH, refCal.time, MonthMode.SALARY)
+
+        assertFalse(bounds.isSalaryFallback)
+        assertEquals(DateUtils.getStartOfDay(anchorCal.time), bounds.start)
+
+        // Expected end: 1 month after Sep 24 minus 1 day -> Oct 23 23:59:59
+        val expectedEndCal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 23, 23, 59, 59)
+            set(Calendar.MILLISECOND, 999)
+        }
+        val actualEndCal = Calendar.getInstance().apply { time = bounds.end }
+        assertEquals(Calendar.OCTOBER, actualEndCal.get(Calendar.MONTH))
+        assertEquals(23, actualEndCal.get(Calendar.DAY_OF_MONTH))
+    }
 }

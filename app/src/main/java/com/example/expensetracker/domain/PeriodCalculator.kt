@@ -149,10 +149,15 @@ class PeriodCalculator @Inject constructor(
         val naturalEnd = if (nextAnchor != null) {
             dayBefore(nextAnchor.date)
         } else {
-            referenceEnd
+            val cal = Calendar.getInstance().apply {
+                time = periodStart
+                add(Calendar.MONTH, 1)
+                add(Calendar.DAY_OF_MONTH, -1)
+            }
+            DateUtils.getEndOfDay(cal.time)
         }
 
-        val periodEnd = if (naturalEnd.after(referenceEnd)) referenceEnd else naturalEnd
+        val periodEnd = naturalEnd
 
         return PeriodBounds(
             start = periodStart,

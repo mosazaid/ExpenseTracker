@@ -254,6 +254,14 @@ class TransactionRepositoryImpl @Inject constructor(
     override fun getUnsettledDebtSplitsFlow(): Flow<List<TransactionSplit>> {
         return transactionSplitDao?.getUnsettledDebtSplits() ?: flowOf(emptyList())
     }
+
+    override fun getAllSplitsFlow(): Flow<List<TransactionSplit>> {
+        return transactionSplitDao?.getAllSplitsFlow() ?: flowOf(emptyList())
+    }
+
+    override suspend fun getAllSplitsSnapshot(): List<TransactionSplit> {
+        return transactionSplitDao?.getAllSplitsSnapshot() ?: emptyList()
+    }
 }
 
 typealias TransactionRepository = TransactionRepositoryImpl
