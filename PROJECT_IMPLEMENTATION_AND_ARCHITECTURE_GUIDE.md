@@ -267,28 +267,40 @@ Single calculator pass (`BalanceCalculator.buildMonthFinancialSummary`):
 
 ## 4. Database and Migration State
 
-**Current version: 11**
+**Current Room Database Version: 17**
 
 | Migration | Summary |
 |-----------|---------|
-| 1→2 | Transfer/salary anchor columns, categories |
+| 1→2 | Transfer/salary anchor columns, initial categories |
 | 2→3, 3→4 | Salary anchor corrections |
 | 4→5 | Reimbursement columns; budget period schema |
-| 5→6 | `awaitingReimbursement` |
-| 6→7 | All transactions → `BANK` account |
+| 5→6 | `awaitingReimbursement` flag |
+| 6→7 | Default account migration to `BANK` |
 | 7→8 | Additional default expense categories |
-| 8→9 | `carriedForwardBalance` |
-| 9→10 | `subDescription` |
-| 10→11 | `SubCategory` table + `subCategoryId` column on `Transaction` + category consolidations |
+| 8→9 | `carriedForwardBalance` support |
+| 9→10 | `subDescription` item details |
+| 10→11 | `SubCategory` table + `subCategoryId` column on `Transaction` |
+| 11→12 | `debt_records` & `configured_loans` tables with `MonthlyLoanPayment` |
+| 12→13 | `app_alerts` persistent notification center schema |
+| 13→14 | `receipt_uri` column on `Transaction` for image attachments |
+| 14→15 | `isDebtSettled` & `settledAt` on `Transaction` for debt management |
+| 15→16 | Expanded shopping subcategories: `Chicken & Meat` and `Snacks & Sweets` |
+| 16→17 | `transaction_splits` table with foreign key cascade deletion for multi-item split transactions |
 
-### Transaction entity (key fields)
+### Core Entities & Key Fields
 
-```
-id, amount, description, subDescription, date, type, categoryId, subCategoryId,
-accountType, toAccountType, startsNewPeriod, carriedForwardBalance,
-allowNegativeBalance, linkedExpenseId, debtorNote, awaitingReimbursement,
-createdAt, updatedAt
-```
+- **`Transaction` (`transactions`)**:
+  `id, amount, description, subDescription, date, type, categoryId, subCategoryId, accountType, toAccountType, startsNewPeriod, carriedForwardBalance, allowNegativeBalance, linkedExpenseId, debtorNote, awaitingReimbursement, isDebtSettled, settledAt, receiptUri, createdAt, updatedAt`
+- **`TransactionSplit` (`transaction_splits`)**:
+  `id, transactionId (FK), subCategoryId, amount, description, debtorName, debtType, createdAt`
+- **`SubCategory` (`sub_categories`)**:
+  `id, categoryId (FK), nameEn, nameAr, isDefault`
+- **`ConfiguredLoan` (`configured_loans`)**:
+  `id, loanName, lenderName, totalPrincipal, monthlyInstallment, remainingAmount, dueDayOfMonth, startDate, endDate, isActive`
+- **`MonthlyLoanPayment` (`monthly_loan_payments`)**:
+  `id, loanId (FK), periodYearMonth, paymentAmount, isPaid, paidDate, transactionId`
+- **`AppAlert` (`app_alerts`)**:
+  `id, alertType, title, message, categoryId, thresholdPercentage, isDismissed, createdAt`
 
 ---
 
@@ -333,24 +345,248 @@ Import template uses `CsvExporter.exportPlainCsv()` → plain `.csv`.
 
 ---
 
-## 6. Architecture Evaluation & Recommendations
+---
 
-### 6.1 Architectural Strengths
-1. **Separation of Concerns**: Domain calculators (`PeriodCalculator`, `BalanceCalculator`, `WalletCalculator`, `BudgetProgressCalculator`) encapsulate complex date and balance business rules independently of UI code.
-2. **Single Source of Truth**: Balance calculations in `BalanceCalculator.buildMonthFinancialSummary` derive income, expenses, transfer impact, and available balances in a single pass over identical transaction snapshots, preventing display desynchronization.
-3. **Reactive UI State**: Extensive use of Kotlin `StateFlow` and Compose `produceState`/`collectAsState` ensures that database mutations automatically update UI components without manual polling.
-4. **Hardware-Accelerated Custom Visualizations**: `ThreeMonthMultiChart` and `CategoryPieChart` use native Jetpack Compose `Canvas` drawing with cubic Bézier curves, gradient brushes, and arc trigonometry instead of heavy external dependencies.
+## 6. Deep Dive: Every Calculation Method & Mathematical Algorithm
 
-### 6.2 Recommended Enhancements
-1. **Extract Domain UseCases**:
-   - Currently, ViewModels call Repositories and Calculators directly.
-   - *Recommendation*: Introduce domain UseCases (e.g. `GetSortedCategoriesUseCase`, `GetThreeMonthStatsUseCase`, `CalculateMonthSummaryUseCase`) using `operator fun invoke()` to reduce ViewModel size and improve reusability.
-2. **Standardize UI State Representation**:
-   - Some screens use multiple discrete `mutableStateOf` variables.
-   - *Recommendation*: Consolidate screen states into immutable data classes (MVI-style `ScreenUiState`) with sealed interfaces for one-shot UI events.
-3. **Module Splitting (Feature Modularization)**:
-   - The app is currently a single `:app` module.
-   - *Recommendation*: In future phases, split into `:core`, `:domain`, `:data`, and `:feature:*` modules to enforce Clean Architecture boundaries at compile time and improve build speeds.
+This section outlines the exact mathematical formulas, astronomical models, and financial equations implemented across the domain layer.
+
+### 6.1 Astronomical Solar Position & Prayer Calculation Engine (`PrayerTimesCalculator.kt`, `PrayerCalculationMethod.kt`)
+
+The prayer calculation engine is an offline, autonomous astronomical calculator based on the **Jean Meeus / NOAA standard solar position models**:
+
+1. **Julian Date ($JD$) Computation**:
+   $$JD = 367 \cdot Y - \left\lfloor \frac{7 \cdot \left(Y + \left\lfloor \frac{M + 9}{12} \right\rfloor\right)}{4} \right\rfloor + \left\lfloor \frac{275 \cdot M}{9} \right\rfloor + D + 1721013.5$$
+   Where $Y$, $M$, $D$ represent the Gregorian year, month, and day.
+
+2. **Solar Coordinate Calculations**:
+   - Elapsed Julian centuries since J2000.0: $T = \frac{JD - 2451545.0}{36525.0}$
+   - Solar Mean Anomaly: $g = 357.529^\circ + 0.98560028^\circ \cdot d$
+   - Solar Mean Longitude: $q = 280.459^\circ + 0.98564736^\circ \cdot d$
+   - Apparent Ecliptic Longitude: $l = q + 1.915^\circ \sin(g) + 0.020^\circ \sin(2g)$
+   - Obliquity of the Ecliptic: $e = 23.439^\circ - 0.00000036^\circ \cdot d$
+   - Solar Declination ($\delta$): $\sin(\delta) = \sin(e) \cdot \sin(l)$
+   - Right Ascension ($RA$): $\tan(RA) = \frac{\cos(e) \cdot \sin(l)}{\cos(l)}$
+   - Equation of Time ($EqT$ in hours): $EqT = \frac{q}{15^\circ} - \frac{RA}{15^\circ}$
+
+3. **Solar Noon (Midday / Dhuhr)**:
+   $$\text{Solar Noon} = 12.0 - EqT - \frac{\text{Longitude}}{15^\circ} + \text{TimezoneOffsetHours}$$
+   Dhuhr occurs when the sun crosses the local meridian (solar noon).
+
+4. **Hour Angle ($\omega$ or $HA$) Formula**:
+   $$\cos(HA) = \frac{\sin(\alpha) - \sin(\text{Latitude}) \cdot \sin(\delta)}{\cos(\text{Latitude}) \cdot \cos(\delta)}$$
+   Where $\alpha$ is the sun's altitude angle relative to the celestial horizon.
+
+5. **Sunrise & Sunset Elevation Horizon Dip Correction**:
+   Standard solar disc semi-diameter + atmospheric refraction is $-0.8333^\circ$.
+   For an observer at elevation $h$ (meters above sea level), the apparent horizon dips according to:
+   $$\text{Dip} = 0.0347^\circ \cdot \sqrt{h}$$
+   $$\alpha_{\text{rise/set}} = - (0.8333^\circ + \text{Dip})$$
+   *Example: For Amman ($h \approx 780\text{m}$), $\text{Dip} \approx 0.97^\circ$, giving $\alpha \approx -1.80^\circ$, precisely matching official Ministry of Awqaf & TimesPrayer Jordan timings.*
+
+6. **Asr Shadow Ratio (Shafi'i / Standard)**:
+   The sun's altitude for Asr occurs when an object's shadow equals its height plus the shadow at noon:
+   $$\text{Noon Shadow} = \tan|\text{Latitude} - \delta|$$
+   $$\alpha_{\text{Asr}} = \operatorname{arccot}(1.0 + \text{Noon Shadow})$$
+
+7. **Iterative Two-Pass Precision**:
+   Because declination $\delta$ and Equation of Time $EqT$ continuously change throughout the day, the engine performs a two-pass calculation:
+   - *Pass 1*: Initial time estimate using solar noon coordinates.
+   - *Pass 2*: Recomputes exact solar coordinates ($\delta, EqT$) at the exact calculated instant of Fajr, Sunrise, Asr, Maghrib, and Isha.
+
+8. **12 Global Juridical Standards (`PrayerCalculationMethod`)**:
+   | Method | Fajr Twilight Angle ($\alpha_f$) | Isha Rule |
+   |--------|----------------------------------|-----------|
+   | **Jordan (Iftaa')** | $18.0^\circ$ | $18.0^\circ$ |
+   | **Umm al-Qura (Makkah)** | $18.5^\circ$ | Fixed 90 min after Maghrib (120 in Ramadan) |
+   | **Egyptian Survey Authority** | $19.5^\circ$ | $17.5^\circ$ |
+   | **Turkey (Diyanet)** | $18.0^\circ$ | $17.0^\circ$ |
+   | **Karachi (Univ. Islamic Sciences)** | $18.0^\circ$ | $18.0^\circ$ |
+   | **ISNA (North America)** | $15.0^\circ$ | $15.0^\circ$ |
+   | **Muslim World League (MWL)** | $18.0^\circ$ | $17.0^\circ$ |
+   | **Dubai (UAE Islamic Affairs)** | $18.2^\circ$ | $18.2^\circ$ |
+   | **Kuwait (Awqaf)** | $18.0^\circ$ | $17.5^\circ$ |
+   | **Qatar (Awqaf)** | $18.0^\circ$ | Fixed 90 min after Maghrib |
+   | **MUIS / JAKIM (Southeast Asia)** | $20.0^\circ$ | $18.0^\circ$ |
+   | **Tehran (Geophysics)** | $17.7^\circ$ | $14.0^\circ$ |
+
+---
+
+### 6.2 Great-Circle Qiblah Bearing & Sensor Fusion (`CompassSensorManager.kt`)
+
+1. **Spherical Trigonometry Forward Azimuth (Qiblah Bearing)**:
+   Calculates the initial great-circle bearing from observer coordinates $(\phi_1, \lambda_1)$ to the Holy Kaaba in Makkah $(\phi_2 = 21.4225^\circ\text{ N}, \lambda_2 = 39.8262^\circ\text{ E})$:
+   $$\Delta\lambda = \lambda_2 - \lambda_1$$
+   $$\theta = \operatorname{atan2}\left(\sin(\Delta\lambda), \; \cos(\phi_1)\tan(\phi_2) - \sin(\phi_1)\cos(\Delta\lambda)\right)$$
+   $$\text{Bearing}_{\text{Qiblah}} = (\theta \cdot \frac{180^\circ}{\pi} + 360^\circ) \pmod{360^\circ}$$
+
+2. **Hardware Sensor Fusion & Fallback**:
+   - **Primary**: Android `Sensor.TYPE_ROTATION_VECTOR` — hardware quaternion fusion of gyroscope, accelerometer, and magnetometer.
+   - **Fallback**: Dual sensor array (`Sensor.TYPE_ACCELEROMETER` + `Sensor.TYPE_MAGNETIC_FIELD`) passed to `SensorManager.getRotationMatrix` and `SensorManager.getOrientation`.
+
+3. **Shortest-Path Circular Low-Pass Exponential Smoothing**:
+   Prevents dial jitter and handles the $0^\circ \leftrightarrow 360^\circ$ boundary seamlessly:
+   $$\Delta = ((\text{TargetAzimuth} - \text{CurrentAzimuth} + 540^\circ) \pmod{360^\circ}) - 180^\circ$$
+   $$\text{Azimuth}_{\text{Smoothed}} = (\text{CurrentAzimuth} + \alpha \cdot \Delta + 360^\circ) \pmod{360^\circ}$$
+   With smoothing coefficient $\alpha = 0.15$.
+
+4. **Kaaba Target Needle & Haptic Trigger**:
+   - Needle angle on screen: $\theta_{\text{needle}} = (\text{Bearing}_{\text{Qiblah}} - \text{Azimuth}_{\text{device}} + 360^\circ) \pmod{360^\circ}$.
+   - Tactile feedback + glowing emerald halo activates when $|\theta_{\text{needle}}| \le 3.5^\circ$ or $\ge 356.5^\circ$.
+
+---
+
+### 6.3 Financial Spending Pacing & Velocity Engine (`SpendingPacingCalculator.kt`)
+
+The financial intelligence engine computes real-time pacing metrics relative to the active budget period:
+
+1. **Active Period Boundaries**:
+   - **Calendar Month**: From 1st day to last day of current month.
+   - **Salary Month**: Starts on latest salary transaction date ($D_{\text{start}}$). Natural end date ($D_{\text{end}}$) is $D_{\text{start}} + 1\text{ month} - 1\text{ day}$, preventing premature cycle end when no next salary is recorded yet.
+
+2. **Baseline Budget Formulation**:
+   Preserves pocket-money / wallet reserves as untouchable savings:
+   $$\text{BaselineBudget} = \max(0.0, \; \text{TotalIncome} - \text{WalletReserved})$$
+
+3. **Temporal & Budget Progress Ratios**:
+   $$\text{TimeElapsedRatio} = \frac{\text{DayOfPeriod}}{\text{TotalPeriodDays}}$$
+   $$\text{BudgetConsumedRatio} = \frac{\text{TotalExpense}}{\text{BaselineBudget}}$$
+
+4. **Spending Velocity Ratio ($V$)**:
+   $$V = \frac{\text{BudgetConsumedRatio}}{\text{TimeElapsedRatio}}$$
+   - $V < 0.70$: Super Saver (under-spending).
+   - $0.70 \le V \le 1.05$: Optimal / On Track.
+   - $1.05 < V \le 1.30$: Moderate Burn.
+   - $V > 1.30$: High Velocity Warning.
+
+5. **Safe Daily Spend Remaining**:
+   $$\text{SafeDailySpend} = \max\left(0.0, \; \frac{\text{BaselineBudget} - \text{TotalExpense}}{\text{DaysRemaining}}\right)$$
+
+6. **Projected Period Outcome**:
+   $$\text{DailySpendRate} = \frac{\text{TotalExpense}}{\text{DayOfPeriod}}$$
+   $$\text{ProjectedTotalSpend} = \text{DailySpendRate} \cdot \text{TotalPeriodDays}$$
+   $$\text{ProjectedDifference} = \text{BaselineBudget} - \text{ProjectedTotalSpend}$$
+   Positive values indicate projected surplus; negative indicates projected deficit.
+
+7. **Early-Cycle Damping Mechanism**:
+   During the first 3 days of a cycle ($\text{DayOfPeriod} \le 3$), normal upfront expenses (groceries, bills) naturally cause a temporary velocity spike. The engine activates **Early Cycle Damping**, softening deficit alerts until sufficient daily spending data accumulates.
+
+---
+
+### 6.4 Gamified Financial Health Score Engine (`FinancialHealthScoreCard.kt`)
+
+Computes a composite financial health score from $0$ to $100$:
+$$\text{Score} = (40 \cdot S_{\text{savings}}) + (35 \cdot S_{\text{budget}}) + (25 \cdot S_{\text{debt}})$$
+
+Where:
+- **Savings Component ($S_{\text{savings}} \in [0, 1]$)**:
+  $$S_{\text{savings}} = \left(\frac{\text{TotalIncome} - \text{TotalExpense}}{\text{TotalIncome}}\right) \cdot \frac{1}{0.30}$$
+  (Scores $1.0$ when saving 30% or more of income).
+- **Budget Adherence Component ($S_{\text{budget}} \in [0, 1]$)**:
+  Percentage of active category budgets currently under 100% capacity.
+- **Debt & Loan Component ($S_{\text{debt}} \in [0, 1]$)**:
+  Deducts 25 points for every overdue or unpaid loan installment in the current period.
+
+---
+
+### 6.5 Zakah Calculation Engine (`ZakahCalculator.kt`)
+
+1. **Nisab Threshold**:
+   Value equivalent to **85 grams of 24k gold**:
+   $$\text{Nisab} = 85.0 \cdot \text{GoldPricePerGram}$$
+
+2. **Net Zakat-Eligible Wealth ($W_{\text{net}}$)**:
+   $$W_{\text{net}} = (\text{Cash} + \text{Bank} + \text{BusinessGoods} + \text{GoldSilverInvestments}) - \text{ImmediateLiabilities}$$
+
+3. **Zakah Obligation**:
+   $$\text{ZakahDue} = \begin{cases} 0.0 & \text{if } W_{\text{net}} < \text{Nisab} \\ W_{\text{net}} \cdot 0.025 & \text{if } W_{\text{net}} \ge \text{Nisab} \text{ and Hawl (1 lunar year) is met} \end{cases}$$
+
+---
+
+### 6.6 Multi-Account Balance State Machine (`BalanceCalculator.kt`)
+
+1. **Liquid Balances**:
+   $$\text{CashBalance} = \text{CashOpening} + \sum \text{CashIncome} - \sum \text{CashExpense} \pm \Delta\text{Transfers} \pm \Delta\text{WalletMoves}$$
+   $$\text{BankBalance} = \text{BankOpening} + \sum \text{BankIncome} - \sum \text{BankExpense} \mp \Delta\text{Transfers} \mp \Delta\text{WalletMoves}$$
+   $$\text{TotalAvailable} = \text{CashBalance} + \text{BankBalance}$$
+
+2. **Transfer Neutrality Invariant**:
+   For any transfer between Cash and Bank:
+   $$\Delta\text{Cash} + \Delta\text{Bank} = 0$$
+   Transfers never affect net income, net expense, or period savings.
+
+---
+
+### 6.7 Multi-Item Split Transactions & Debtor Attribution (`TransactionSplit`)
+
+Room DB version 17 introduces parent-child transactional decomposition:
+$$\text{TotalTransactionAmount} = \sum_{i=1}^{N} \text{SplitAmount}_i$$
+- When calculating subcategory totals (`subCategorySpendMap`), the engine inspects each split item. If a transaction has splits, its base amount is bypassed and individual split amounts are credited to their respective `subCategoryId`.
+- Split lines with `debtType = LENT` allocate debt balances to `debtorName`, preventing lent amounts from polluting personal expense categories.
+
+---
+
+## 7. Deep Dive: Every Architecture & Framework Pattern Used
+
+### 7.1 Presentation Layer: Jetpack Compose + MVVM
+- **Declarative Reactive UI**: Single unidirectional data flow (UDF). Screens observe immutable `StateFlow<UiState>` emitted by ViewModels.
+- **Material 3 Design System**: Theme with dynamic color scheme, dark/light surface containers, and tailored typographic scales.
+- **Hardware-Accelerated Canvas Visualizations**: `ThreeMonthMultiChart`, `CategoryPieChart`, and the Qiblah Compass dial use custom Jetpack Compose `Canvas` with native Bézier spline paths and touch-coordinate geometry.
+
+### 7.2 Type-Safe Navigation Compose (Navigation 2.8.8)
+- Eliminates string-based URL routes. Routes are modeled as Kotlin `@Serializable` objects and data classes:
+  ```kotlin
+  @Serializable object Overview
+  @Serializable object History
+  @Serializable data class AddTransaction(val transactionId: Long? = null, val recurringId: Long? = null)
+  ```
+- Compile-time argument type validation via `toRoute<T>()`.
+
+### 7.3 Dependency Injection Architecture (Google Hilt)
+- **Application Level**: `@HiltAndroidApp` initializes singletons and lifecycle containers.
+- **ViewModels**: Injected via `@HiltViewModel` and `@Inject constructor`.
+- **Module Provision**:
+  - `DatabaseModule`: Singleton `AppDatabase`, DAOs.
+  - `LocationModule`: `LocationHelper` with `@ApplicationContext`.
+  - `SchedulerModule`: `AlarmScheduler` for exact alarms.
+
+### 7.4 Offline-First Persistence Layer (Room DB v17)
+- **Entities & Tables**: Normalized relational tables with SQLite indexes.
+- **Foreign Key Cascade Deletion**: Deleting a parent `Transaction` automatically deletes all associated `TransactionSplit` records via SQLite foreign keys (`onDelete = ForeignKey.CASCADE`).
+- **Reactive Queries**: DAOs expose Kotlin `Flow<List<T>>` for automatic UI updates when underlying tables mutate.
+- **Lightweight Preferences**: AndroidX DataStore for user preferences (time format, biometric lock, selected prayer method).
+
+### 7.5 Dual-Engine Background Scheduling Architecture
+- **Primary: Android `AlarmManager`**:
+  Uses `setExactAndAllowWhileIdle()` to wake the device at the exact scheduled time for:
+  - 9:00 PM Daily Expense Reminders (`DailyExpenseReminderReceiver`)
+  - 5 Daily Prayer Reminders (`PrayerReminderReceiver`)
+- **Fallback: Android `WorkManager`**:
+  `DailyExpenseReminderWorker` and `LoanReminderWorker` scheduled with battery-friendly constraints to guarantee execution even if OEM power managers delay exact alarms.
+
+### 7.6 Centralized Runtime Permissions & Rationale Architecture
+- `PermissionHelper` unifies runtime permission requests (`CAMERA`, `ACCESS_FINE_LOCATION`, `POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`).
+- Distinguishes initial request vs rationale vs permanent denial (directing users to system app settings via `ACTION_APPLICATION_DETAILS_SETTINGS`).
+
+### 7.7 Hardware-Backed Biometric Security Architecture
+- `BiometricAuthManager` using AndroidX `BiometricPrompt` supporting `BIOMETRIC_STRONG` and `DEVICE_CREDENTIAL`.
+- `BiometricGate` Compose wrapper:
+  - Automatically re-locks on `Lifecycle.Event.ON_STOP` when app enters background.
+  - Sets `FLAG_SECURE` to block system screenshots and task-switcher previews while locked.
+
+---
+
+## 8. Architecture Evaluation & Recommendations
+
+### 8.1 Architectural Strengths
+1. **Separation of Concerns**: Domain calculators (`PeriodCalculator`, `BalanceCalculator`, `WalletCalculator`, `BudgetProgressCalculator`, `PrayerTimesCalculator`, `SpendingPacingCalculator`) encapsulate complex mathematical, astronomical, and business rules with zero Android UI dependencies.
+2. **Single Source of Truth**: Balance calculations derive income, expenses, transfer impact, and available balances in a single pass over Room entity snapshots, eliminating desynchronization.
+3. **Reactive UI State**: Extensive use of Kotlin `StateFlow` and Compose `produceState`/`collectAsState` ensures database mutations trigger atomic, flicker-free UI updates.
+4. **Hardware-Accelerated Custom Visualizations**: Native Compose `Canvas` drawing with Bézier splines, gradient brushes, and arc trigonometry avoids bulky external charting libraries.
+
+### 8.2 Recommended Future Enhancements
+1. **Extract Domain UseCases**: Introduce domain UseCase classes (`operator fun invoke()`) to streamline ViewModel responsibilities as feature complexity expands.
+2. **Feature Modularization**: Split the single `:app` module into `:core:model`, `:core:database`, `:core:astronomy`, and `:feature:*` modules for isolated compile units.
 
 ---
 

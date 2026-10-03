@@ -218,6 +218,67 @@ Secondary & Push Destinations:
 
 ---
 
+## Detailed Calculation Methods & Mathematical Formulas
+
+### 1. Astronomical Prayer Times Engine (`PrayerTimesCalculator.kt`)
+- **Astronomical Model**: Uses Jean Meeus / NOAA standard solar position equations with Julian Day ($JD$) tracking.
+- **Solar Coordinates**: Calculates Solar Mean Anomaly $g$, Mean Longitude $q$, Ecliptic Longitude $l$, Obliquity $e$, Declination $\delta$, and Equation of Time $EqT$.
+- **Solar Noon (Dhuhr)**: $\text{Noon} = 12.0 - EqT - (\text{Longitude}/15.0) + \text{TimezoneOffset}$.
+- **Hour Angle ($\cos HA$)**: $\cos(HA) = \frac{\sin(\alpha) - \sin(\text{lat})\sin(\delta)}{\cos(\text{lat})\cos(\delta)}$.
+- **Elevation Horizon Dip**: $\text{Dip} = 0.0347^\circ \cdot \sqrt{\text{elevation}_{\text{meters}}}$ (accounting for elevation above sea level, e.g. Amman at 780m, Jerusalem at 750m).
+- **Asr Shadow Altitude**: $\alpha_{\text{Asr}} = \operatorname{arccot}(1.0 + \tan|\text{lat} - \delta|)$.
+- **Iterative Refinement**: Performs 2-pass recalculation of solar declination and $EqT$ at the exact calculated prayer moments.
+- **12 Global Juridical Standards**: Auto-detected via GPS country code or selectable manually:
+  - Jordan General Iftaa' ($18.0^\circ / 18.0^\circ$)
+  - Umm al-Qura, Saudi Arabia ($18.5^\circ$ / 90 min)
+  - Egyptian General Authority of Survey ($19.5^\circ / 17.5^\circ$)
+  - Turkey Diyanet ($18.0^\circ / 17.0^\circ$)
+  - Karachi ($18.0^\circ / 18.0^\circ$)
+  - ISNA North America ($15.0^\circ / 15.0^\circ$)
+  - Muslim World League ($18.0^\circ / 17.0^\circ$)
+  - Dubai UAE ($18.2^\circ / 18.2^\circ$)
+  - Kuwait Awqaf ($18.0^\circ / 17.5^\circ$)
+  - Qatar Awqaf ($18.0^\circ$ / 90 min)
+  - MUIS / JAKIM Southeast Asia ($20.0^\circ / 18.0^\circ$)
+  - Tehran Geophysics ($17.7^\circ / 14.0^\circ$)
+
+### 2. Great-Circle Qiblah Direction & Compass Sensor Fusion (`CompassSensorManager.kt`)
+- **Spherical Trigonometry Forward Azimuth**:
+  $\theta = \operatorname{atan2}\left(\sin(\Delta\lambda), \; \cos(\phi_1)\tan(\phi_2) - \sin(\phi_1)\cos(\Delta\lambda)\right)$
+  Computed toward the Holy Kaaba in Makkah ($21.4225^\circ\text{ N}, 39.8262^\circ\text{ E}$).
+- **Sensor Fusion**: Hardware `Sensor.TYPE_ROTATION_VECTOR` with fallback to `ACCELEROMETER` + `MAGNETIC_FIELD`.
+- **Jitter-Free Exponential Smoothing**: Shortest-path circular low-pass filter ($\alpha = 0.15$) preventing dial jumping across the $0^\circ/360^\circ$ boundary.
+- **Alignment Feedback**: Tactile haptic vibration and animated glowing emerald halo trigger within $\pm 3.5^\circ$ of Mecca.
+
+### 3. Financial Spending Pacing & Velocity (`SpendingPacingCalculator.kt`)
+- **Baseline Budget**: $\text{Baseline} = \max(0.0, \; \text{TotalIncome} - \text{WalletReserved})$.
+- **Velocity Ratio**: $V = \frac{\text{BudgetConsumedRatio}}{\text{TimeElapsedRatio}}$ (where $V \le 1.05$ is optimal, and $V > 1.30$ triggers warning).
+- **Safe Daily Spend**: $\text{SafeDailySpend} = \max\left(0.0, \; \frac{\text{Baseline} - \text{TotalExpense}}{\text{DaysRemaining}}\right)$.
+- **Projected Period Outcome**: $\text{Projected} = \text{Baseline} - (\text{DailySpendRate} \cdot \text{TotalPeriodDays})$ (positive = surplus, negative = deficit).
+- **Early Cycle Damping**: Softens alerts during first 3 days of period to accommodate upfront monthly bills.
+
+### 4. Gamified Financial Health Score (`FinancialHealthScoreCard.kt`)
+- Composite 0–100 index evaluated across 3 key vectors:
+  $\text{Score} = (40\% \cdot \text{SavingsRatio}) + (35\% \cdot \text{BudgetAdherence}) + (25\% \cdot \text{DebtLoanHealth})$.
+
+### 5. Zakah Obligation Engine (`ZakahCalculator.kt`)
+- Evaluates net liquid assets against **85 grams of 24k gold Nisab**.
+- Implements 1 lunar year Hawl qualification and exact $2.5\%$ ($1/40$) obligation.
+
+---
+
+## Architecture Blueprints & Tech Stack
+
+- **UI / Presentation Layer**: Jetpack Compose, Material 3, Clean MVVM, Kotlin Coroutines, and `StateFlow` unidirectional data flow.
+- **Type-Safe Routing**: Jetpack Navigation Compose 2.8.8 using `@Serializable` Kotlin objects and classes.
+- **Dependency Injection**: Google Hilt (`@HiltAndroidApp`, `@HiltViewModel`, `@Singleton`).
+- **Offline Persistence**: Room Database (v17) with SQLite, Kotlin Symbol Processing (KSP), foreign key cascade deletion, and AndroidX DataStore for user preferences.
+- **Background Scheduling**: Dual-engine architecture with Android `AlarmManager` (`setExactAndAllowWhileIdle`) for exact time reminders and `WorkManager` for guaranteed background execution.
+- **Centralized Security**: AndroidX `BiometricPrompt` supporting strong biometrics & device credentials, with automatic background re-locking (`ON_STOP`) and `FLAG_SECURE` window shielding.
+- **Hardware-Accelerated Visualizations**: Native Compose `Canvas` rendering cubic Bézier curves, gradient area fills, and touch-coordinate geometry without third-party chart libraries.
+
+---
+
 ## Testing & Verification
 
 ### Unit Tests (`app/src/test/java/com/example/expensetracker/`)
