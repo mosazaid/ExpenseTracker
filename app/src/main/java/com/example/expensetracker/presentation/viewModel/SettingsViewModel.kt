@@ -85,6 +85,15 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    val timeFormat: StateFlow<com.example.expensetracker.data.preferences.TimeFormatPreference> = userPreferences.timeFormat
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.example.expensetracker.data.preferences.TimeFormatPreference.H12)
+
+    fun setTimeFormat(format: com.example.expensetracker.data.preferences.TimeFormatPreference) {
+        viewModelScope.launch {
+            userPreferences.setTimeFormat(format)
+        }
+    }
+
     val biometricLockEnabled: StateFlow<Boolean> = userPreferences.biometricLockEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 

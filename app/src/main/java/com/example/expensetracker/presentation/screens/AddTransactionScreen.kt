@@ -166,7 +166,11 @@ fun AddTransactionScreen(
         AccountType.WALLET -> null
     }
 
-    val timeFormat = remember { java.text.SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    val timeFormatPref by viewModel.timeFormat.collectAsState()
+    val is24Hour = timeFormatPref == com.example.expensetracker.data.preferences.TimeFormatPreference.H24
+    val timeFormat = remember(is24Hour) {
+        java.text.SimpleDateFormat(if (is24Hour) "HH:mm" else "hh:mm a", Locale.getDefault())
+    }
     val timePicker = android.app.TimePickerDialog(
         context,
         { _, hourOfDay, minute ->
@@ -179,7 +183,7 @@ fun AddTransactionScreen(
         },
         Calendar.getInstance().apply { time = uiState.selectedDate }.get(Calendar.HOUR_OF_DAY),
         Calendar.getInstance().apply { time = uiState.selectedDate }.get(Calendar.MINUTE),
-        true
+        is24Hour
     )
 
     val datePicker = DatePickerDialog(

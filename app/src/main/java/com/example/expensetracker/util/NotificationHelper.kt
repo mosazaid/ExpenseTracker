@@ -38,6 +38,10 @@ class NotificationHelper @Inject constructor(
         return true
     }
 
+    private val appIconBitmap: android.graphics.Bitmap by lazy {
+        android.graphics.BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher)
+    }
+
     fun showSalaryReminderNotification(recurring: RecurringTransaction) {
         if (!hasPermission()) return
         createChannels()
@@ -54,7 +58,8 @@ class NotificationHelper @Inject constructor(
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_SALARY)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setLargeIcon(appIconBitmap)
             .setContentTitle("Salary reminder")
             .setContentText("Record ${CurrencyUtils.formatCurrency(recurring.amount)} salary")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -81,7 +86,8 @@ class NotificationHelper @Inject constructor(
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_DAILY)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setLargeIcon(appIconBitmap)
             .setContentTitle(context.getString(R.string.notif_daily_expense_title))
             .setContentText(context.getString(R.string.notif_daily_expense_desc))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -131,7 +137,8 @@ class NotificationHelper @Inject constructor(
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_BUDGET)
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setLargeIcon(appIconBitmap)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
@@ -167,7 +174,8 @@ class NotificationHelper @Inject constructor(
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_LOANS)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setLargeIcon(appIconBitmap)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
@@ -194,7 +202,8 @@ class NotificationHelper @Inject constructor(
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_SALARY)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setLargeIcon(appIconBitmap)
             .setContentTitle("Test Notification")
             .setContentText("Notifications are working properly!")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -229,7 +238,8 @@ class NotificationHelper @Inject constructor(
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_PRAYER)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setLargeIcon(appIconBitmap)
             .setContentTitle("Time for $prayerName prayer")
             .setContentText("It is now $prayerTime, time to perform $prayerName prayer.")
             .setStyle(NotificationCompat.BigTextStyle().bigText("It is now $prayerTime, time to perform $prayerName prayer."))

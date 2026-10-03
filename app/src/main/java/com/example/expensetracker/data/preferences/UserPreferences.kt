@@ -29,6 +29,11 @@ enum class ThemeMode {
     DARK
 }
 
+enum class TimeFormatPreference {
+    H12,
+    H24
+}
+
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = "user_preferences"
 )
@@ -41,6 +46,7 @@ class UserPreferences @Inject constructor(
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val themePaletteKey = stringPreferencesKey("theme_palette")
     private val languageKey = stringPreferencesKey("app_language")
+    private val timeFormatKey = stringPreferencesKey("app_time_format")
     private val monthModeKey = stringPreferencesKey("month_mode")
     private val openingCashKey = stringPreferencesKey("opening_cash_balance")
     private val openingBankKey = stringPreferencesKey("opening_bank_balance")
@@ -66,6 +72,19 @@ class UserPreferences @Inject constructor(
     private val prayerSavedLatKey = stringPreferencesKey("prayer_saved_lat")
     private val prayerSavedLngKey = stringPreferencesKey("prayer_saved_lng")
     private val prayerSavedTzKey = stringPreferencesKey("prayer_saved_tz")
+
+    val timeFormat: Flow<TimeFormatPreference> = context.dataStore.data.map { prefs ->
+        when (prefs[timeFormatKey]) {
+            TimeFormatPreference.H24.name -> TimeFormatPreference.H24
+            else -> TimeFormatPreference.H12
+        }
+    }
+
+    suspend fun setTimeFormat(format: TimeFormatPreference) {
+        context.dataStore.edit { prefs ->
+            prefs[timeFormatKey] = format.name
+        }
+    }
 
     val prayerCalculationMethod: Flow<String?> = context.dataStore.data.map { prefs ->
         prefs[prayerCalculationMethodKey]

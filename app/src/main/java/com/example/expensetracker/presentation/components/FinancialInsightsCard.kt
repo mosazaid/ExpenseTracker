@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.expensetracker.R
@@ -104,16 +105,17 @@ fun FinancialInsightsCard(
                 .padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Header Row: Sparkle + Title + Info Icon + Status Pill
+            // Header Row: [Sparkle + Title/Subtitle] ... [Info Icon + Status Pill]
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Left: Sparkle Avatar + Title & Period Subtitle
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.weight(1f, fill = false)
+                    modifier = Modifier.weight(1f)
                 ) {
                     Surface(
                         shape = CircleShape,
@@ -130,59 +132,74 @@ fun FinancialInsightsCard(
                         }
                     }
 
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.financial_ai_insights_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            IconButton(
-                                onClick = { showInfoDialog = true },
-                                modifier = Modifier.size(24.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Info,
-                                    contentDescription = stringResource(R.string.pacing_info_title),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
+                    Column(
+                        modifier = Modifier.weight(1f, fill = false),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
                         Text(
-                            text = "Day ${analysis.dayOfPeriod} of ${analysis.totalPeriodDays} • ${analysis.daysRemaining} days left",
+                            text = stringResource(R.string.financial_ai_insights_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = if (!analysis.cycleLabel.isNullOrBlank()) {
+                                "${analysis.cycleLabel} • Day ${analysis.dayOfPeriod}/${analysis.totalPeriodDays}"
+                            } else {
+                                "Day ${analysis.dayOfPeriod} of ${analysis.totalPeriodDays} • ${analysis.daysRemaining} days left"
+                            },
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
+                            color = MaterialTheme.colorScheme.outline,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
 
-                // Status Pill
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = accentColor.copy(alpha = 0.14f)
+                Spacer(modifier = Modifier.width(6.dp))
+
+                // Right Action Cluster: Info Icon + Status Pill
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    IconButton(
+                        onClick = { showInfoDialog = true },
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
-                            imageVector = statusIcon,
-                            contentDescription = null,
-                            tint = accentColor,
-                            modifier = Modifier.size(13.dp)
+                            imageVector = Icons.Outlined.Info,
+                            contentDescription = stringResource(R.string.pacing_info_title),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
                         )
-                        Text(
-                            text = statusLabel,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = accentColor
-                        )
+                    }
+
+                    // Status Pill
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = accentColor.copy(alpha = 0.14f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = statusIcon,
+                                contentDescription = null,
+                                tint = accentColor,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = statusLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = accentColor
+                            )
+                        }
                     }
                 }
             }

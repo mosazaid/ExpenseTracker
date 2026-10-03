@@ -24,6 +24,43 @@ class PrayerTimesCalculatorTest {
     }
 
     @Test
+    fun testAmmanTimesPrayerAccuracyForOctober3() {
+        val amman = PrayerTimesCalculator.PRESET_CITIES.first { it.nameEn.startsWith("Amman") }
+        val cal = java.util.Calendar.getInstance().apply {
+            set(2026, java.util.Calendar.OCTOBER, 3, 12, 0, 0)
+        }
+        val schedule24 = PrayerTimesCalculator.calculateDaySchedule(
+            city = amman,
+            date = cal.time,
+            method = PrayerCalculationMethod.JORDAN,
+            is24Hour = true
+        )
+
+        // Times from https://timesprayer.com/en/prayer-times-in-amman.html for Oct 3, 2026:
+        // Fajr: 05:10, Sunrise: 06:27, Dhuhr: 12:25, Asr: 15:47, Maghrib: 18:23, Isha: 19:40
+        assertEquals("05:10", schedule24.fajr)
+        assertEquals("06:27", schedule24.sunrise)
+        assertEquals("12:25", schedule24.dhuhr)
+        assertEquals("15:47", schedule24.asr)
+        assertEquals("18:23", schedule24.maghrib)
+        assertEquals("19:40", schedule24.isha)
+
+        // Test 12-hour format
+        val schedule12 = PrayerTimesCalculator.calculateDaySchedule(
+            city = amman,
+            date = cal.time,
+            method = PrayerCalculationMethod.JORDAN,
+            is24Hour = false
+        )
+        assertEquals("5:10 AM", schedule12.fajr)
+        assertEquals("6:27 AM", schedule12.sunrise)
+        assertEquals("12:25 PM", schedule12.dhuhr)
+        assertEquals("3:47 PM", schedule12.asr)
+        assertEquals("6:23 PM", schedule12.maghrib)
+        assertEquals("7:40 PM", schedule12.isha)
+    }
+
+    @Test
     fun testAutoDetectCalculationMethod() {
         assertEquals(PrayerCalculationMethod.JORDAN, PrayerCalculationMethod.autoDetect("JO"))
         assertEquals(PrayerCalculationMethod.UMM_AL_QURA, PrayerCalculationMethod.autoDetect("SA"))

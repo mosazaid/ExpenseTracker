@@ -56,6 +56,9 @@
     <string name="language">اللغة</string>
     <string name="english">English</string>
     <string name="arabic">العربية</string>
+    <string name="time_format_title">صيغة الوقت</string>
+    <string name="time_format_12h">12 ساعة (ص/م)</string>
+    <string name="time_format_24h">24 ساعة</string>
 
     <!-- Biometric lock -->
     <string name="biometric_lock">قفل التطبيق</string>

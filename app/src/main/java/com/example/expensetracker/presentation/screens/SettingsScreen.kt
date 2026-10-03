@@ -69,6 +69,7 @@ fun SettingsScreen(
     val language by viewModel.language.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
     val themePalette by viewModel.themePalette.collectAsState()
+    val timeFormat by viewModel.timeFormat.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
     val currencyCode by viewModel.currencyCode.collectAsState()
     val context = LocalContext.current
@@ -267,6 +268,21 @@ fun SettingsScreen(
                         activity?.recreate()
                     },
                     label = { Text(stringResource(R.string.arabic)) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(stringResource(R.string.time_format_title), style = MaterialTheme.typography.labelMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = timeFormat == com.example.expensetracker.data.preferences.TimeFormatPreference.H12,
+                    onClick = { viewModel.setTimeFormat(com.example.expensetracker.data.preferences.TimeFormatPreference.H12) },
+                    label = { Text(stringResource(R.string.time_format_12h)) }
+                )
+                FilterChip(
+                    selected = timeFormat == com.example.expensetracker.data.preferences.TimeFormatPreference.H24,
+                    onClick = { viewModel.setTimeFormat(com.example.expensetracker.data.preferences.TimeFormatPreference.H24) },
+                    label = { Text(stringResource(R.string.time_format_24h)) }
                 )
             }
 

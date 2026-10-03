@@ -1,5 +1,35 @@
 # Release Notes
 
+## Version: Feature Expansion Phase 10 — 12H/24H Time Format, App Icon Notifications, High-Precision Solar Prayer Engine, Expanded Global Cities & Financial Insights Info Fix (October 2026)
+
+### Highlights
+- **Financial Insights Card Info Icon & Responsive Layout**:
+  - Restructured `FinancialInsightsCard` header row to guarantee the Info `IconButton` is always rendered, accessible, and never pushed off-screen or clipped by long titles on compact screens.
+  - Title and period subtitle are constrained with `Modifier.weight(1f)` and `TextOverflow.Ellipsis`.
+  - Positioned the Info icon (`Icons.Outlined.Info`) in the right-hand action cluster adjacent to the Status Pill with an accessible 36dp touch target.
+  - Tapping opens the interactive `FinancialInsightsInfoDialog` with detailed visual breakdowns for spending velocity, daily safe allowance, early cycle damping, and projected month-end surplus/deficit.
+  - Subtitle now displays the custom cycle label if configured (e.g. "Salary Cycle • Day 12/30") or falls back to "Day X of Y • Z days left".
+- **12-Hour vs 24-Hour Time Format Configuration**:
+  - Added user toggle in `SettingsScreen` under General settings to choose between 12-hour format (`hh:mm a` e.g. `02:30 PM`) and 24-hour format (`HH:mm` e.g. `14:30`).
+  - Preference persisted via DataStore in `UserPreferences.timeFormat12H` (default: 12-hour).
+  - Applied dynamically across the app including the transaction time picker in `AddTransactionScreen` and the prayer timetable on `PrayerQiblahScreen`.
+  - Fully localized in English and Arabic with responsive preview chips.
+- **Application Launcher Icon in Notifications**:
+  - Replaced generic Android dialog icons in `NotificationHelper` with the official app launcher icon (`R.mipmap.ic_launcher`) for recurring expense reminders, salary notifications, and prayer alert notifications.
+- **High-Precision Solar Prayer Engine Calibration (TimesPrayer Amman)**:
+  - Upgraded solar calculation equations in `PrayerTimesCalculator` to Jean Meeus / NOAA high-precision standard solar coordinates.
+  - Added elevation horizon dip correction ($\text{dip} = 0.0347^\circ \times \sqrt{h}$) calibrated to Amman's elevation (~800m), eliminating the 5-minute Maghrib and Isha discrepancy and precisely matching official times from `timesprayer.com/en/prayer-times-in-amman.html` (Fajr 5:10, Sunrise 6:27, Dhuhr 12:25, Asr 15:47, Maghrib 18:23, Isha 19:40 for Oct 3, 2026).
+- **Expanded Global Cities & Countries in City Picker**:
+  - Enriched the offline city catalog with comprehensive city lists across:
+    - **Austria (Namsa)**: Vienna, Graz, Linz, Salzburg, Innsbruck, Klagenfurt, Villach, Wels.
+    - **Philippines**: Manila, Quezon City, Davao City, Caloocan, Cebu City, Zamboanga, Taguig, Antipolo, Pasig, Cagayan de Oro, Iloilo City, General Santos.
+    - **Malaysia**: Kuala Lumpur, George Town, Johor Bahru, Ipoh, Shah Alam, Melaka, Kota Kinabalu, Kuching, Petaling Jaya, Alor Setar.
+    - **Europe**: Germany, France, United Kingdom, Italy, Spain, Netherlands, Switzerland, Sweden, Norway, Denmark, Poland, Belgium, Greece, Ireland, Portugal, Czech Republic, Romania, Hungary.
+    - **Middle East & North Africa**: Jordan, Saudi Arabia, UAE, Egypt, Palestine, Turkey, Qatar, Kuwait, Oman, Bahrain, Morocco, Algeria, Tunisia, Lebanon, Iraq.
+  - Searchable country and city picker bottom sheet with instant filtering by English or Arabic name.
+
+---
+
 ## Version: Feature Expansion Phase 9 — Split Subcategory Attribution, Financial Pacing Fixes, Subcategory Stats Comparison, Real-Time Sensor Qiblah Compass & Multi-Method Prayer Calculation (October 2026)
 
 ### Highlights

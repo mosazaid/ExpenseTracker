@@ -71,6 +71,9 @@ class AddEditTransactionViewModel @Inject constructor(
     val monthMode: StateFlow<MonthMode> = userPreferences.monthMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MonthMode.CALENDAR)
 
+    val timeFormat: StateFlow<com.example.expensetracker.data.preferences.TimeFormatPreference> = userPreferences.timeFormat
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.example.expensetracker.data.preferences.TimeFormatPreference.H12)
+
     val allCategories = categoryRepository.getCategoriesSortedByUsage()
 
     fun getSubCategories(categoryId: Long): Flow<List<SubCategory>> {

@@ -56,6 +56,9 @@
     <string name="language">Language</string>
     <string name="english">English</string>
     <string name="arabic">Arabic</string>
+    <string name="time_format_title">Time Format</string>
+    <string name="time_format_12h">12-Hour (AM/PM)</string>
+    <string name="time_format_24h">24-Hour</string>
 
     <!-- Biometric lock -->
     <string name="biometric_lock">App lock</string>

@@ -8,6 +8,29 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 
 ---
 
+## What's New (Phase 10 Releases)
+
+### 1. 12-Hour vs 24-Hour Time Format Configuration
+- Added customizable time format toggle under **Settings -> General**: switch between 12-Hour (`hh:mm a` e.g. `02:30 PM`) and 24-Hour (`HH:mm` e.g. `14:30`).
+- Automatically formats time pickers in `AddTransactionScreen` and prayer timetable on `PrayerQiblahScreen`.
+- Fully localized in English and Arabic with preview chips.
+
+### 2. High-Precision Astronomical Prayer Engine (TimesPrayer Amman Calibrated)
+- Powered by Jean Meeus / NOAA high-precision standard solar position algorithms with elevation horizon dip correction ($\text{dip} = 0.0347^\circ \times \sqrt{h}$) calibrated to Amman (~800m).
+- Eliminates prayer discrepancies and matches official Amman timetables (`timesprayer.com/en/prayer-times-in-amman.html`): Fajr 5:10, Sunrise 6:27, Dhuhr 12:25, Asr 15:47, Maghrib 18:23, Isha 19:40 for Oct 3, 2026.
+
+### 3. Application Launcher Icon in System Notifications
+- Updated `NotificationHelper` to use the official app launcher icon (`R.mipmap.ic_launcher`) across all notification channels (prayer reminders, salary banners, recurring expense reminders).
+
+### 4. Expanded Global Country & City Catalog
+- Searchable city picker now covers comprehensive city lists for **Austria (Namsa)**, **Philippines**, **Malaysia**, **Europe** (UK, France, Germany, Spain, Italy, Switzerland, Sweden, Norway, etc.), and **Middle East / North Africa**.
+
+### 5. Financial Insights Header Layout & Info Icon Fix
+- Restructured `FinancialInsightsCard` header layout: guaranteed that the Info `IconButton` is always visible and never clipped on narrow mobile viewports.
+- Info button is placed adjacent to the Status Pill with an accessible 36dp touch target, opening the comprehensive `FinancialInsightsInfoDialog` breakdown.
+
+---
+
 ## What's New (Phase 9 Releases)
 
 ### 1. Real-Time Sensor Qiblah Compass & Multi-Method Prayer Calculations

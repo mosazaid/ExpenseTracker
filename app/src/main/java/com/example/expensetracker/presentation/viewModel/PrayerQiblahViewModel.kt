@@ -28,10 +28,12 @@ data class PrayerUiState(
     val calculationMethod: PrayerCalculationMethod = PrayerCalculationMethod.JORDAN,
     val isAutoMethod: Boolean = true,
     val detectedCountryCode: String? = null,
+    val is24Hour: Boolean = false,
     val schedule: PrayerSchedule = PrayerTimesCalculator.calculateDaySchedule(
         city = PrayerTimesCalculator.PRESET_CITIES.first(),
         date = Date(),
-        method = PrayerCalculationMethod.JORDAN
+        method = PrayerCalculationMethod.JORDAN,
+        is24Hour = false
     ),
     val prayerAlertsEnabled: Boolean = true,
     val fajrAlertEnabled: Boolean = true,
@@ -53,11 +55,34 @@ class PrayerQiblahViewModel @Inject constructor(
 
     init {
         loadPreferencesAndLocation()
+        observeTimeFormat()
+    }
+
+    private fun observeTimeFormat() {
+        viewModelScope.launch {
+            userPreferences.timeFormat.collect { formatPref ->
+                val is24 = formatPref == com.example.expensetracker.data.preferences.TimeFormatPreference.H24
+                if (_uiState.value.is24Hour != is24) {
+                    val newSchedule = PrayerTimesCalculator.calculateDaySchedule(
+                        city = _uiState.value.selectedCity,
+                        date = Date(),
+                        method = _uiState.value.calculationMethod,
+                        is24Hour = is24
+                    )
+                    _uiState.value = _uiState.value.copy(
+                        is24Hour = is24,
+                        schedule = newSchedule
+                    )
+                }
+            }
+        }
     }
 
     private fun loadPreferencesAndLocation() {
         viewModelScope.launch {
             val savedMethodKey = userPreferences.prayerCalculationMethod.first()
+            val timeFormatPref = userPreferences.timeFormat.first()
+            val is24 = timeFormatPref == com.example.expensetracker.data.preferences.TimeFormatPreference.H24
             val locationHelper = LocationHelper(context)
             val detected = locationHelper.detectLocationInfo()
 
@@ -96,7 +121,8 @@ class PrayerQiblahViewModel @Inject constructor(
             val newSchedule = PrayerTimesCalculator.calculateDaySchedule(
                 city = initialCity,
                 date = Date(),
-                method = effectiveMethod
+                method = effectiveMethod,
+                is24Hour = is24
             )
 
             _uiState.value = _uiState.value.copy(
@@ -106,6 +132,7 @@ class PrayerQiblahViewModel @Inject constructor(
                 calculationMethod = effectiveMethod,
                 isAutoMethod = isAuto,
                 detectedCountryCode = detected?.countryCode,
+                is24Hour = is24,
                 schedule = newSchedule,
                 prayerAlertsEnabled = alertsEnabled,
                 fajrAlertEnabled = fajr,
@@ -122,7 +149,8 @@ class PrayerQiblahViewModel @Inject constructor(
         val newSchedule = PrayerTimesCalculator.calculateDaySchedule(
             city = city,
             date = Date(),
-            method = _uiState.value.calculationMethod
+            method = _uiState.value.calculationMethod,
+            is24Hour = _uiState.value.is24Hour
         )
         _uiState.value = _uiState.value.copy(
             selectedCity = city,
@@ -153,7 +181,8 @@ class PrayerQiblahViewModel @Inject constructor(
         val newSchedule = PrayerTimesCalculator.calculateDaySchedule(
             city = city,
             date = Date(),
-            method = method
+            method = method,
+            is24Hour = _uiState.value.is24Hour
         )
 
         _uiState.value = _uiState.value.copy(
@@ -178,7 +207,8 @@ class PrayerQiblahViewModel @Inject constructor(
             val newSchedule = PrayerTimesCalculator.calculateDaySchedule(
                 city = _uiState.value.selectedCity,
                 date = Date(),
-                method = method
+                method = method,
+                is24Hour = _uiState.value.is24Hour
             )
 
             _uiState.value = _uiState.value.copy(
@@ -212,11 +242,11 @@ class PrayerQiblahViewModel @Inject constructor(
 
             if (enabled && _uiState.value.prayerAlertsEnabled) {
                 val timeStr = when (prayerName.lowercase(java.util.Locale.US)) {
-                    "fajr" -> _uiState.value.schedule.fajr
-                    "dhuhr" -> _uiState.value.schedule.dhuhr
-                    "asr" -> _uiState.value.schedule.asr
-                    "maghrib" -> _uiState.value.schedule.maghrib
-                    "isha" -> _uiState.value.schedule.isha
+                    "fajr" -> _uiState.value.schedule.fajr24
+                    "dhuhr" -> _uiState.value.schedule.dhuhr24
+                    "asr" -> _uiState.value.schedule.asr24
+                    "maghrib" -> _uiState.value.schedule.maghrib24
+                    "isha" -> _uiState.value.schedule.isha24
                     else -> ""
                 }
                 schedulePrayerAlarm(prayerName, timeStr)
@@ -230,8 +260,10 @@ class PrayerQiblahViewModel @Inject constructor(
         try {
             val parts = timeStr.split(":")
             if (parts.size >= 2) {
-                val hour = parts[0].trim().toInt()
-                val minute = parts[1].trim().toInt()
+                var hour = parts[0].trim().toInt()
+                val minute = parts[1].trim().take(2).toInt()
+                if (timeStr.contains("PM", ignoreCase = true) && hour < 12) hour += 12
+                if (timeStr.contains("AM", ignoreCase = true) && hour == 12) hour = 0
                 alarmScheduler.schedulePrayerAlarm(prayerName, hour, minute)
             }
         } catch (_: Exception) {}
@@ -246,10 +278,10 @@ class PrayerQiblahViewModel @Inject constructor(
             return
         }
 
-        if (state.fajrAlertEnabled) schedulePrayerAlarm("Fajr", state.schedule.fajr) else alarmScheduler.cancelPrayerAlarm("Fajr")
-        if (state.dhuhrAlertEnabled) schedulePrayerAlarm("Dhuhr", state.schedule.dhuhr) else alarmScheduler.cancelPrayerAlarm("Dhuhr")
-        if (state.asrAlertEnabled) schedulePrayerAlarm("Asr", state.schedule.asr) else alarmScheduler.cancelPrayerAlarm("Asr")
-        if (state.maghribAlertEnabled) schedulePrayerAlarm("Maghrib", state.schedule.maghrib) else alarmScheduler.cancelPrayerAlarm("Maghrib")
-        if (state.ishaAlertEnabled) schedulePrayerAlarm("Isha", state.schedule.isha) else alarmScheduler.cancelPrayerAlarm("Isha")
+        if (state.fajrAlertEnabled) schedulePrayerAlarm("Fajr", state.schedule.fajr24) else alarmScheduler.cancelPrayerAlarm("Fajr")
+        if (state.dhuhrAlertEnabled) schedulePrayerAlarm("Dhuhr", state.schedule.dhuhr24) else alarmScheduler.cancelPrayerAlarm("Dhuhr")
+        if (state.asrAlertEnabled) schedulePrayerAlarm("Asr", state.schedule.asr24) else alarmScheduler.cancelPrayerAlarm("Asr")
+        if (state.maghribAlertEnabled) schedulePrayerAlarm("Maghrib", state.schedule.maghrib24) else alarmScheduler.cancelPrayerAlarm("Maghrib")
+        if (state.ishaAlertEnabled) schedulePrayerAlarm("Isha", state.schedule.isha24) else alarmScheduler.cancelPrayerAlarm("Isha")
     }
 }
