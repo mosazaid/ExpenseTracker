@@ -226,6 +226,21 @@
     <string name="debt_type_borrowed_short">اقترضته</string>
     <string name="carry_forward_confirm_btn">إبقاء المتابعة</string>
     <string name="mark_settled_btn">تحديد كمسدد</string>
+    <string name="debt_pay_action">تسجيل سداد</string>
+    <string name="debt_forgive_action">مسامحة</string>
+    <string name="debt_paid_progress">المسدد: %1$s من %2$s</string>
+    <string name="debt_remaining_label">المتبقي: %1$s</string>
+    <string name="debt_record_payment_title">تسجيل دفعة سداد</string>
+    <string name="debt_record_payment_desc">أدخل المبلغ المسدد ليتم تسجيله في سجل الحركات وتحديث رصيد الدَين.</string>
+    <string name="debt_payment_amount_label">المبلغ المسدد</string>
+    <string name="debt_payment_account_label">الحساب (المصدر/الوجهة)</string>
+    <string name="debt_quick_full_pay">سداد كامل الرصيد (%1$s)</string>
+    <string name="debt_forgive_confirm_title">إسقاط الدَّين (مسامحة)؟</string>
+    <string name="debt_forgive_confirm_desc">هل أنت متأكد من إسقاط أو مسامحة هذا الدَّين؟ سيتم اعتباره مسدداً بالكامل ولن يظهر في المطالبات المفتوحة.</string>
+    <string name="debt_forgive_confirm_btn">تأكيد المسامحة والإغلاق</string>
+    <string name="compass_calibrate_dialog_title">معايرة بوصلة القبلة</string>
+    <string name="compass_calibrate_dialog_desc">دقة حساس البوصلة منخفضة بسبب تداخل مغناطيسي. حرك هاتفك في الهواء بحركة شكل الرقم 8 (∞) عدة مرات لإعادة الضبط، وتأكد من إبعاد الأغطية المغناطيسية.</string>
+    <string name="compass_calibrate_understood">حسناً، فهمت</string>
 
     <!-- Categories & Budgets -->
     <string name="categories_budgets_title">التصنيفات والميزانية</string>
@@ -443,5 +458,15 @@
     <string name="pacing_info_projection_title">الفائض أو العجز المتوقع</string>
     <string name="pacing_info_projection_desc">الرصيد الصافي المتوقع عند انتهاء الدورة المالية، ويُحسب بمقارنة الميزانية بالمصروفات الحالية والمعدل الواقعي للأيام المتبقية.</string>
     <string name="pacing_info_close">فهمت ذلك</string>
+
+    <!-- Full App Backup & Migration -->
+    <string name="full_backup_title">نسخة احتياطية شاملة (لنقل البيانات لجهاز آخر)</string>
+    <string name="full_backup_desc">تصدير أو استعادة كل شيء: كافة المعاملات، التصنيفات، القروض، الديون، العمليات المتكررة، التنبيهات والإعدادات كاملة.</string>
+    <string name="full_backup_export_btn">تصدير نسخة شاملة</string>
+    <string name="full_backup_import_btn">استعادة نسخة شاملة</string>
+    <string name="full_backup_import_confirm_title">استعادة النسخة الاحتياطية الشاملة؟</string>
+    <string name="full_backup_import_confirm_desc">سيتم استبدال بيانات التطبيق والإعدادات الحالية ببيانات ملف النسخة الاحتياطية. هل أنت متأكد من المتابعة؟</string>
+    <string name="full_backup_success">تمت استعادة النسخة بنجاح: %1$d معاملة، %2$d تصنيف، %3$d قرض، وكافة الإعدادات.</string>
+    <string name="full_backup_error">فشلت استعادة النسخة الاحتياطية: %1$s</string>
 </resources>
 

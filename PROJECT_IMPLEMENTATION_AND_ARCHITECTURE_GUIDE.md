@@ -711,6 +711,41 @@ id,date,type,category,amount,account,toAccount,description,subDescription,starts
 
 Defined in `domain/TransactionExportRow.kt` → `CsvImportFormat` object.
 
+### 10.3 Complete Device Migration Backup & Restore (Full JSON)
+
+To support complete device migration and offline disaster recovery, `FullBackupManager` serializes 100% of the app's state into a single portable `.json` file:
+
+1. **Payload Structure**:
+   - `version`: Integer format version (`1`).
+   - `exported_at`: ISO timestamp string.
+   - `database`: Complete rows for all 9 Room tables:
+     - `categories` (`CategoryDao.getAllCategoriesSnapshot`)
+     - `sub_categories` (`SubCategoryDao.getAllSubCategoriesSnapshot`)
+     - `budgets` (`BudgetDao.getAllBudgetsSnapshot`)
+     - `configured_loans` (`ConfiguredLoanDao.getAllLoansSnapshot`)
+     - `recurring_transactions` (`RecurringTransactionDao.getAllRecurringTransactionsSnapshot`)
+     - `transactions` (`TransactionDao.getAllTransactionsSnapshot`)
+     - `transaction_splits` (`TransactionSplitDao.getAllSplitsSnapshot`)
+     - `monthly_loan_payments` (`MonthlyLoanPaymentDao.getAllPaymentsSnapshot`)
+     - `app_alerts` (`AppAlertDao.getAllAlertsSnapshot`)
+   - `preferences`: Complete key-value dictionary of all DataStore preferences (`UserPreferences.exportAllPreferencesMap`):
+     - Currencies, decimal configurations, themes (Light/Dark/System), languages (EN/AR), 12h/24h time display mode, account opening balances, alert master switches, prayer methods, notification preferences, backup timestamps.
+
+2. **Atomic Integrity & Foreign Key Safety**:
+   - Executes inside `AppDatabase.withTransaction`.
+   - **Deletion Order (Reverse FK)**:
+     `transaction_splits` → `transactions` → `monthly_loan_payments` → `budgets` → `sub_categories` → `recurring_transactions` → `configured_loans` → `categories` → `app_alerts`.
+   - **Insertion Order (Forward FK)**:
+     `categories` → `sub_categories` → `budgets` → `configured_loans` → `recurring_transactions` → `transactions` → `transaction_splits` → `monthly_loan_payments` → `app_alerts`.
+   - **Preferences Restoration**: `UserPreferences.importAllPreferencesMap(preferencesMap)` seamlessly repopulates typed preferences in DataStore.
+
+3. **User Flow & Safety**:
+   - Located in **Settings → Data Management** under **Complete App Backup (Transfer to Another Device)**.
+   - Exports via Android Storage Access Framework (`ActivityResultContracts.CreateDocument("application/json")`).
+   - Restores via `ActivityResultContracts.OpenDocument()`.
+   - Protected with a modal warning dialog requiring explicit user confirmation before replacing local data.
+   - Summarizes total restored item count via snackbar / toast notifications.
+
 ---
 
 ## 11. File-Level Source of Truth
@@ -729,7 +764,7 @@ Defined in `domain/TransactionExportRow.kt` → `CsvImportFormat` object.
 | Wallet | `WalletScreen.kt`, `WalletViewModel.kt`, `WalletCalculator.kt` |
 | Statistics | `StatisticsScreen.kt`, `StatisticsViewModel.kt`, `ThreeMonthMultiChart.kt`, `CategoryPieChart.kt`, `StatisticsBarChart.kt` |
 | Settings | `SettingsScreen.kt`, `SettingsViewModel.kt` |
-| Export/Import | `CsvExporter.kt`, `CsvImporter.kt`, `StyledExcelExporter.kt`, `PdfTransactionExporter.kt`, `TransactionExportLoader.kt` |
+| Export/Import | `FullBackupManager.kt`, `CsvExporter.kt`, `CsvImporter.kt`, `StyledExcelExporter.kt`, `PdfTransactionExporter.kt`, `TransactionExportLoader.kt` |
 | DB browser | `DatabaseBrowserScreen.kt`, `DatabaseBrowserViewModel.kt`, `DatabaseInspector.kt` |
 | Locale | `LocaleHelper.kt`, `UserPreferences.kt`, `values/strings.xml`, `values-ar/strings.xml` |
 | Biometric lock | `BiometricAuthManager.kt`, `BiometricGate.kt`, `BiometricLockScreen.kt`, `BiometricLockViewModel.kt`, `MainActivity.kt` |

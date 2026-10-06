@@ -55,7 +55,7 @@
 
         <receiver
             android:name=".data.receiver.DailyExpenseReminderReceiver"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="com.example.expensetracker.ACTION_DAILY_ALARM" />
@@ -64,7 +64,7 @@
 
         <receiver
             android:name=".data.receiver.PrayerReminderReceiver"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="com.example.expensetracker.ACTION_PRAYER_ALARM" />

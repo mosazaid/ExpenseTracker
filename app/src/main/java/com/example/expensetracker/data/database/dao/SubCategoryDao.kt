@@ -22,6 +22,15 @@ interface SubCategoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSubCategory(subCategory: SubCategory): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSubCategories(subCategories: List<SubCategory>): List<Long>
+
     @Query("DELETE FROM sub_categories WHERE id = :id")
     suspend fun deleteSubCategoryById(id: Long)
+
+    @Query("SELECT * FROM sub_categories ORDER BY id ASC")
+    suspend fun getAllSubCategoriesSnapshot(): List<SubCategory>
+
+    @Query("DELETE FROM sub_categories")
+    suspend fun deleteAllSubCategories()
 }

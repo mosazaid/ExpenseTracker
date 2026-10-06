@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.expensetracker.R
@@ -105,66 +104,45 @@ fun FinancialInsightsCard(
                 .padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Header Row: [Sparkle + Title/Subtitle] ... [Info Icon + Status Pill]
-            Row(
+            // Header Section: Top Title Bar + Status/Cycle Sub-header
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Left: Sparkle Avatar + Title & Period Subtitle
+                // Primary Title Row: [Sparkle Avatar + Title] ... [Info Button]
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = accentColor.copy(alpha = 0.12f),
-                        modifier = Modifier.size(36.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Outlined.AutoAwesome,
-                                contentDescription = null,
-                                tint = accentColor,
-                                modifier = Modifier.size(20.dp)
-                            )
+                        Surface(
+                            shape = CircleShape,
+                            color = accentColor.copy(alpha = 0.12f),
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = accentColor,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
-                    }
 
-                    Column(
-                        modifier = Modifier.weight(1f, fill = false),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
                         Text(
                             text = stringResource(R.string.financial_ai_insights_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = if (!analysis.cycleLabel.isNullOrBlank()) {
-                                "${analysis.cycleLabel} • Day ${analysis.dayOfPeriod}/${analysis.totalPeriodDays}"
-                            } else {
-                                "Day ${analysis.dayOfPeriod} of ${analysis.totalPeriodDays} • ${analysis.daysRemaining} days left"
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                }
 
-                Spacer(modifier = Modifier.width(6.dp))
-
-                // Right Action Cluster: Info Icon + Status Pill
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
                     IconButton(
                         onClick = { showInfoDialog = true },
                         modifier = Modifier.size(36.dp)
@@ -176,6 +154,37 @@ fun FinancialInsightsCard(
                             modifier = Modifier.size(20.dp)
                         )
                     }
+                }
+
+                // Sub-header Row: [Calendar Icon + Period / Date Info] ... [Status Badge Pill]
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.weight(1f, fill = false)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.CalendarMonth,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = if (!analysis.cycleLabel.isNullOrBlank()) {
+                                "${analysis.cycleLabel} • Day ${analysis.dayOfPeriod}/${analysis.totalPeriodDays}"
+                            } else {
+                                "Day ${analysis.dayOfPeriod} of ${analysis.totalPeriodDays} • ${analysis.daysRemaining} days left"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     // Status Pill
                     Surface(

@@ -28,6 +28,20 @@ class WalletCalculator @Inject constructor(
     private val periodCalculator: PeriodCalculator
 ) {
 
+    suspend fun getCumulativeWalletBalance(excludeTransactionId: Long? = null): Double {
+        val totalIn = if (excludeTransactionId != null) {
+            transactionRepository.getTotalWalletMoveInExcluding(AccountType.WALLET, excludeTransactionId)
+        } else {
+            transactionRepository.getTotalWalletMoveIn(AccountType.WALLET)
+        }
+        val totalOut = if (excludeTransactionId != null) {
+            transactionRepository.getTotalWalletMoveOutExcluding(AccountType.WALLET, excludeTransactionId)
+        } else {
+            transactionRepository.getTotalWalletMoveOut(AccountType.WALLET)
+        }
+        return (totalIn - totalOut).coerceAtLeast(0.0)
+    }
+
     suspend fun getWalletBalance(startDate: Date, endDate: Date, excludeTransactionId: Long? = null): Double {
         val transactions = transactionRepository.getTransactionsBetweenDatesSnapshot(startDate, endDate)
         return computeWalletBalanceFromMoves(

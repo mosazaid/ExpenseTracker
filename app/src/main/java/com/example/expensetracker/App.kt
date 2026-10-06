@@ -17,6 +17,15 @@ import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
+import com.example.expensetracker.core.location.LocationHelper
+import com.example.expensetracker.domain.PrayerCalculationMethod
+import com.example.expensetracker.domain.PrayerTimesCalculator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import java.util.Date
+
 @HiltAndroidApp
 class App : Application(), Configuration.Provider {
 
@@ -25,6 +34,9 @@ class App : Application(), Configuration.Provider {
 
     @Inject
     lateinit var alarmScheduler: AlarmScheduler
+
+    @Inject
+    lateinit var userPreferences: com.example.expensetracker.data.preferences.UserPreferences
 
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(LocaleHelper.onAttach(base))
@@ -41,6 +53,36 @@ class App : Application(), Configuration.Provider {
         scheduleSalaryReminderWorker()
         scheduleDailyExpenseReminderWorker()
         scheduleLoanReminderWorker()
+        syncPrayerAlarms()
+    }
+
+    private fun syncPrayerAlarms() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                if (userPreferences.prayerAlertsEnabled.first()) {
+                    val locationHelper = LocationHelper(this@App)
+                    val detected = locationHelper.detectLocationInfo()
+                    val city = detected?.nearestPresetCity ?: PrayerTimesCalculator.PRESET_CITIES.first()
+                    val methodKey = userPreferences.prayerCalculationMethod.first()
+                    val method = if (methodKey != null) {
+                        try {
+                            PrayerCalculationMethod.valueOf(methodKey)
+                        } catch (_: Exception) {
+                            PrayerCalculationMethod.autoDetect(detected?.countryCode)
+                        }
+                    } else {
+                        PrayerCalculationMethod.autoDetect(detected?.countryCode)
+                    }
+                    val schedule = PrayerTimesCalculator.calculateDaySchedule(city, Date(), method, true)
+
+                    if (userPreferences.fajrAlertEnabled.first()) alarmScheduler.schedulePrayerAlarm("Fajr", schedule.fajr24)
+                    if (userPreferences.dhuhrAlertEnabled.first()) alarmScheduler.schedulePrayerAlarm("Dhuhr", schedule.dhuhr24)
+                    if (userPreferences.asrAlertEnabled.first()) alarmScheduler.schedulePrayerAlarm("Asr", schedule.asr24)
+                    if (userPreferences.maghribAlertEnabled.first()) alarmScheduler.schedulePrayerAlarm("Maghrib", schedule.maghrib24)
+                    if (userPreferences.ishaAlertEnabled.first()) alarmScheduler.schedulePrayerAlarm("Isha", schedule.isha24)
+                }
+            } catch (_: Exception) {}
+        }
     }
 
     private fun scheduleSalaryReminderWorker() {

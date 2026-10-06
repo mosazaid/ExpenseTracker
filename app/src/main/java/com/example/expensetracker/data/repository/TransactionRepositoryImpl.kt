@@ -99,6 +99,14 @@ class TransactionRepositoryImpl @Inject constructor(
         return transactionDao.getDeptIncomesLinkedTo(expenseId)
     }
 
+    override suspend fun getTotalReimbursedAmountForExpense(expenseId: Long): Double {
+        return transactionDao.getTotalReimbursedAmountForExpense(expenseId)
+    }
+
+    override fun getTotalReimbursedAmountForExpenseFlow(expenseId: Long): Flow<Double> {
+        return transactionDao.getTotalReimbursedAmountForExpenseFlow(expenseId)
+    }
+
     override suspend fun getExpenseCountBetweenDates(startDate: Date, endDate: Date): Int {
         return transactionDao.getExpenseCountBetweenDates(startDate, endDate)
     }

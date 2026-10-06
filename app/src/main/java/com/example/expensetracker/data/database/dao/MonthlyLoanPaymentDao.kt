@@ -108,6 +108,15 @@ interface MonthlyLoanPaymentDao {
         ORDER BY mlp.monthKey DESC, COALESCE(t.date, mlp.paidDate) DESC
     """)
     fun getPaymentHistoryForLoanFlow(loanConfigId: Long): Flow<List<LoanPaymentHistoryItem>>
+
+    @Query("SELECT * FROM monthly_loan_payments ORDER BY id ASC")
+    suspend fun getAllPaymentsSnapshot(): List<MonthlyLoanPayment>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPayments(payments: List<MonthlyLoanPayment>): List<Long>
+
+    @Query("DELETE FROM monthly_loan_payments")
+    suspend fun deleteAllPayments()
 }
 
 data class PaidLoanInfo(

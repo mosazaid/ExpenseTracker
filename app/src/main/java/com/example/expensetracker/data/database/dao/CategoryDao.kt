@@ -42,10 +42,10 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE isDefault = 1")
     fun getDefaultCategories(): Flow<List<Category>>
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCategory(category: Category): Long
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCategories(categories: List<Category>)
 
     @Update
@@ -56,4 +56,10 @@ interface CategoryDao {
 
     @Query("DELETE FROM categories WHERE id = :id AND isDefault = 0")
     suspend fun deleteCategoryById(id: Long)
+
+    @Query("SELECT * FROM categories ORDER BY id ASC")
+    suspend fun getAllCategoriesSnapshot(): List<Category>
+
+    @Query("DELETE FROM categories")
+    suspend fun deleteAllCategories()
 }

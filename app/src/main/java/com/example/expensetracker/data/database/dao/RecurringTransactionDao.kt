@@ -3,6 +3,7 @@ package com.example.expensetracker.data.database.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.expensetracker.data.database.entities.RecurringTransaction
@@ -41,4 +42,13 @@ interface RecurringTransactionDao {
 
     @Query("DELETE FROM recurring_transactions WHERE id = :id")
     suspend fun deleteRecurringTransactionById(id: Long)
+
+    @Query("SELECT * FROM recurring_transactions ORDER BY id ASC")
+    suspend fun getAllRecurringTransactionsSnapshot(): List<RecurringTransaction>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertRecurringTransactions(transactions: List<RecurringTransaction>): List<Long>
+
+    @Query("DELETE FROM recurring_transactions")
+    suspend fun deleteAllRecurringTransactions()
 }

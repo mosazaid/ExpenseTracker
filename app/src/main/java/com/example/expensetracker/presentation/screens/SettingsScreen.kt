@@ -21,8 +21,12 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Devices
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material.icons.outlined.Warning
 import com.example.expensetracker.core.location.LocationHelper
 import com.example.expensetracker.core.permission.PermissionHelper
 import com.example.expensetracker.presentation.components.PermissionRationaleDialog
@@ -146,11 +150,49 @@ fun SettingsScreen(
         uri?.let { viewModel.importCsv(it) }
     }
 
+    var showFullBackupConfirmDialog by remember { mutableStateOf(false) }
+    var pendingFullBackupUri by remember { mutableStateOf<android.net.Uri?>(null) }
+
+    val fullBackupImportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            pendingFullBackupUri = uri
+            showFullBackupConfirmDialog = true
+        }
+    }
+
     LaunchedEffect(Unit) {
         currentCash = viewModel.getCurrentCashBalance()
         currentBank = viewModel.getCurrentBankBalance()
         cashInput = currentCash.toString()
         bankInput = currentBank.toString()
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.fullBackupResult.collect { result ->
+            if (result.isSuccess) {
+                snackbarHostState.showSnackbar(
+                    context.getString(
+                        R.string.full_backup_success,
+                        result.transactionCount,
+                        result.categoryCount,
+                        result.loanCount
+                    )
+                )
+                currentCash = viewModel.getCurrentCashBalance()
+                currentBank = viewModel.getCurrentBankBalance()
+                cashInput = currentCash.toString()
+                bankInput = currentBank.toString()
+            } else {
+                snackbarHostState.showSnackbar(
+                    context.getString(
+                        R.string.full_backup_error,
+                        result.errorMessage ?: "Unknown error"
+                    )
+                )
+            }
+        }
     }
 
     LaunchedEffect(exportRequest) {
@@ -211,6 +253,62 @@ fun SettingsScreen(
                 }.onFailure {
                     pendingSaveRequest = request
                     saveDocumentLauncher.launch(request.fileName)
+                }
+            }
+        )
+    }
+
+    if (showFullBackupConfirmDialog && pendingFullBackupUri != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showFullBackupConfirmDialog = false
+                pendingFullBackupUri = null
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.full_backup_import_confirm_title),
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.full_backup_import_confirm_desc),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val uri = pendingFullBackupUri
+                        showFullBackupConfirmDialog = false
+                        pendingFullBackupUri = null
+                        if (uri != null) {
+                            viewModel.importFullBackup(uri)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(stringResource(R.string.full_backup_import_btn))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showFullBackupConfirmDialog = false
+                        pendingFullBackupUri = null
+                    }
+                ) {
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -584,6 +682,90 @@ fun SettingsScreen(
 
             // ── Section 5: Data & Backup
             Text("5. Data & Backup", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+
+            // ── Complete App Backup & Device Migration Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                ),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Devices,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.full_backup_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.full_backup_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { viewModel.exportFullBackup() },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Upload,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = stringResource(R.string.full_backup_export_btn),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = { fullBackupImportLauncher.launch(arrayOf("application/json", "text/*")) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Download,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = stringResource(R.string.full_backup_import_btn),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Spreadsheet & Document Export", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+
             Text(stringResource(R.string.export_filter), style = MaterialTheme.typography.labelMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(

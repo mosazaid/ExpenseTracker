@@ -89,6 +89,10 @@ class CsvImporter @Inject constructor(
                     debtorNote = row["debtornote"].takeIf { !it.isNullOrBlank() },
                     awaitingReimbursement = row["awaitingreimbursement"]?.toBooleanStrictOrNull() ?: false,
                     allowNegativeBalance = row["allownegativebalance"]?.toBooleanStrictOrNull() ?: false,
+                    debtType = row["debttype"].takeIf { !it.isNullOrBlank() },
+                    isDebtSettled = row["isdebtsettled"]?.toBooleanStrictOrNull() ?: false,
+                    recurringId = row["recurringid"]?.toLongOrNull(),
+                    receiptImagePath = row["receiptimagepath"].takeIf { !it.isNullOrBlank() },
                     createdAt = row["createdat"]?.let { dateFormat.parse(it) } ?: existing?.createdAt ?: Date(),
                     updatedAt = Date()
                 )

@@ -54,20 +54,142 @@ class DebtsViewModel @Inject constructor(
         _shouldAutoShowRolloverDialog.value = false
     }
 
+    private val _lentDebtItems = MutableStateFlow<List<DebtItemUiModel>>(emptyList())
+    val lentDebtItems: StateFlow<List<DebtItemUiModel>> = _lentDebtItems.asStateFlow()
+
+    private val _borrowedDebtItems = MutableStateFlow<List<DebtItemUiModel>>(emptyList())
+    val borrowedDebtItems: StateFlow<List<DebtItemUiModel>> = _borrowedDebtItems.asStateFlow()
+
     val lentDebts: StateFlow<List<Transaction>> = transactionRepository.getOutstandingLentDebtsFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val borrowedDebts: StateFlow<List<Transaction>> = transactionRepository.getOutstandingBorrowedDebtsFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun settleDebt(transactionId: Long) {
+    init {
+        observeDebts()
+    }
+
+    private fun observeDebts() {
         viewModelScope.launch {
-            transactionRepository.setDebtSettled(transactionId, true)
+            transactionRepository.getAllOutstandingDebtsFlow().collect {
+                loadDebtItemModels()
+            }
+        }
+    }
+
+    fun loadDebtItemModels() {
+        viewModelScope.launch {
+            val rawLent = transactionRepository.getAllOutstandingDebtsSnapshot().filter { it.awaitingReimbursement && !it.isDebtSettled }
+            val rawBorrowed = transactionRepository.getAllOutstandingDebtsSnapshot().filter { it.debtType == "BORROWED" && !it.isDebtSettled }
+
+            _lentDebtItems.value = rawLent.map { txn ->
+                val paid = transactionRepository.getTotalReimbursedAmountForExpense(txn.id)
+                val remaining = (txn.amount - paid).coerceAtLeast(0.0)
+                DebtItemUiModel(
+                    transaction = txn,
+                    totalAmount = txn.amount,
+                    paidAmount = paid,
+                    remainingAmount = remaining,
+                    isSettled = txn.isDebtSettled || remaining <= 0.001,
+                    isOwedToMe = true,
+                    debtorName = txn.debtorNote?.ifBlank { txn.description } ?: txn.description
+                )
+            }.filter { !it.isSettled }
+
+            _borrowedDebtItems.value = rawBorrowed.map { txn ->
+                val paid = transactionRepository.getTotalReimbursedAmountForExpense(txn.id)
+                val remaining = (txn.amount - paid).coerceAtLeast(0.0)
+                DebtItemUiModel(
+                    transaction = txn,
+                    totalAmount = txn.amount,
+                    paidAmount = paid,
+                    remainingAmount = remaining,
+                    isSettled = txn.isDebtSettled || remaining <= 0.001,
+                    isOwedToMe = false,
+                    debtorName = txn.debtorNote?.ifBlank { txn.description } ?: txn.description
+                )
+            }.filter { !it.isSettled }
+        }
+    }
+
+    fun recordDebtPayment(
+        debtId: Long,
+        paymentAmount: Double,
+        accountType: com.example.expensetracker.data.database.entities.AccountType,
+        onComplete: () -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val debt = transactionRepository.getTransactionById(debtId) ?: return@launch
+            val isOwedToMe = debt.awaitingReimbursement
+            val currentPaid = transactionRepository.getTotalReimbursedAmountForExpense(debtId)
+            val newTotalPaid = currentPaid + paymentAmount
+            val isFullyPaid = newTotalPaid >= (debt.amount - 0.001)
+
+            // Create repayment transaction
+            val repaymentType = if (isOwedToMe) {
+                com.example.expensetracker.data.database.entities.TransactionType.INCOME
+            } else {
+                com.example.expensetracker.data.database.entities.TransactionType.EXPENSE
+            }
+
+            val desc = if (isOwedToMe) {
+                "Debt Repayment: ${debt.debtorNote?.ifBlank { debt.description } ?: debt.description}"
+            } else {
+                "Debt Payment: ${debt.debtorNote?.ifBlank { debt.description } ?: debt.description}"
+            }
+
+            val repaymentTxn = Transaction(
+                amount = paymentAmount,
+                description = desc,
+                subDescription = if (isFullyPaid) "Fully Paid" else "Partial: ${newTotalPaid.toInt()}/${debt.amount.toInt()}",
+                date = Date(),
+                type = repaymentType,
+                categoryId = debt.categoryId,
+                accountType = accountType,
+                linkedExpenseId = debt.id,
+                debtorNote = debt.debtorNote
+            )
+            transactionRepository.insertTransaction(repaymentTxn)
+
+            if (isFullyPaid) {
+                transactionRepository.setDebtSettled(debtId, true)
+                alertRepository.dismissAlertsByTypeAndRelatedId(
+                    com.example.expensetracker.data.database.entities.AppAlert.TYPE_DEBT,
+                    debtId
+                )
+            } else {
+                // Update alert with remaining balance
+                val monthKey = SimpleDateFormat("yyyy-MM", Locale.US).format(Date())
+                val remaining = (debt.amount - newTotalPaid).coerceAtLeast(0.0)
+                alertRepository.postDebtAlert(
+                    transactionId = debt.id,
+                    personName = debt.debtorNote?.ifBlank { debt.description } ?: debt.description,
+                    amount = remaining,
+                    isOwedToMe = isOwedToMe,
+                    periodKey = monthKey
+                )
+            }
+
+            loadDebtItemModels()
+            onComplete()
+        }
+    }
+
+    fun forgiveDebt(debtId: Long, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            transactionRepository.setDebtSettled(debtId, true)
             alertRepository.dismissAlertsByTypeAndRelatedId(
                 com.example.expensetracker.data.database.entities.AppAlert.TYPE_DEBT,
-                transactionId
+                debtId
             )
+            loadDebtItemModels()
+            onComplete()
         }
+    }
+
+    fun settleDebt(transactionId: Long) {
+        forgiveDebt(transactionId)
     }
 
     fun carryOverDebtsToNewMonth(selectedDebtIds: List<Long>) {
@@ -89,3 +211,13 @@ class DebtsViewModel @Inject constructor(
         }
     }
 }
+
+data class DebtItemUiModel(
+    val transaction: Transaction,
+    val totalAmount: Double,
+    val paidAmount: Double,
+    val remainingAmount: Double,
+    val isSettled: Boolean,
+    val isOwedToMe: Boolean,
+    val debtorName: String
+)

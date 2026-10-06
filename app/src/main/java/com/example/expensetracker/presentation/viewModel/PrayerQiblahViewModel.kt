@@ -99,7 +99,7 @@ class PrayerQiblahViewModel @Inject constructor(
             val isAuto = savedMethodKey == null
 
             val initialCity = if (detected != null) {
-                val tzOffset = (TimeZone.getDefault().rawOffset / 3600000.0)
+                val tzOffset = (TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 3600000.0)
                 CityLocation(
                     nameEn = detected.cityName ?: "Current Location",
                     nameAr = "موقعي الحالي",
@@ -162,7 +162,7 @@ class PrayerQiblahViewModel @Inject constructor(
     }
 
     fun onGpsLocationDetected(lat: Double, lng: Double, cityName: String?, countryCode: String?) {
-        val tzOffset = (TimeZone.getDefault().rawOffset / 3600000.0)
+        val tzOffset = (TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 3600000.0)
         val city = CityLocation(
             nameEn = cityName ?: "Current Location",
             nameAr = "موقعي الحالي",

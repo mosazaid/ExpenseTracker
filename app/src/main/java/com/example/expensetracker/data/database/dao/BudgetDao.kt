@@ -52,9 +52,18 @@ interface BudgetDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBudget(budget: Budget): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBudgets(budgets: List<Budget>): List<Long>
+
     @Update
     suspend fun updateBudget(budget: Budget)
 
     @Delete
     suspend fun deleteBudget(budget: Budget)
+
+    @Query("SELECT * FROM budgets ORDER BY id ASC")
+    suspend fun getAllBudgetsSnapshot(): List<Budget>
+
+    @Query("DELETE FROM budgets")
+    suspend fun deleteAllBudgets()
 }

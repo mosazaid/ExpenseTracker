@@ -748,10 +748,11 @@ private fun MonthlyFinancialSummaryCard(
                             modifier = Modifier.weight(1f)
                         )
                         if (monthSummary.walletBalance != 0.0) {
+                            val isNegative = monthSummary.walletBalance < 0
                             SummaryMetricBox(
                                 label = stringResource(R.string.action_wallet),
-                                amountPrefix = "-",
-                                amount = monthSummary.walletBalance,
+                                amountPrefix = if (isNegative) "-" else "",
+                                amount = kotlin.math.abs(monthSummary.walletBalance),
                                 valueColor = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.weight(1f)
                             )

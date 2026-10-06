@@ -8,6 +8,28 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 
 ---
 
+## What's New (Phase 11 Releases)
+
+### 1. Complete App Backup & Device Migration (Full JSON)
+- **100% Data & State Portability**: Built `FullBackupManager` to enable single-file JSON export and atomic restore when migrating to another phone or restoring your setup.
+- **Preferences & SharedPreferences / DataStore**: Captures all user settings (currency, theme, language, 12h/24h format, opening balances, alert master toggles, prayer methods, notification configs, backup timestamps).
+- **All 9 Room Database Tables**: Categories, Subcategories, Budgets, Loans, Recurring items, Transactions, Splits, Loan payments, and App Alerts.
+- **Atomic & FK Safe**: Employs `AppDatabase.withTransaction` with strict reverse-dependency deletion and forward-dependency insertion to ensure zero data corruption.
+- **Safe UI Experience**: Located in **Settings -> Data Management** under **Complete App Backup (Transfer to Another Device)** with file pickers, destructive action confirmation dialogs, and item count summaries.
+
+### 2. Debt Partial Payments & Transaction History Integration
+- Supported flexible debt repayments (pay partially or in full) with progress indicator (`x/y` paid).
+- Automatically records repayment transactions in history linked to the counterparty.
+- Auto-clears or updates debt notification alerts when balance is reduced or fully settled.
+
+### 3. Wallet Balance Correction
+- Rectified wallet accounting logic in `WalletCalculator` and `WalletViewModel` so held funds properly reflect positive balances.
+
+### 4. Solar Prayer Calculation Elevation Dip
+- Integrated elevation horizon depression angle ($\text{dip} = 0.0347^\circ \times \sqrt{h}$) into `PrayerTimesCalculator`, fixing the Maghrib prayer discrepancy for elevated locations like Amman.
+
+---
+
 ## What's New (Phase 10 Releases)
 
 ### 1. 12-Hour vs 24-Hour Time Format Configuration

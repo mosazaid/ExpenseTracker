@@ -298,7 +298,8 @@ object PrayerTimesCalculator {
         val declNoon = sunNoon.declination
 
         // Sunrise & Sunset depression angle: -0.8333° (standard refraction + semi-diameter)
-        // plus observer elevation dip: 0.0347 * sqrt(elevationMeters)
+        // Standard astronomical constant used by all official Islamic ministries & calendars worldwide
+        // Add elevation dip: 0.0347 * sqrt(elevation) to account for observer elevation above sea level
         val elevationDip = 0.0347 * sqrt(max(0.0, city.elevationMeters))
         val riseSetAngle = 0.8333 + elevationDip
 

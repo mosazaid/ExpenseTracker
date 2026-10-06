@@ -22,6 +22,8 @@ interface ITransactionRepository {
     suspend fun getUnreimbursedExpenses(startDate: Date, endDate: Date): List<Transaction>
     suspend fun hasLinkedDeptIncome(expenseId: Long): Boolean
     suspend fun getDeptIncomesLinkedTo(expenseId: Long): List<Transaction>
+    suspend fun getTotalReimbursedAmountForExpense(expenseId: Long): Double
+    fun getTotalReimbursedAmountForExpenseFlow(expenseId: Long): Flow<Double>
     suspend fun getExpenseCountBetweenDates(startDate: Date, endDate: Date): Int
     fun getOutstandingLentDebtsFlow(): Flow<List<Transaction>>
     fun getOutstandingBorrowedDebtsFlow(): Flow<List<Transaction>>

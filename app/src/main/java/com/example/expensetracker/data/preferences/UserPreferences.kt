@@ -329,4 +329,60 @@ class UserPreferences @Inject constructor(
 
     private fun recurringDismissKey(recurringId: Long, dueMillis: Long): String =
         "$recurringId:$dueMillis"
+
+    suspend fun exportAllPreferencesMap(): Map<String, String> {
+        val prefs = context.dataStore.data.first()
+        val result = mutableMapOf<String, String>()
+        for ((key, value) in prefs.asMap()) {
+            if (value is Set<*>) {
+                result[key.name] = value.joinToString(",")
+            } else {
+                result[key.name] = value.toString()
+            }
+        }
+        return result
+    }
+
+    suspend fun importAllPreferencesMap(map: Map<String, String>) {
+        context.dataStore.edit { prefs ->
+            map[themeModeKey.name]?.let { prefs[themeModeKey] = it }
+            map[themePaletteKey.name]?.let { prefs[themePaletteKey] = it }
+            map[languageKey.name]?.let {
+                prefs[languageKey] = it
+                LocaleHelper.persistLanguage(context, it)
+            }
+            map[timeFormatKey.name]?.let { prefs[timeFormatKey] = it }
+            map[monthModeKey.name]?.let { prefs[monthModeKey] = it }
+            map[openingCashKey.name]?.let { prefs[openingCashKey] = it }
+            map[openingBankKey.name]?.let { prefs[openingBankKey] = it }
+            map[currencyCodeKey.name]?.let {
+                prefs[currencyCodeKey] = it
+                com.example.expensetracker.core.format.CurrencyUtils.activeCurrencyCode = it
+            }
+            map[biometricLockKey.name]?.toBooleanStrictOrNull()?.let { prefs[biometricLockKey] = it }
+            map[onboardingCompletedKey.name]?.toBooleanStrictOrNull()?.let { prefs[onboardingCompletedKey] = it }
+            map[loanAlertsKey.name]?.toBooleanStrictOrNull()?.let { prefs[loanAlertsKey] = it }
+            map[debtAlertsKey.name]?.toBooleanStrictOrNull()?.let { prefs[debtAlertsKey] = it }
+            map[salaryAlertsKey.name]?.toBooleanStrictOrNull()?.let { prefs[salaryAlertsKey] = it }
+            map[budgetAlertsKey.name]?.toBooleanStrictOrNull()?.let { prefs[budgetAlertsKey] = it }
+            map[dailyReminderKey.name]?.toBooleanStrictOrNull()?.let { prefs[dailyReminderKey] = it }
+            map[prayerAlertsEnabledKey.name]?.toBooleanStrictOrNull()?.let { prefs[prayerAlertsEnabledKey] = it }
+            map[fajrAlertKey.name]?.toBooleanStrictOrNull()?.let { prefs[fajrAlertKey] = it }
+            map[dhuhrAlertKey.name]?.toBooleanStrictOrNull()?.let { prefs[dhuhrAlertKey] = it }
+            map[asrAlertKey.name]?.toBooleanStrictOrNull()?.let { prefs[asrAlertKey] = it }
+            map[maghribAlertKey.name]?.toBooleanStrictOrNull()?.let { prefs[maghribAlertKey] = it }
+            map[ishaAlertKey.name]?.toBooleanStrictOrNull()?.let { prefs[ishaAlertKey] = it }
+            map[prayerCalculationMethodKey.name]?.let { prefs[prayerCalculationMethodKey] = it }
+            map[prayerSavedCityEnKey.name]?.let { prefs[prayerSavedCityEnKey] = it }
+            map[prayerSavedCityArKey.name]?.let { prefs[prayerSavedCityArKey] = it }
+            map[prayerSavedLatKey.name]?.let { prefs[prayerSavedLatKey] = it }
+            map[prayerSavedLngKey.name]?.let { prefs[prayerSavedLngKey] = it }
+            map[prayerSavedTzKey.name]?.let { prefs[prayerSavedTzKey] = it }
+            map[lastLoanSheetDateKey.name]?.let { prefs[lastLoanSheetDateKey] = it }
+            map[lastDebtRolloverMonthKey.name]?.let { prefs[lastDebtRolloverMonthKey] = it }
+            map[dismissedRecurringKey.name]?.let {
+                prefs[dismissedRecurringKey] = it.split(",").filter { s -> s.isNotBlank() }.toSet()
+            }
+        }
+    }
 }

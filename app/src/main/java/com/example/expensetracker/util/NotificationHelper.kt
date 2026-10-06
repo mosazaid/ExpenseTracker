@@ -38,8 +38,29 @@ class NotificationHelper @Inject constructor(
         return true
     }
 
-    private val appIconBitmap: android.graphics.Bitmap by lazy {
-        android.graphics.BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher)
+    private val appIconBitmap: android.graphics.Bitmap? by lazy {
+        try {
+            val drawable = androidx.core.content.ContextCompat.getDrawable(context, R.mipmap.ic_launcher)
+            if (drawable != null) {
+                if (drawable is android.graphics.drawable.BitmapDrawable) {
+                    drawable.bitmap
+                } else {
+                    val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 96
+                    val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 96
+                    val bitmap = android.graphics.Bitmap.createBitmap(
+                        width,
+                        height,
+                        android.graphics.Bitmap.Config.ARGB_8888
+                    )
+                    val canvas = android.graphics.Canvas(bitmap)
+                    drawable.setBounds(0, 0, canvas.width, canvas.height)
+                    drawable.draw(canvas)
+                    bitmap
+                }
+            } else null
+        } catch (_: Exception) {
+            null
+        }
     }
 
     fun showSalaryReminderNotification(recurring: RecurringTransaction) {
@@ -57,17 +78,17 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_SALARY)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setLargeIcon(appIconBitmap)
+        val builder = NotificationCompat.Builder(context, CHANNEL_SALARY)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Salary reminder")
             .setContentText("Record ${CurrencyUtils.formatCurrency(recurring.amount)} salary")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .build()
 
-        NotificationManagerCompat.from(context).notify(recurring.id.toInt(), notification)
+        appIconBitmap?.let { builder.setLargeIcon(it) }
+
+        NotificationManagerCompat.from(context).notify(recurring.id.toInt(), builder.build())
     }
 
     fun showDailyExpenseReminderNotification() {
@@ -85,17 +106,17 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_DAILY)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setLargeIcon(appIconBitmap)
+        val builder = NotificationCompat.Builder(context, CHANNEL_DAILY)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.notif_daily_expense_title))
             .setContentText(context.getString(R.string.notif_daily_expense_desc))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .build()
 
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_DAILY_ID, notification)
+        appIconBitmap?.let { builder.setLargeIcon(it) }
+
+        NotificationManagerCompat.from(context).notify(NOTIFICATION_DAILY_ID, builder.build())
     }
 
     fun showBudgetNotification(categoryName: String, spent: Double, limit: Double, isExceeded: Boolean) {
@@ -136,21 +157,21 @@ class NotificationHelper @Inject constructor(
             )
         }
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_BUDGET)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setLargeIcon(appIconBitmap)
+        val builder = NotificationCompat.Builder(context, CHANNEL_BUDGET)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setPriority(if (isExceeded) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .build()
 
-        NotificationManagerCompat.from(context).notify(notifId, notification)
+        appIconBitmap?.let { builder.setLargeIcon(it) }
+
+        NotificationManagerCompat.from(context).notify(notifId, builder.build())
     }
 
-    fun showLoanReminderNotification(loanName: String, amount: Double, loanId: Long) {
+    fun showLoanReminderNotification(loanName: String, amount: Double, loanId: Long, remainingAmount: Double? = null) {
         if (!hasPermission()) return
         createChannels()
 
@@ -167,24 +188,33 @@ class NotificationHelper @Inject constructor(
         )
 
         val title = context.getString(R.string.notif_loan_title, loanName)
-        val text = context.getString(
-            R.string.notif_loan_desc,
-            loanName,
-            CurrencyUtils.formatCurrency(amount)
-        )
+        val text = if (remainingAmount != null && remainingAmount < amount && remainingAmount > 0.0) {
+            "$loanName: ${CurrencyUtils.formatCurrency(remainingAmount)} remaining of ${CurrencyUtils.formatCurrency(amount)}"
+        } else {
+            context.getString(
+                R.string.notif_loan_desc,
+                loanName,
+                CurrencyUtils.formatCurrency(amount)
+            )
+        }
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_LOANS)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setLargeIcon(appIconBitmap)
+        val builder = NotificationCompat.Builder(context, CHANNEL_LOANS)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .build()
 
-        NotificationManagerCompat.from(context).notify(notifId, notification)
+        appIconBitmap?.let { builder.setLargeIcon(it) }
+
+        NotificationManagerCompat.from(context).notify(notifId, builder.build())
+    }
+
+    fun cancelLoanNotification(loanId: Long) {
+        val notifId = (loanId.toInt() and 0x7FFFFFFF) % 10000 + 30000
+        NotificationManagerCompat.from(context).cancel(notifId)
     }
 
     fun showTestNotification() {
@@ -201,17 +231,17 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_SALARY)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setLargeIcon(appIconBitmap)
+        val builder = NotificationCompat.Builder(context, CHANNEL_SALARY)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Test Notification")
             .setContentText("Notifications are working properly!")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .build()
 
-        NotificationManagerCompat.from(context).notify(9999, notification)
+        appIconBitmap?.let { builder.setLargeIcon(it) }
+
+        NotificationManagerCompat.from(context).notify(9999, builder.build())
     }
 
     fun showPrayerReminderNotification(prayerName: String, prayerTime: String) {
@@ -237,18 +267,18 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_PRAYER)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setLargeIcon(appIconBitmap)
+        val builder = NotificationCompat.Builder(context, CHANNEL_PRAYER)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Time for $prayerName prayer")
             .setContentText("It is now $prayerTime, time to perform $prayerName prayer.")
             .setStyle(NotificationCompat.BigTextStyle().bigText("It is now $prayerTime, time to perform $prayerName prayer."))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .build()
 
-        NotificationManagerCompat.from(context).notify(notifId, notification)
+        appIconBitmap?.let { builder.setLargeIcon(it) }
+
+        NotificationManagerCompat.from(context).notify(notifId, builder.build())
     }
 
     private fun createChannels() {

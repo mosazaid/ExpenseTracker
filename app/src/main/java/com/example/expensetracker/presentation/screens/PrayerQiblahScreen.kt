@@ -88,6 +88,16 @@ fun PrayerQiblahScreen(
     var showCityDialog by remember { mutableStateOf(false) }
     var showLocationRationaleDialog by remember { mutableStateOf(false) }
     var isPermanentlyDeniedLocation by remember { mutableStateOf(false) }
+    var showCalibrationDialog by remember { mutableStateOf(false) }
+
+    // Synchronize geographic location with compass sensor manager for True North declination
+    LaunchedEffect(uiState.selectedCity) {
+        compassManager.setLocation(
+            latitude = uiState.selectedCity.latitude,
+            longitude = uiState.selectedCity.longitude,
+            altitude = uiState.selectedCity.elevationMeters
+        )
+    }
 
     // Start/Stop compass sensors with lifecycle
     DisposableEffect(Unit) {
@@ -201,7 +211,8 @@ fun PrayerQiblahScreen(
                 compassReading = compassReading,
                 qiblahBearing = targetQiblahBearing,
                 relativeAngle = relativeAngle,
-                isAligned = isAligned
+                isAligned = isAligned,
+                onCalibrateClick = { showCalibrationDialog = true }
             )
 
             // Calculation Method Card
@@ -231,6 +242,16 @@ fun PrayerQiblahScreen(
                 }
             )
         }
+    }
+
+    // Compass Calibration Dialog
+    if (showCalibrationDialog) {
+        CompassCalibrationDialog(
+            accuracy = compassReading.accuracy,
+            isTilted = compassReading.isTilted,
+            declination = compassReading.declination,
+            onDismiss = { showCalibrationDialog = false }
+        )
     }
 
     // Searchable City Picker Dialog
@@ -548,7 +569,8 @@ private fun QiblahCompassCard(
     compassReading: CompassReading,
     qiblahBearing: Float,
     relativeAngle: Float,
-    isAligned: Boolean
+    isAligned: Boolean,
+    onCalibrateClick: () -> Unit
 ) {
     val emeraldGreen = FinancePositive
     val goldAccent = Color(0xFFD4AF37)
@@ -613,7 +635,8 @@ private fun QiblahCompassCard(
                         SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> emeraldGreen.copy(alpha = 0.12f)
                         SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM -> goldAccent.copy(alpha = 0.15f)
                         else -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
-                    }
+                    },
+                    modifier = Modifier.clickable { onCalibrateClick() }
                 ) {
                     Text(
                         text = when (compassReading.accuracy) {
@@ -857,14 +880,192 @@ private fun QiblahCompassCard(
                     )
                 }
             } else if (compassReading.accuracy <= SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
-                Text(
-                    text = stringResource(R.string.qiblah_calibrate_hint),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.clickable { onCalibrateClick() }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.qiblah_calibrate_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+private fun CompassCalibrationDialog(
+    accuracy: Int,
+    isTilted: Boolean,
+    declination: Float,
+    onDismiss: () -> Unit
+) {
+    val isCalibrated = accuracy >= SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
+    val infiniteTransition = rememberInfiniteTransition(label = "infinityWave")
+    val waveOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2400, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "waveOffset"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Outlined.Explore,
+                contentDescription = null,
+                tint = if (isCalibrated) FinancePositive else MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(36.dp)
+            )
+        },
+        title = {
+            Text(
+                text = stringResource(R.string.compass_calibrate_dialog_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Live Status Badge
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = when (accuracy) {
+                        SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> FinancePositive.copy(alpha = 0.15f)
+                        SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM -> Color(0xFFD4AF37).copy(alpha = 0.15f)
+                        else -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isCalibrated) Icons.Outlined.CheckCircle else Icons.Outlined.Warning,
+                            contentDescription = null,
+                            tint = when (accuracy) {
+                                SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> FinancePositive
+                                SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM -> Color(0xFFD4AF37)
+                                else -> MaterialTheme.colorScheme.error
+                            },
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = when (accuracy) {
+                                SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> "Precision: High (Calibrated)"
+                                SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM -> "Precision: Good"
+                                else -> "Precision: Low (Calibrating...)"
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = when (accuracy) {
+                                SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> FinancePositive
+                                SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM -> Color(0xFFD4AF37)
+                                else -> MaterialTheme.colorScheme.error
+                            }
+                        )
+                    }
+                }
+
+                // Animated Figure-8 (∞) gesture graphic
+                Box(
+                    modifier = Modifier
+                        .size(180.dp, 100.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val outlineColor = MaterialTheme.colorScheme.outlineVariant
+                    val accentDotColor = if (isCalibrated) FinancePositive else Color(0xFFD4AF37)
+
+                    Canvas(modifier = Modifier.size(140.dp, 70.dp)) {
+                        val w = size.width
+                        val h = size.height
+                        val cx = w / 2f
+                        val cy = h / 2f
+                        val scaleX = w * 0.42f
+                        val scaleY = h * 0.40f
+
+                        // Draw Lemniscate of Bernoulli (Figure-8)
+                        val numPoints = 120
+                        val path = Path()
+                        for (i in 0..numPoints) {
+                            val t = (i.toFloat() / numPoints) * (2 * Math.PI)
+                            val denom = 1 + sin(t) * sin(t)
+                            val x = cx + (scaleX * cos(t) / denom).toFloat()
+                            val y = cy + (scaleY * sin(t) * cos(t) / denom).toFloat()
+                            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                        }
+
+                        drawPath(
+                            path = path,
+                            color = outlineColor.copy(alpha = 0.8f),
+                            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                        )
+
+                        // Animated glowing dot travelling along the figure-8
+                        val movingT = (waveOffset * 2 * Math.PI)
+                        val movingDenom = 1 + sin(movingT) * sin(movingT)
+                        val dotX = cx + (scaleX * cos(movingT) / movingDenom).toFloat()
+                        val dotY = cy + (scaleY * sin(movingT) * cos(movingT) / movingDenom).toFloat()
+
+                        drawCircle(
+                            color = accentDotColor,
+                            radius = 6.dp.toPx(),
+                            center = Offset(dotX, dotY)
+                        )
+                    }
+                }
+
+                // Step-by-step guidance
+                Text(
+                    text = stringResource(R.string.compass_calibrate_dialog_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                if (isTilted) {
+                    Text(
+                        text = "• " + stringResource(R.string.qiblah_level_phone_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                if (abs(declination) > 0.1f) {
+                    Text(
+                        text = "Geomagnetic Declination: ${String.format(java.util.Locale.US, "%+.1f°", declination)} (True North compensated)",
+                        style = MaterialTheme.typography.labelSmall.withTabularNums(),
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text(stringResource(R.string.compass_calibrate_understood))
+            }
+        }
+    )
 }
 
 // -------------------------------------------------------------

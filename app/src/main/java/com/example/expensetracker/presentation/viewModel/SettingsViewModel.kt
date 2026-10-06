@@ -61,7 +61,8 @@ class SettingsViewModel @Inject constructor(
     private val recurringRepository: IRecurringRepository,
     private val balanceCalculator: BalanceCalculator,
     private val periodCalculator: PeriodCalculator,
-    private val notificationHelper: com.example.expensetracker.util.NotificationHelper
+    private val notificationHelper: com.example.expensetracker.util.NotificationHelper,
+    private val fullBackupManager: com.example.expensetracker.core.export.FullBackupManager
 ) : ViewModel() {
 
     val activeSalaryReminder = recurringRepository.getActiveRecurringTransactions()
@@ -225,6 +226,45 @@ class SettingsViewModel @Inject constructor(
             }.onFailure { error ->
                 _importResult.emit(
                     CsvImportResult(0, 0, 0, listOf(error.message ?: "Import failed"))
+                )
+            }
+        }
+    }
+
+    private val _fullBackupResult = MutableSharedFlow<com.example.expensetracker.core.export.FullBackupRestoreResult>()
+    val fullBackupResult = _fullBackupResult.asSharedFlow()
+
+    fun exportFullBackup() {
+        viewModelScope.launch {
+            val file = fullBackupManager.exportFullBackup()
+            _exportRequest.value = ExportShareRequest(
+                uri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                ),
+                mimeType = "application/json",
+                fileName = file.name,
+                title = context.getString(com.example.expensetracker.R.string.full_backup_title)
+            )
+        }
+    }
+
+    fun importFullBackup(uri: Uri) {
+        viewModelScope.launch {
+            runCatching {
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    stream.bufferedReader().readText()
+                } ?: throw IllegalStateException("Cannot read file")
+            }.onSuccess { content ->
+                val result = fullBackupManager.importFullBackup(content)
+                _fullBackupResult.emit(result)
+            }.onFailure { error ->
+                _fullBackupResult.emit(
+                    com.example.expensetracker.core.export.FullBackupRestoreResult(
+                        isSuccess = false,
+                        errorMessage = error.message ?: "Failed to read backup file"
+                    )
                 )
             }
         }

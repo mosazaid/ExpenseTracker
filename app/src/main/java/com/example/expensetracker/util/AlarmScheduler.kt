@@ -71,6 +71,15 @@ class AlarmScheduler @Inject constructor(
         }
     }
 
+    fun schedulePrayerAlarm(prayerName: String, timeStr: String) {
+        val parts = timeStr.split(":")
+        if (parts.size >= 2) {
+            val hour = parts[0].trim().toIntOrNull() ?: return
+            val minute = parts[1].trim().take(2).toIntOrNull() ?: return
+            schedulePrayerAlarm(prayerName, hour, minute)
+        }
+    }
+
     fun schedulePrayerAlarm(prayerName: String, hour: Int, minute: Int) {
         val reqCode = prayerRequestCode(prayerName)
         val formattedTime = String.format(java.util.Locale.US, "%02d:%02d", hour, minute)

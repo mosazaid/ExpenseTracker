@@ -212,9 +212,28 @@
   - [ ] Open `OverviewScreen` and tap the GPS Location Sync icon button in the top bar.
   - [ ] Verify runtime location permission prompt is triggered (if not granted) or location is refreshed with a confirmation snackbar.
 
+## Complete App Backup & Device Migration (JSON)
+- [ ] Go to **Settings -> Data Management -> Complete App Backup (Transfer to Another Device)**.
+- [ ] Tap **Export All Data & Settings (JSON)**:
+  - [ ] System file creator prompts for save location with default name `expense_tracker_full_backup_*.json`.
+  - [ ] File contains valid JSON with `version`, `database` (all 9 tables), and `preferences` (all DataStore keys).
+- [ ] Tap **Restore Complete Backup (JSON)**:
+  - [ ] Confirmation warning dialog appears informing user that existing data will be replaced.
+  - [ ] Selecting a backup JSON file restores transactions, splits, categories, subcategories, budgets, loans, alerts, and settings.
+  - [ ] Snackbar/toast confirms exact restored counts (e.g. `Restored: X transactions, Y categories, Z preferences`).
+  - [ ] All settings (currency, language, theme, 12h/24h, opening balances) update immediately.
+
+## Debts & Loans Partial Payments
+- [ ] Open `DebtsScreen` and select a debt to pay.
+- [ ] Verify partial payment option allows specifying amount less than total.
+- [ ] Progress reflects partial payment (e.g. paid $50 of $100).
+- [ ] Transaction history records corresponding payment item with proper transaction type and debtor reference.
+- [ ] Paying full balance removes debt reminder alert from notification list.
+
 ## Regression Checks
 - [ ] Categories and Subcategories CRUD still works.
 - [ ] Existing historical data remains readable after v16 → v17 migration.
 - [ ] Currency numbers formatted with proper decimal places across all screens.
 - [ ] Database browser includes `transaction_splits`, `configured_loans`, `monthly_loan_payments`, and `app_alerts`.
+
 

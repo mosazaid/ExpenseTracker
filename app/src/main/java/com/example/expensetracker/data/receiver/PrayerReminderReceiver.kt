@@ -33,22 +33,45 @@ class PrayerReminderReceiver : BroadcastReceiver() {
         val prayerName = intent.getStringExtra(EXTRA_PRAYER_NAME) ?: "Prayer"
         val prayerTime = intent.getStringExtra(EXTRA_PRAYER_TIME) ?: ""
 
-        if (action == ACTION_PRAYER_ALARM) {
+        if (action == ACTION_PRAYER_ALARM || action == Intent.ACTION_BOOT_COMPLETED) {
             val pendingResult = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val alertsEnabled = userPreferences.prayerAlertsEnabled.first()
-                    if (alertsEnabled) {
-                        val isPrayerEnabled = when (prayerName.lowercase(java.util.Locale.US)) {
-                            "fajr" -> userPreferences.fajrAlertEnabled.first()
-                            "dhuhr" -> userPreferences.dhuhrAlertEnabled.first()
-                            "asr" -> userPreferences.asrAlertEnabled.first()
-                            "maghrib" -> userPreferences.maghribAlertEnabled.first()
-                            "isha" -> userPreferences.ishaAlertEnabled.first()
-                            else -> false
+                    if (action == ACTION_PRAYER_ALARM) {
+                        if (alertsEnabled) {
+                            val isPrayerEnabled = when (prayerName.lowercase(java.util.Locale.US)) {
+                                "fajr" -> userPreferences.fajrAlertEnabled.first()
+                                "dhuhr" -> userPreferences.dhuhrAlertEnabled.first()
+                                "asr" -> userPreferences.asrAlertEnabled.first()
+                                "maghrib" -> userPreferences.maghribAlertEnabled.first()
+                                "isha" -> userPreferences.ishaAlertEnabled.first()
+                                else -> false
+                            }
+                            if (isPrayerEnabled) {
+                                notificationHelper.showPrayerReminderNotification(prayerName, prayerTime)
+                            }
                         }
-                        if (isPrayerEnabled) {
-                            notificationHelper.showPrayerReminderNotification(prayerName, prayerTime)
+                        // Automatically reschedule for tomorrow at the same prayer time
+                        if (prayerTime.isNotBlank()) {
+                            alarmScheduler.schedulePrayerAlarm(prayerName, prayerTime)
+                        }
+                    } else if (action == Intent.ACTION_BOOT_COMPLETED) {
+                        if (alertsEnabled) {
+                            // Compute today's schedule and reschedule all enabled prayers
+                            val locationHelper = com.example.expensetracker.core.location.LocationHelper(context)
+                            val detected = locationHelper.detectLocationInfo()
+                            val city = detected?.nearestPresetCity ?: PrayerTimesCalculator.PRESET_CITIES.first()
+                            val methodKey = userPreferences.prayerCalculationMethod.first()
+                            val method = methodKey?.let { runCatching { PrayerCalculationMethod.valueOf(it) }.getOrNull() }
+                                ?: PrayerCalculationMethod.autoDetect(detected?.countryCode)
+                            val schedule = PrayerTimesCalculator.calculateDaySchedule(city, Date(), method, true)
+
+                            if (userPreferences.fajrAlertEnabled.first()) alarmScheduler.schedulePrayerAlarm("Fajr", schedule.fajr24)
+                            if (userPreferences.dhuhrAlertEnabled.first()) alarmScheduler.schedulePrayerAlarm("Dhuhr", schedule.dhuhr24)
+                            if (userPreferences.asrAlertEnabled.first()) alarmScheduler.schedulePrayerAlarm("Asr", schedule.asr24)
+                            if (userPreferences.maghribAlertEnabled.first()) alarmScheduler.schedulePrayerAlarm("Maghrib", schedule.maghrib24)
+                            if (userPreferences.ishaAlertEnabled.first()) alarmScheduler.schedulePrayerAlarm("Isha", schedule.isha24)
                         }
                     }
                 } finally {

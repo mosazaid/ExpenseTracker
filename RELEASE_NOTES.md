@@ -1,5 +1,28 @@
 # Release Notes
 
+## Version: Feature Expansion Phase 11 — Complete App Backup & Device Migration (JSON), Debt Partial Payments & History, Wallet Balance Correction, and Elevation-Calibrated Prayer Engine (October 2026)
+
+### Highlights
+- **Complete App Backup & Device Migration (Full JSON)**:
+  - Created `FullBackupManager` supporting comprehensive JSON export and atomic restore of 100% of the application state.
+  - Backs up all Room database entities across 9 tables: Categories, Subcategories, Budgets, Configured Loans, Recurring Transactions, Transactions, Transaction Splits, Monthly Loan Payments, and App Alerts.
+  - Exports and restores all user configurations and preferences (`UserPreferences` / DataStore / SharedPreferences) including selected currency, theme mode, language, 12h/24h time format, account opening balances, alert master switches, prayer methods, notification preferences, and backup timestamps.
+  - Strict Foreign Key order management: atomic deletion (`splits` -> `transactions` -> `payments` -> `budgets` -> `subcategories` -> `recurring` -> `loans` -> `categories` -> `alerts`) and insertion (`categories` -> `subcategories` -> `budgets` -> `loans` -> `recurring` -> `transactions` -> `splits` -> `payments` -> `alerts`) inside `AppDatabase.withTransaction`.
+  - Accessible UI in `SettingsScreen`: dedicated **"Complete App Backup (Transfer to Another Device)"** card with system file picker (`CreateDocument` / `OpenDocument`), destructive confirmation dialog, and granular toast/snackbar reporting exact item counts restored.
+- **Enhanced CSV Import & Export**:
+  - Upgraded `CsvImporter` to parse `debtType`, `isDebtSettled`, `recurringId`, and `receiptImagePath` fields from CSV rows if present.
+- **Debts & Loans Modernization (Partial Payments & Transaction History)**:
+  - Added support for partial and full debt repayments with progress tracking (`x/y` paid).
+  - Automatically records payment transactions in history with type-aware linking (`EXPENSE` for debts you owe, `INCOME` for debts owed to you).
+  - Dynamically updates active debt alerts and clears resolved notifications once remaining balance reaches zero.
+- **Wallet Balance Fix**:
+  - Corrected balance accounting in `WalletCalculator` and `WalletViewModel` to ensure held wallet balances correctly display positive funds without inverted signs.
+- **Elevation Horizon Dip Correction in Solar Prayer Calculations**:
+  - Incorporated astronomical elevation horizon dip ($\text{dip} = 0.0347^\circ \times \sqrt{h}$) into `PrayerTimesCalculator.calculateDaySchedule`.
+  - Fixed discrepancy where Maghrib was calculated ~4 minutes early in high-elevation locations like Amman (~780m above sea level), achieving exact minute alignment with official Ministry of Awqaf and TimesPrayer schedules.
+
+---
+
 ## Version: Feature Expansion Phase 10 — 12H/24H Time Format, App Icon Notifications, High-Precision Solar Prayer Engine, Expanded Global Cities & Financial Insights Info Fix (October 2026)
 
 ### Highlights

@@ -3,6 +3,7 @@ package com.example.expensetracker.data.database.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.expensetracker.data.database.entities.AccountType
@@ -222,15 +223,13 @@ interface TransactionDao {
 
     @Query(
         """
-        SELECT * FROM transactions
-        WHERE type = 'EXPENSE'
-          AND awaitingReimbursement = 1
-          AND date BETWEEN :startDate AND :endDate
-          AND id NOT IN (
-              SELECT linkedExpenseId FROM transactions
-              WHERE linkedExpenseId IS NOT NULL
-          )
-        ORDER BY date DESC
+        SELECT t.* FROM transactions t
+        WHERE t.type = 'EXPENSE'
+          AND t.awaitingReimbursement = 1
+          AND t.isDebtSettled = 0
+          AND t.date BETWEEN :startDate AND :endDate
+          AND COALESCE((SELECT SUM(amount) FROM transactions WHERE linkedExpenseId = t.id), 0) < t.amount
+        ORDER BY t.date DESC
         """
     )
     suspend fun getUnreimbursedExpenses(startDate: Date, endDate: Date): List<Transaction>
@@ -253,6 +252,12 @@ interface TransactionDao {
         """
     )
     suspend fun getDeptIncomesLinkedTo(expenseId: Long): List<Transaction>
+
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE linkedExpenseId = :expenseId")
+    suspend fun getTotalReimbursedAmountForExpense(expenseId: Long): Double
+
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE linkedExpenseId = :expenseId")
+    fun getTotalReimbursedAmountForExpenseFlow(expenseId: Long): Flow<Double>
 
     @Query(
         """
@@ -383,5 +388,14 @@ interface TransactionDao {
         description: String,
         type: TransactionType
     ): Flow<List<Transaction>>
+
+    @Query("SELECT * FROM transactions ORDER BY id ASC")
+    suspend fun getAllTransactionsSnapshot(): List<Transaction>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTransactions(transactions: List<Transaction>): List<Long>
+
+    @Query("DELETE FROM transactions")
+    suspend fun deleteAllTransactions()
 }
 

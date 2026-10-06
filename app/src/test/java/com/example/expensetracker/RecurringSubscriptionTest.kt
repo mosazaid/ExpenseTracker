@@ -96,6 +96,18 @@ class RecurringSubscriptionTest {
         override suspend fun deleteRecurringTransactionById(id: Long) {
             items.removeAll { it.id == id }
         }
+
+        override suspend fun getAllRecurringTransactionsSnapshot(): List<RecurringTransaction> =
+            items.toList()
+
+        override suspend fun insertRecurringTransactions(transactions: List<RecurringTransaction>): List<Long> {
+            items.addAll(transactions)
+            return transactions.map { it.id }
+        }
+
+        override suspend fun deleteAllRecurringTransactions() {
+            items.clear()
+        }
     }
 
     class FakeCategoryRepository : ICategoryRepository {

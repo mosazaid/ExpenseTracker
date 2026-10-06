@@ -42,4 +42,13 @@ interface AppAlertDao {
 
     @Delete
     suspend fun deleteAlert(alert: AppAlert)
+
+    @Query("SELECT * FROM app_alerts ORDER BY id ASC")
+    suspend fun getAllAlertsSnapshot(): List<AppAlert>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAlerts(alerts: List<AppAlert>): List<Long>
+
+    @Query("DELETE FROM app_alerts")
+    suspend fun deleteAllAlerts()
 }

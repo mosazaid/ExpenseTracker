@@ -226,6 +226,21 @@
     <string name="debt_type_borrowed_short">Borrowed</string>
     <string name="carry_forward_confirm_btn">Keep Active</string>
     <string name="mark_settled_btn">Mark Settled</string>
+    <string name="debt_pay_action">Pay / Settle</string>
+    <string name="debt_forgive_action">Forgive (مسامحة)</string>
+    <string name="debt_paid_progress">Paid: %1$s / %2$s</string>
+    <string name="debt_remaining_label">Remaining: %1$s</string>
+    <string name="debt_record_payment_title">Record Debt Payment</string>
+    <string name="debt_record_payment_desc">Enter the amount paid. It will be recorded into your history and subtracted from this debt.</string>
+    <string name="debt_payment_amount_label">Payment Amount</string>
+    <string name="debt_payment_account_label">Payment Account</string>
+    <string name="debt_quick_full_pay">Full Balance (%1$s)</string>
+    <string name="debt_forgive_confirm_title">Forgive this debt?</string>
+    <string name="debt_forgive_confirm_desc">Are you sure you want to forgive and close this debt? It will be marked as settled without creating any further payment transactions.</string>
+    <string name="debt_forgive_confirm_btn">Forgive &amp; Close</string>
+    <string name="compass_calibrate_dialog_title">Calibrate Compass</string>
+    <string name="compass_calibrate_dialog_desc">The magnetometer sensor has low precision or magnetic interference. Wave your phone in a figure-8 (∞) pattern in the air to recalibrate and ensure it is kept away from magnets or metal.</string>
+    <string name="compass_calibrate_understood">Understood</string>
 
     <!-- Categories & Budgets -->
     <string name="categories_budgets_title">Categories &amp; Budgets</string>
@@ -443,5 +458,15 @@
     <string name="pacing_info_projection_title">Projected Surplus / Deficit</string>
     <string name="pacing_info_projection_desc">The expected net balance when the cycle concludes, calculated by comparing your baseline budget against current spend and realistic remaining run rate.</string>
     <string name="pacing_info_close">Understood</string>
+
+    <!-- Full App Backup & Migration -->
+    <string name="full_backup_title">Complete App Backup (Transfer to Another Device)</string>
+    <string name="full_backup_desc">Backup or restore everything: all transactions, categories, loans, debts, recurring items, alerts, and settings.</string>
+    <string name="full_backup_export_btn">Export Complete Backup</string>
+    <string name="full_backup_import_btn">Restore Complete Backup</string>
+    <string name="full_backup_import_confirm_title">Restore Complete Backup?</string>
+    <string name="full_backup_import_confirm_desc">This will replace current app data and preferences with the contents of the backup file. Proceed?</string>
+    <string name="full_backup_success">Backup restored: %1$d transactions, %2$d categories, %3$d loans, and all preferences restored.</string>
+    <string name="full_backup_error">Backup restoration failed: %1$s</string>
 </resources>
 

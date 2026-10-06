@@ -35,4 +35,13 @@ interface ConfiguredLoanDao {
 
     @Query("DELETE FROM configured_loans WHERE id = :id")
     suspend fun deleteLoanById(id: Long)
+
+    @Query("SELECT * FROM configured_loans ORDER BY id ASC")
+    suspend fun getAllLoansSnapshot(): List<ConfiguredLoan>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertLoans(loans: List<ConfiguredLoan>): List<Long>
+
+    @Query("DELETE FROM configured_loans")
+    suspend fun deleteAllLoans()
 }

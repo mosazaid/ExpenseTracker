@@ -78,14 +78,8 @@ class WalletViewModel @Inject constructor(
     }
 
     suspend fun getWalletBalanceForSelectedPeriod(): Double {
-        val bounds = periodCalculator.getBounds(
-            HistoryPeriod.MONTH,
-            _uiState.value.selectedDate,
-            MonthMode.SALARY
-        )
-        if (bounds.isSalaryFallback) return 0.0
         val excludeId = _uiState.value.editingTransactionId
-        return walletCalculator.getWalletBalance(bounds.start, bounds.end, excludeId)
+        return walletCalculator.getCumulativeWalletBalance(excludeId)
     }
 
     suspend fun getAvailableLiquidBalance(account: AccountType): Double {

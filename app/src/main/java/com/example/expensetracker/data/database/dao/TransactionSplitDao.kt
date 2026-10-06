@@ -44,4 +44,7 @@ interface TransactionSplitDao {
 
     @Query("UPDATE transaction_splits SET isDebtSettled = :settled WHERE id = :splitId")
     suspend fun setDebtSettled(splitId: Long, settled: Boolean)
+
+    @Query("DELETE FROM transaction_splits")
+    suspend fun deleteAllSplits()
 }

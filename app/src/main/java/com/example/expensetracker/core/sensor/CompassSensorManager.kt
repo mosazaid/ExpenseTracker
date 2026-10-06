@@ -1,6 +1,7 @@
 package com.example.expensetracker.core.sensor
 
 import android.content.Context
+import android.hardware.GeomagneticField
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -11,11 +12,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlin.math.abs
 
 data class CompassReading(
-    val azimuth: Float = 0f, // Device azimuth in degrees (0..360, where 0 is North)
+    val azimuth: Float = 0f, // True azimuth in degrees (0..360, where 0 is True North)
+    val magneticAzimuth: Float = 0f, // Raw magnetic azimuth in degrees
+    val declination: Float = 0f, // Geomagnetic declination offset in degrees
     val accuracy: Int = SensorManager.SENSOR_STATUS_ACCURACY_HIGH,
     val isSensorAvailable: Boolean = true,
     val pitch: Float = 0f,
-    val roll: Float = 0f
+    val roll: Float = 0f,
+    val isTilted: Boolean = false,
+    val isCalibrated: Boolean = true
 )
 
 class CompassSensorManager(context: Context) : SensorEventListener {
@@ -32,6 +37,7 @@ class CompassSensorManager(context: Context) : SensorEventListener {
     val reading: StateFlow<CompassReading> = _reading.asStateFlow()
 
     private val rotationMatrix = FloatArray(9)
+    private val remappedMatrix = FloatArray(9)
     private val orientationAngles = FloatArray(3)
 
     private var gravityValues = FloatArray(3)
@@ -39,14 +45,34 @@ class CompassSensorManager(context: Context) : SensorEventListener {
     private var hasGravity = false
     private var hasGeomagnetic = false
 
+    private var magneticDeclination = 0f
     private var smoothedAzimuth = 0f
     private var isListening = false
+    private var currentAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_HIGH
+
+    fun setLocation(latitude: Double, longitude: Double, altitude: Double = 0.0) {
+        try {
+            val geomagneticField = GeomagneticField(
+                latitude.toFloat(),
+                longitude.toFloat(),
+                altitude.toFloat(),
+                System.currentTimeMillis()
+            )
+            magneticDeclination = geomagneticField.declination
+        } catch (_: Exception) {
+            magneticDeclination = 0f
+        }
+    }
 
     fun start() {
         if (isListening) return
         val hasRotationVector = rotationVectorSensor != null
         if (hasRotationVector) {
             sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_UI)
+            // Also listen to magnetic sensor to monitor magnetic field accuracy / calibration
+            magneticSensor?.let {
+                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+            }
             isListening = true
         } else if (accelerometerSensor != null && magneticSensor != null) {
             sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_UI)
@@ -64,26 +90,32 @@ class CompassSensorManager(context: Context) : SensorEventListener {
     }
 
     override fun onSensorChanged(event: SensorEvent) {
+        if (event.accuracy != SensorManager.SENSOR_STATUS_UNRELIABLE) {
+            currentAccuracy = event.accuracy
+        }
+
         when (event.sensor.type) {
             Sensor.TYPE_ROTATION_VECTOR -> {
                 SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-                SensorManager.getOrientation(rotationMatrix, orientationAngles)
-                val rawAzimuth = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
-                val normalizedAzimuth = (rawAzimuth + 360f) % 360f
-                val pitch = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
-                val roll = Math.toDegrees(orientationAngles[2].toDouble()).toFloat()
-
-                updateAzimuth(normalizedAzimuth, event.accuracy, pitch, roll)
+                computeOrientation(rotationMatrix, currentAccuracy)
             }
             Sensor.TYPE_ACCELEROMETER -> {
                 gravityValues = event.values.clone()
                 hasGravity = true
-                if (hasGeomagnetic) computeFromAccMag(event.accuracy)
+                if (hasGeomagnetic) computeFromAccMag(currentAccuracy)
             }
             Sensor.TYPE_MAGNETIC_FIELD -> {
                 geomagneticValues = event.values.clone()
                 hasGeomagnetic = true
-                if (hasGravity) computeFromAccMag(event.accuracy)
+                currentAccuracy = event.accuracy
+                if (rotationVectorSensor == null && hasGravity) {
+                    computeFromAccMag(currentAccuracy)
+                } else {
+                    _reading.value = _reading.value.copy(
+                        accuracy = currentAccuracy,
+                        isCalibrated = currentAccuracy >= SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
+                    )
+                }
             }
         }
     }
@@ -91,35 +123,71 @@ class CompassSensorManager(context: Context) : SensorEventListener {
     private fun computeFromAccMag(accuracy: Int) {
         val success = SensorManager.getRotationMatrix(rotationMatrix, null, gravityValues, geomagneticValues)
         if (success) {
-            SensorManager.getOrientation(rotationMatrix, orientationAngles)
-            val rawAzimuth = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
-            val normalizedAzimuth = (rawAzimuth + 360f) % 360f
-            val pitch = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
-            val roll = Math.toDegrees(orientationAngles[2].toDouble()).toFloat()
-
-            updateAzimuth(normalizedAzimuth, accuracy, pitch, roll)
+            computeOrientation(rotationMatrix, accuracy)
         }
     }
 
-    private fun updateAzimuth(newAzimuth: Float, accuracy: Int, pitch: Float, roll: Float) {
+    private fun computeOrientation(rotMatrix: FloatArray, accuracy: Int) {
+        SensorManager.getOrientation(rotMatrix, orientationAngles)
+        val initialPitch = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
+
+        // Coordinate remapping for tilted device to prevent 180° gimbal lock inversion
+        val remapped = if (abs(initialPitch) > 45f) {
+            val axisY = if (initialPitch > 0) SensorManager.AXIS_MINUS_Z else SensorManager.AXIS_Z
+            val success = SensorManager.remapCoordinateSystem(rotMatrix, SensorManager.AXIS_X, axisY, remappedMatrix)
+            if (success) remappedMatrix else rotMatrix
+        } else {
+            rotMatrix
+        }
+
+        SensorManager.getOrientation(remapped, orientationAngles)
+        val rawAzimuth = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
+        val normalizedMagAzimuth = (rawAzimuth + 360f) % 360f
+        val pitch = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
+        val roll = Math.toDegrees(orientationAngles[2].toDouble()).toFloat()
+
+        // Convert Magnetic Azimuth to True North Azimuth using Geomagnetic Declination
+        val trueAzimuth = (normalizedMagAzimuth + magneticDeclination + 360f) % 360f
+
+        updateAzimuth(trueAzimuth, normalizedMagAzimuth, accuracy, pitch, roll)
+    }
+
+    private fun updateAzimuth(
+        newTrueAzimuth: Float,
+        magAzimuth: Float,
+        accuracy: Int,
+        pitch: Float,
+        roll: Float
+    ) {
         // Smooth angle along the shortest circular path
-        var diff = (newAzimuth - smoothedAzimuth) % 360f
+        var diff = (newTrueAzimuth - smoothedAzimuth) % 360f
         if (diff > 180f) diff -= 360f
         if (diff < -180f) diff += 360f
 
-        // Exponential smoothing factor: 0.25 provides responsive yet stable rotation
-        smoothedAzimuth = (smoothedAzimuth + diff * 0.25f + 360f) % 360f
+        // Exponential smoothing factor: 0.22 provides responsive yet stable rotation
+        smoothedAzimuth = (smoothedAzimuth + diff * 0.22f + 360f) % 360f
+
+        val isTilted = abs(pitch) > 30f || abs(roll) > 30f
+        val isCalibrated = accuracy >= SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
 
         _reading.value = CompassReading(
             azimuth = smoothedAzimuth,
+            magneticAzimuth = magAzimuth,
+            declination = magneticDeclination,
             accuracy = accuracy,
             isSensorAvailable = true,
             pitch = pitch,
-            roll = roll
+            roll = roll,
+            isTilted = isTilted,
+            isCalibrated = isCalibrated
         )
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        _reading.value = _reading.value.copy(accuracy = accuracy)
+        currentAccuracy = accuracy
+        _reading.value = _reading.value.copy(
+            accuracy = accuracy,
+            isCalibrated = accuracy >= SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
+        )
     }
 }
