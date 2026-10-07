@@ -174,7 +174,6 @@
 ## Notification Settings Screen
 - [ ] Dedicated `NotificationSettingsScreen` accessible from Settings and More tab.
 - [ ] Toggles work for Loan Reminders, Debt Reminders, Salary & Recurring, Budget Warnings, and Daily 9 PM Reminder.
-- [ ] "Send Test Notification" dispatches test notification successfully.
 
 ## Phase 9 Enhancements & Bug Fixes
 - [ ] **Split Subcategory Spend Attribution & History Display**:

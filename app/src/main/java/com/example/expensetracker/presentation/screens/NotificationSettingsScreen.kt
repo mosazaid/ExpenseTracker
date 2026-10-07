@@ -276,30 +276,6 @@ fun NotificationSettingsScreen(
                 checked = dailyReminder,
                 onCheckedChange = { viewModel.setDailyReminder(it) }
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Test Notification Button
-            OutlinedButton(
-                onClick = {
-                    viewModel.sendTestNotification()
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(context.getString(R.string.test_notification_sent))
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.NotificationsActive,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.send_test_notification_btn))
-            }
         }
     }
 

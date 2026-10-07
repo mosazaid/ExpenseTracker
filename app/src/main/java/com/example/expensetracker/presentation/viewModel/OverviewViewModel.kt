@@ -70,7 +70,7 @@ class OverviewViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     val monthSummary: StateFlow<MonthSummaryUiState> =
         combine(monthMode, allTransactions, _refreshTrigger) { mode, txns, trigger ->
-            Triple(mode, txns.size, trigger)
+            Triple(mode, txns, trigger)
         }
             .flatMapLatest { (mode, _, _) ->
                 flow { emit(buildMonthSummary(mode, Date())) }

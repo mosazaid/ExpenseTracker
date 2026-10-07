@@ -296,10 +296,6 @@ class SettingsViewModel @Inject constructor(
         return notificationHelper.areNotificationsEnabled()
     }
 
-    fun sendTestSalaryNotification() {
-        notificationHelper.showTestNotification()
-    }
-
     fun deactivateSalaryReminder(id: Long) {
         viewModelScope.launch {
             recurringRepository.deactivateRecurring(id)

@@ -56,8 +56,4 @@ class NotificationSettingsViewModel @Inject constructor(
     fun setDailyReminder(enabled: Boolean) {
         viewModelScope.launch { userPreferences.setDailyReminderEnabled(enabled) }
     }
-
-    fun sendTestNotification() {
-        notificationHelper.showDailyExpenseReminderNotification()
-    }
 }

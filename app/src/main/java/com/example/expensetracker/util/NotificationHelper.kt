@@ -217,33 +217,6 @@ class NotificationHelper @Inject constructor(
         NotificationManagerCompat.from(context).cancel(notifId)
     }
 
-    fun showTestNotification() {
-        if (!hasPermission()) return
-        createChannels()
-
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            9999,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val builder = NotificationCompat.Builder(context, CHANNEL_SALARY)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Test Notification")
-            .setContentText("Notifications are working properly!")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-
-        appIconBitmap?.let { builder.setLargeIcon(it) }
-
-        NotificationManagerCompat.from(context).notify(9999, builder.build())
-    }
-
     fun showPrayerReminderNotification(prayerName: String, prayerTime: String) {
         if (!hasPermission()) return
         createChannels()

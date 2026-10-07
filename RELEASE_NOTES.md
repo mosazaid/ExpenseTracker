@@ -14,12 +14,20 @@
 - **Debts & Loans Modernization (Partial Payments & Transaction History)**:
   - Added support for partial and full debt repayments with progress tracking (`x/y` paid).
   - Automatically records payment transactions in history with type-aware linking (`EXPENSE` for debts you owe, `INCOME` for debts owed to you).
-  - Dynamically updates active debt alerts and clears resolved notifications once remaining balance reaches zero.
 - **Wallet Balance Fix**:
   - Corrected balance accounting in `WalletCalculator` and `WalletViewModel` to ensure held wallet balances correctly display positive funds without inverted signs.
 - **Elevation Horizon Dip Correction in Solar Prayer Calculations**:
   - Incorporated astronomical elevation horizon dip ($\text{dip} = 0.0347^\circ \times \sqrt{h}$) into `PrayerTimesCalculator.calculateDaySchedule`.
   - Fixed discrepancy where Maghrib was calculated ~4 minutes early in high-elevation locations like Amman (~780m above sea level), achieving exact minute alignment with official Ministry of Awqaf and TimesPrayer schedules.
+- **Overview Available Balance Refinement**:
+  - Confirmed and verified that the Total Available Balance in the Overview header (`HeroBalanceCard`) strictly represents liquid available funds (`Cash + Bank`), excluding amounts reserved or moved into the Wallet (`WALLET_MOVE`).
+  - Updated `OverviewViewModel` reactive state flow to re-emit immediately whenever transaction contents change.
+  - Replaced hardcoded currency badges in Overview with dynamic `CurrencyUtils.activeCurrencyCode`.
+  - Updated `OverviewViewModel` reactive state flow to re-emit immediately whenever transaction contents change.
+  - Replaced hardcoded currency badges in Overview with dynamic `CurrencyUtils.activeCurrencyCode`.
+- **Test Notification Cleanup**:
+  - Removed "Send Test Notification" UI button from `NotificationSettingsScreen`.
+  - Cleaned up obsolete test notification dispatch methods from ViewModels, `NotificationHelper`, and localized string resources.
 
 ---
 

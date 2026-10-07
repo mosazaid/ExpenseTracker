@@ -373,8 +373,6 @@
     <string name="alert_budget_desc">تحذيرات ذكية عند الاقتراب من الحد الأقصى لميزانية الفئة أو تجاوزه.</string>
     <string name="alert_daily_title">تذكير التسجيل اليومي</string>
     <string name="alert_daily_desc">تذكير مسائي هادئ في حال لم تسجل أي مصروف خلال اليوم للحفاظ على عاداتك المالية.</string>
-    <string name="test_notification_sent">تم إرسال إشعار تجريبي</string>
-    <string name="send_test_notification_btn">إرسال إشعار تجريبي</string>
     <string name="manage_notifications_btn">إعدادات التنبيهات والإشعارات</string>
     <string name="manage_notifications_desc">التحكم في كافة تنبيهات التطبيق، التذكيرات الدورية والتسجيل اليومي</string>
 

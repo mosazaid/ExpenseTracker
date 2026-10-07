@@ -136,8 +136,9 @@ fun OverviewScreen(
         }
     }
 
-    val cashBal = monthSummary.currentBalances.cash ?: 0.0
-    val bankBal = monthSummary.currentBalances.bank ?: 0.0
+    val cashBal = monthSummary.currentBalances.cash
+    val bankBal = monthSummary.currentBalances.bank
+    // Total available balance in header strictly excludes wallet (Cash + Bank only; funds moved to wallet are deducted)
     val totalAvailable = (cashBal + bankBal)
     val recentTransactions = remember(allTransactions) { allTransactions.take(4) }
 
@@ -443,7 +444,7 @@ private fun HeroBalanceCard(
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "JOD",
+                        text = CurrencyUtils.activeCurrencyCode,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -824,7 +825,7 @@ private fun MonthlyFinancialSummaryCard(
                                     textAlign = TextAlign.End
                                 )
                                 Text(
-                                    text = "JOD",
+                                    text = CurrencyUtils.activeCurrencyCode,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.outline,
@@ -898,7 +899,7 @@ private fun MonthlyFinancialSummaryCard(
                                         textAlign = TextAlign.End
                                     )
                                     Text(
-                                        text = "JOD",
+                                        text = CurrencyUtils.activeCurrencyCode,
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.outline,
