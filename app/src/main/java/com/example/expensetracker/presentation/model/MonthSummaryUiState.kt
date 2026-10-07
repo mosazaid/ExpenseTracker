@@ -25,6 +25,7 @@ data class MonthSummaryUiState(
     val transferImpact: AccountBalances = AccountBalances(0.0, 0.0),
     val currentBalances: AccountBalances = AccountBalances(0.0, 0.0),
     val walletBalance: Double = 0.0,
+    val cumulativeWalletBalance: Double = 0.0,
     val dueReminders: List<RecurringTransaction> = emptyList(),
     val periodLoansDeducted: Double = 0.0,
     val totalPaidLoans: Double = 0.0,

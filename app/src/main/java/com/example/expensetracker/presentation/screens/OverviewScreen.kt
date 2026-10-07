@@ -241,7 +241,8 @@ fun OverviewScreen(
                 HeroBalanceCard(
                     totalBalance = totalAvailable,
                     cashBalance = cashBal,
-                    bankBalance = bankBal
+                    bankBalance = bankBal,
+                    walletBalance = monthSummary.cumulativeWalletBalance
                 )
             }
 
@@ -402,16 +403,34 @@ private fun HeroBalanceCard(
     totalBalance: Double,
     cashBalance: Double,
     bankBalance: Double,
+    walletBalance: Double = 0.0,
     modifier: Modifier = Modifier
 ) {
-    val totalSafe = (cashBalance.coerceAtLeast(0.0) + bankBalance.coerceAtLeast(0.0)).coerceAtLeast(0.01)
-    val cashRatio = (cashBalance.coerceAtLeast(0.0) / totalSafe).toFloat().coerceIn(0f, 1f)
-    val bankRatio = (bankBalance.coerceAtLeast(0.0) / totalSafe).toFloat().coerceIn(0f, 1f)
+    val safeCash = cashBalance.coerceAtLeast(0.0)
+    val safeBank = bankBalance.coerceAtLeast(0.0)
+    val safeWallet = walletBalance.coerceAtLeast(0.0)
+    val hasWallet = safeWallet > 0.0
+
+    // Assets denominator accurately incorporates wallet when present so Bank doesn't absorb 100%
+    val totalAssets = (safeCash + safeBank + safeWallet).coerceAtLeast(0.01)
+    val cashRatio = (safeCash / totalAssets).toFloat().coerceIn(0f, 1f)
+    val bankRatio = (safeBank / totalAssets).toFloat().coerceIn(0f, 1f)
+    val walletRatio = (safeWallet / totalAssets).toFloat().coerceIn(0f, 1f)
 
     val animatedCashRatio by animateFloatAsState(
         targetValue = cashRatio,
         animationSpec = tween(durationMillis = 350),
         label = "cashRatio"
+    )
+    val animatedBankRatio by animateFloatAsState(
+        targetValue = bankRatio,
+        animationSpec = tween(durationMillis = 350),
+        label = "bankRatio"
+    )
+    val animatedWalletRatio by animateFloatAsState(
+        targetValue = walletRatio,
+        animationSpec = tween(durationMillis = 350),
+        label = "walletRatio"
     )
 
     Surface(
@@ -432,11 +451,21 @@ private fun HeroBalanceCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = stringResource(R.string.total_available_balance),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = stringResource(R.string.total_available_balance),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (hasWallet) {
+                        Text(
+                            text = "${stringResource(R.string.action_wallet)}: ${CurrencyUtils.formatCurrency(safeWallet)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF7E57C2)
+                        )
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
@@ -471,7 +500,7 @@ private fun HeroBalanceCard(
                         .clip(RoundedCornerShape(4.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 ) {
-                    if (animatedCashRatio > 0.01f) {
+                    if (animatedCashRatio > 0.005f) {
                         Box(
                             modifier = Modifier
                                 .weight(animatedCashRatio)
@@ -479,13 +508,20 @@ private fun HeroBalanceCard(
                                 .background(MaterialTheme.colorScheme.primary)
                         )
                     }
-                    val remainingWeight = (1f - animatedCashRatio).coerceAtLeast(0.001f)
-                    if (bankRatio > 0.01f) {
+                    if (animatedBankRatio > 0.005f) {
                         Box(
                             modifier = Modifier
-                                .weight(remainingWeight)
+                                .weight(animatedBankRatio)
                                 .fillMaxHeight()
                                 .background(MaterialTheme.colorScheme.secondary)
+                        )
+                    }
+                    if (hasWallet && animatedWalletRatio > 0.005f) {
+                        Box(
+                            modifier = Modifier
+                                .weight(animatedWalletRatio)
+                                .fillMaxHeight()
+                                .background(Color(0xFF7E57C2))
                         )
                     }
                 }
@@ -527,6 +563,25 @@ private fun HeroBalanceCard(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+
+                    if (hasWallet) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF7E57C2))
+                            )
+                            Text(
+                                text = "${stringResource(R.string.action_wallet)}: ${(walletRatio * 100).toInt()}%",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }

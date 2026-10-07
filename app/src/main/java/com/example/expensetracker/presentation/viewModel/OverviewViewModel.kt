@@ -104,6 +104,7 @@ class OverviewViewModel @Inject constructor(
             0.0
         }
         val dueReminders = recurringRepository.getDueReminders()
+        val cumulativeWalletBalance = walletCalculator.getCumulativeWalletBalance()
         val currentRemainingIncome = financials.periodNet - walletBalance
         val totalRemaining = financials.currentBalances.total
         val previousMonthRemaining = totalRemaining - currentRemainingIncome
@@ -122,6 +123,7 @@ class OverviewViewModel @Inject constructor(
             transferImpact = financials.transferImpact,
             currentBalances = financials.currentBalances,
             walletBalance = walletBalance,
+            cumulativeWalletBalance = cumulativeWalletBalance,
             dueReminders = dueReminders,
             periodLoansDeducted = financials.periodLoansDeducted,
             totalPaidLoans = financials.totalPaidLoans,

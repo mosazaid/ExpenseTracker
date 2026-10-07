@@ -34,4 +34,31 @@ class MonthSummaryRemainingTest {
         assertEquals(state.totalRemaining, state.previousMonthRemaining + state.remainingIncome, 0.001)
         assertEquals(55.02, state.currentBalances.total, 0.001)
     }
+
+    @Test
+    fun testHeroAssetDistribution_withCumulativeWallet() {
+        val cashBal = 200.0
+        val bankBal = 800.0
+        val walletBal = 500.0
+        val state = MonthSummaryUiState(
+            currentBalances = AccountBalances(cash = cashBal, bank = bankBal),
+            cumulativeWalletBalance = walletBal
+        )
+
+        // Total available strictly liquid: Cash + Bank (excludes wallet)
+        val totalAvailable = state.currentBalances.cash + state.currentBalances.bank
+        assertEquals(1000.0, totalAvailable, 0.001)
+
+        // Proportional asset distribution: Cash, Bank, and Wallet
+        val totalAssets = state.currentBalances.cash + state.currentBalances.bank + state.cumulativeWalletBalance
+        assertEquals(1500.0, totalAssets, 0.001)
+
+        val cashRatio = state.currentBalances.cash / totalAssets
+        val bankRatio = state.currentBalances.bank / totalAssets
+        val walletRatio = state.cumulativeWalletBalance / totalAssets
+
+        assertEquals(200.0 / 1500.0, cashRatio, 0.001)
+        assertEquals(800.0 / 1500.0, bankRatio, 0.001)
+        assertEquals(500.0 / 1500.0, walletRatio, 0.001)
+    }
 }

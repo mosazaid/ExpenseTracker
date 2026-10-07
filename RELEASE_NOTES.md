@@ -1,5 +1,20 @@
 # Release Notes
 
+## Version: Feature Expansion Phase 13 — Overview Hero Asset Distribution & Wallet Proportionality (October 2026)
+
+### Highlights
+- **Overview Hero Asset Distribution & Wallet Separation**:
+  - Resolved user-reported issue where the Bank ratio / percentage in the Overview hero header card appeared to absorb or include the Wallet balance (previously showing 100% Bank when Cash was 0%, even if significant funds were held in Wallet).
+  - Updated `MonthSummaryUiState` and `OverviewViewModel` to compute and expose `cumulativeWalletBalance` alongside liquid Cash and Bank balances.
+  - Upgraded `HeroBalanceCard` in `OverviewScreen`:
+    - **Liquid Available Balance Preserved**: The primary display figure strictly reflects spendable liquid cash (`Cash + Bank`), completely excluding funds allocated to Wallet.
+    - **Wallet Indicator**: Added dedicated wallet indicator badge in the card header displaying `${CurrencyUtils.formatCurrency(safeWallet)}` when wallet funds are present.
+    - **3-Way Proportional Asset Distribution Bar**: Segmented bar dynamically accommodates **Cash (Green/Primary)**, **Bank (Blue/Secondary)**, and **Wallet (Purple `Color(0xFF7E57C2)`)**, accurately dividing proportional weights by `Cash + Bank + Wallet`.
+    - **Clear Multi-Asset Legend**: Bottom legend row renders independent percentages (`Cash: X%`, `Bank: Y%`, `Wallet: Z%`), ensuring Bank percentage never artificially captures 100% when wallet reserves exist.
+  - Added unit test `testHeroAssetDistribution_withCumulativeWallet` in `MonthSummaryRemainingTest` verifying exact mathematical proportionality.
+
+---
+
 ## Version: Feature Expansion Phase 12 — GPS Elevation Inheritance & Maghrib Prayer Calibration (October 2026)
 
 ### Highlights
