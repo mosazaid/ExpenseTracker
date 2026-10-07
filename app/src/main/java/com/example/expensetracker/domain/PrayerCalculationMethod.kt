@@ -5,13 +5,15 @@ enum class PrayerCalculationMethod(
     val description: String,
     val fajrAngle: Double,
     val ishaAngle: Double? = null,
-    val ishaIntervalMinutes: Int? = null
+    val ishaIntervalMinutes: Int? = null,
+    val maghribOffsetMinutes: Int = 0
 ) {
     JORDAN(
         displayName = "Jordan (General Iftaa' Department)",
         description = "Fajr: 18.0°, Isha: 18.0°",
         fajrAngle = 18.0,
-        ishaAngle = 18.0
+        ishaAngle = 18.0,
+        maghribOffsetMinutes = 1
     ),
     UMM_AL_QURA(
         displayName = "Umm al-Qura (Makkah, Saudi Arabia)",

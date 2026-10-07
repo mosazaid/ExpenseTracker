@@ -105,7 +105,8 @@ class PrayerQiblahViewModel @Inject constructor(
                     nameAr = "موقعي الحالي",
                     latitude = detected.latitude,
                     longitude = detected.longitude,
-                    timezoneOffsetHours = tzOffset
+                    timezoneOffsetHours = tzOffset,
+                    elevationMeters = detected.elevationMeters
                 )
             } else {
                 PrayerTimesCalculator.PRESET_CITIES.first()
@@ -161,14 +162,26 @@ class PrayerQiblahViewModel @Inject constructor(
         syncAllAlarms()
     }
 
-    fun onGpsLocationDetected(lat: Double, lng: Double, cityName: String?, countryCode: String?) {
+    fun onGpsLocationDetected(
+        lat: Double,
+        lng: Double,
+        cityName: String?,
+        countryCode: String?,
+        elevationMeters: Double? = null
+    ) {
         val tzOffset = (TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 3600000.0)
+        val resolvedElevation = if (elevationMeters != null && elevationMeters > 0.0) {
+            elevationMeters
+        } else {
+            LocationHelper(context).findNearestPresetCity(lat, lng).elevationMeters
+        }
         val city = CityLocation(
             nameEn = cityName ?: "Current Location",
             nameAr = "موقعي الحالي",
             latitude = lat,
             longitude = lng,
-            timezoneOffsetHours = tzOffset
+            timezoneOffsetHours = tzOffset,
+            elevationMeters = resolvedElevation
         )
 
         // If method is auto, update it based on detected country

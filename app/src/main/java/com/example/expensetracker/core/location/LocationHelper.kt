@@ -24,7 +24,8 @@ data class DeviceLocationInfo(
     val countryCode: String?,
     val cityName: String?,
     val detectedCurrencyCode: String,
-    val nearestPresetCity: CityLocation
+    val nearestPresetCity: CityLocation,
+    val elevationMeters: Double = nearestPresetCity.elevationMeters
 )
 
 @Singleton
@@ -77,10 +78,11 @@ class LocationHelper @Inject constructor(
 
     fun detectLocationInfo(): DeviceLocationInfo? {
         val location = getLastKnownLocation() ?: return null
-        return resolveLocationDetails(location.latitude, location.longitude)
+        val alt = if (location.hasAltitude() && location.altitude > 0.0) location.altitude else null
+        return resolveLocationDetails(location.latitude, location.longitude, alt)
     }
 
-    fun resolveLocationDetails(lat: Double, lng: Double): DeviceLocationInfo {
+    fun resolveLocationDetails(lat: Double, lng: Double, altitudeMeters: Double? = null): DeviceLocationInfo {
         var countryCode: String? = null
         var cityName: String? = null
 
@@ -111,13 +113,20 @@ class LocationHelper @Inject constructor(
         val resolvedCountry = countryCode ?: mapCityToCountryCode(nearestCity.nameEn)
         val currencyCode = mapCountryToCurrencyCode(resolvedCountry)
 
+        val resolvedElevation = if (altitudeMeters != null && altitudeMeters > 0.0) {
+            altitudeMeters
+        } else {
+            nearestCity.elevationMeters
+        }
+
         return DeviceLocationInfo(
             latitude = lat,
             longitude = lng,
             countryCode = resolvedCountry,
             cityName = cityName ?: nearestCity.nameEn,
             detectedCurrencyCode = currencyCode,
-            nearestPresetCity = nearestCity
+            nearestPresetCity = nearestCity,
+            elevationMeters = resolvedElevation
         )
     }
 

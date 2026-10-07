@@ -210,6 +210,7 @@
   - [ ] Tap bell toggle icons for Fajr, Dhuhr, Asr, Maghrib, and Isha in `PrayerQiblahScreen` to enable/disable specific reminders.
   - [ ] Open `OverviewScreen` and tap the GPS Location Sync icon button in the top bar.
   - [ ] Verify runtime location permission prompt is triggered (if not granted) or location is refreshed with a confirmation snackbar.
+  - [ ] Verify GPS detected location inherits accurate elevation above sea level (e.g. Amman ~1000m) and does not default to sea-level (0m), ensuring Maghrib matches within 0–1 minute of the official Ministry of Awqaf timetable.
 
 ## Complete App Backup & Device Migration (JSON)
 - [ ] Go to **Settings -> Data Management -> Complete App Backup (Transfer to Another Device)**.

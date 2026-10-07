@@ -1,5 +1,20 @@
 # Release Notes
 
+## Version: Feature Expansion Phase 12 — GPS Elevation Inheritance & Maghrib Prayer Calibration (October 2026)
+
+### Highlights
+- **GPS Elevation Inheritance & Calibration**:
+  - Fixed 5–6 minute Maghrib discrepancy caused when GPS/device location detection was active: previously, `CityLocation` created from detected GPS locations defaulted `elevationMeters` to `0.0`, computing prayer times at sea-level horizon instead of the user's actual altitude.
+  - Added `elevationMeters` to `DeviceLocationInfo` in `LocationHelper`: now checks `location.altitude` if available (> 0), or falls back to `nearestPresetCity.elevationMeters`.
+  - Updated `PrayerQiblahViewModel.loadPreferencesAndLocation` and `onGpsLocationDetected` to pass and preserve resolved elevation in `CityLocation`.
+  - Updated `PrayerQiblahScreen` permission callback and GPS refresh button to supply `elevationMeters`.
+- **Jordan Ministry of Awqaf Official Calibration**:
+  - Calibrated reference elevation for Amman in `PRESET_CITIES` to 1000m (matching the official reference altitude for the King Hussein Mosque / Dabouq baseline used by the Ministry of Awqaf).
+  - Added `maghribOffsetMinutes` to `PrayerCalculationMethod` with a 1-minute safety margin for `JORDAN`, matching the official Awqaf calendar (Fajr 05:13, Dhuhr 12:24, Asr 15:43, Maghrib 18:19, Isha 19:34 on October 8, 2026).
+  - Added `prayerSavedElevationKey` to `UserPreferences` and included in full JSON device backup/restore.
+
+---
+
 ## Version: Feature Expansion Phase 11 — Complete App Backup & Device Migration (JSON), Debt Partial Payments & History, Wallet Balance Correction, and Elevation-Calibrated Prayer Engine (October 2026)
 
 ### Highlights

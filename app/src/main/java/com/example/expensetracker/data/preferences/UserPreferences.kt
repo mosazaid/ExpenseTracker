@@ -72,6 +72,7 @@ class UserPreferences @Inject constructor(
     private val prayerSavedLatKey = stringPreferencesKey("prayer_saved_lat")
     private val prayerSavedLngKey = stringPreferencesKey("prayer_saved_lng")
     private val prayerSavedTzKey = stringPreferencesKey("prayer_saved_tz")
+    private val prayerSavedElevationKey = stringPreferencesKey("prayer_saved_elevation")
 
     val timeFormat: Flow<TimeFormatPreference> = context.dataStore.data.map { prefs ->
         when (prefs[timeFormatKey]) {
@@ -378,6 +379,7 @@ class UserPreferences @Inject constructor(
             map[prayerSavedLatKey.name]?.let { prefs[prayerSavedLatKey] = it }
             map[prayerSavedLngKey.name]?.let { prefs[prayerSavedLngKey] = it }
             map[prayerSavedTzKey.name]?.let { prefs[prayerSavedTzKey] = it }
+            map[prayerSavedElevationKey.name]?.let { prefs[prayerSavedElevationKey] = it }
             map[lastLoanSheetDateKey.name]?.let { prefs[lastLoanSheetDateKey] = it }
             map[lastDebtRolloverMonthKey.name]?.let { prefs[lastDebtRolloverMonthKey] = it }
             map[dismissedRecurringKey.name]?.let {

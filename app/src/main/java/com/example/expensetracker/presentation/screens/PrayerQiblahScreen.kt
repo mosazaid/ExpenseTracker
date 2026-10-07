@@ -121,7 +121,8 @@ fun PrayerQiblahScreen(
                     lat = detected.latitude,
                     lng = detected.longitude,
                     cityName = detected.cityName,
-                    countryCode = detected.countryCode
+                    countryCode = detected.countryCode,
+                    elevationMeters = detected.elevationMeters
                 )
             }
         } else {
@@ -189,7 +190,8 @@ fun PrayerQiblahScreen(
                                 lat = detected.latitude,
                                 lng = detected.longitude,
                                 cityName = detected.cityName,
-                                countryCode = detected.countryCode
+                                countryCode = detected.countryCode,
+                                elevationMeters = detected.elevationMeters
                             )
                         }
                     } else {

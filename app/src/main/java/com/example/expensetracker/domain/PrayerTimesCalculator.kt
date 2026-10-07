@@ -42,7 +42,7 @@ object PrayerTimesCalculator {
 
     val PRESET_CITIES = listOf(
         // Jordan & Levant (with accurate elevations above sea level)
-        CityLocation("Amman, Jordan", "عمان، الأردن", 31.9539, 35.9106, 3.0, 780.0),
+        CityLocation("Amman, Jordan", "عمان، الأردن", 31.9539, 35.9106, 3.0, 1000.0),
         CityLocation("Irbid, Jordan", "إربد، الأردن", 32.5568, 35.8469, 3.0, 620.0),
         CityLocation("Zarqa, Jordan", "الزرقاء، الأردن", 32.0608, 36.0942, 3.0, 610.0),
         CityLocation("Aqaba, Jordan", "العقبة، الأردن", 29.5320, 35.0063, 3.0, 20.0),
@@ -371,7 +371,8 @@ object PrayerTimesCalculator {
         val sunrise24 = toTime24(sunriseHours)
         val dhuhr24 = toTime24(dhuhrHours)
         val asr24 = toTime24(asrHours)
-        val maghrib24 = toTime24(sunsetHours)
+        val maghribHours = sunsetHours + (method.maghribOffsetMinutes / 60.0)
+        val maghrib24 = toTime24(maghribHours)
         val isha24 = toTime24(ishaHours)
 
         val fajrDisplay = formatPrayerTime(fajr24, is24Hour)
@@ -389,7 +390,7 @@ object PrayerTimesCalculator {
             "Fajr" to minOf(fajrHours),
             "Dhuhr" to minOf(dhuhrHours),
             "Asr" to minOf(asrHours),
-            "Maghrib" to minOf(sunsetHours),
+            "Maghrib" to minOf(maghribHours),
             "Isha" to minOf(ishaHours)
         )
 
