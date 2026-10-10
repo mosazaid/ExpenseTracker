@@ -85,6 +85,7 @@ fun PrayerQiblahScreen(
     val compassReading by compassManager.reading.collectAsState()
 
     var showMethodDialog by remember { mutableStateOf(false) }
+    var showAdhanSoundDialog by remember { mutableStateOf(false) }
     var showCityDialog by remember { mutableStateOf(false) }
     var showLocationRationaleDialog by remember { mutableStateOf(false) }
     var isPermanentlyDeniedLocation by remember { mutableStateOf(false) }
@@ -225,6 +226,12 @@ fun PrayerQiblahScreen(
                 onChangeClick = { showMethodDialog = true }
             )
 
+            // Adhan Sound Notification Audio Card
+            AdhanSoundCard(
+                selectedSound = uiState.selectedAdhanSound,
+                onChangeClick = { showAdhanSoundDialog = true }
+            )
+
             // Upcoming Next Prayer Banner
             NextPrayerHeroCard(
                 prayerName = uiState.schedule.nextPrayerName,
@@ -279,6 +286,18 @@ fun PrayerQiblahScreen(
                 showMethodDialog = false
             },
             onDismiss = { showMethodDialog = false }
+        )
+    }
+
+    // Adhan Sound Selection Dialog
+    if (showAdhanSoundDialog) {
+        AdhanSoundSelectionDialog(
+            currentSound = uiState.selectedAdhanSound,
+            onSelectSound = { sound ->
+                viewModel.setAdhanSound(sound)
+                showAdhanSoundDialog = false
+            },
+            onDismiss = { showAdhanSoundDialog = false }
         )
     }
 
@@ -808,7 +827,7 @@ private fun QiblahCompassCard(
                 }
             }
 
-            // Real-time Guidance Banner
+            // Real-time Guidance Banner with Fixed Height
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = if (isAligned) emeraldGreen.copy(alpha = 0.15f)
@@ -818,86 +837,115 @@ private fun QiblahCompassCard(
                     color = if (isAligned) emeraldGreen.copy(alpha = 0.5f)
                     else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    if (isAligned) {
-                        Icon(
-                            imageVector = Icons.Outlined.CheckCircle,
-                            contentDescription = null,
-                            tint = emeraldGreen,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = stringResource(R.string.qiblah_aligned),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = emeraldGreen
-                        )
-                    } else {
-                        val turnAngle = abs(relativeAngle).roundToInt()
-                        val isTurnRight = relativeAngle > 0
-                        Icon(
-                            imageVector = if (isTurnRight) Icons.AutoMirrored.Outlined.ArrowForward else Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (isTurnRight) stringResource(R.string.qiblah_turn_right, turnAngle)
-                            else stringResource(R.string.qiblah_turn_left, turnAngle),
-                            style = MaterialTheme.typography.titleSmall.withTabularNums(),
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (isAligned) {
+                            Icon(
+                                imageVector = Icons.Outlined.CheckCircle,
+                                contentDescription = null,
+                                tint = emeraldGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.qiblah_aligned),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = emeraldGreen
+                            )
+                        } else {
+                            val turnAngle = abs(relativeAngle).roundToInt()
+                            val isTurnRight = relativeAngle > 0
+                            Icon(
+                                imageVector = if (isTurnRight) Icons.AutoMirrored.Outlined.ArrowForward else Icons.AutoMirrored.Outlined.ArrowBack,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (isTurnRight) stringResource(R.string.qiblah_turn_right, turnAngle)
+                                else stringResource(R.string.qiblah_turn_left, turnAngle),
+                                style = MaterialTheme.typography.titleSmall.withTabularNums(),
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }
 
-            // Calibration / Tilt Warning if needed
+            // Calibration / Tilt Warning Area with Constant Height (CLS = 0) to prevent table jumping
             val isTilted = abs(compassReading.pitch) > 35f || abs(compassReading.roll) > 35f
-            if (isTilted) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.ScreenRotation,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = stringResource(R.string.qiblah_level_phone_hint),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            } else if (compassReading.accuracy <= SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.clickable { onCalibrateClick() }
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = stringResource(R.string.qiblah_calibrate_hint),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(26.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isTilted) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ScreenRotation,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.qiblah_level_phone_hint),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                } else if (compassReading.accuracy <= SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.clickable { onCalibrateClick() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.qiblah_calibrate_hint),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Check,
+                            contentDescription = null,
+                            tint = emeraldGreen.copy(alpha = 0.7f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.compass_calibrated),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
                 }
             }
         }
@@ -1471,3 +1519,165 @@ private fun CalculationMethodDialog(
         }
     )
 }
+
+// -------------------------------------------------------------
+// Adhan Sound Notification Card & Selection Dialog (Assabile)
+// -------------------------------------------------------------
+@Composable
+private fun AdhanSoundCard(
+    selectedSound: com.example.expensetracker.domain.AdhanSoundOption,
+    onChangeClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.adhan_sound_title),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
+                    ) {
+                        Text(
+                            text = "Assabile Curated",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = "${selectedSound.titleEn} (${selectedSound.titleAr})",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "${selectedSound.reciterEn} • ${selectedSound.reciterAr}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+
+            TextButton(
+                onClick = onChangeClick,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Text(
+                    text = stringResource(R.string.prayer_change_method),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdhanSoundSelectionDialog(
+    currentSound: com.example.expensetracker.domain.AdhanSoundOption,
+    onSelectSound: (com.example.expensetracker.domain.AdhanSoundOption) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = stringResource(R.string.adhan_sound_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = stringResource(R.string.adhan_source_attribution),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                com.example.expensetracker.domain.AdhanSoundOption.entries.forEach { option ->
+                    val isSelected = option == currentSound
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                        else MaterialTheme.colorScheme.surfaceContainerLowest,
+                        border = BorderStroke(
+                            width = if (isSelected) 1.5.dp else 1.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelectSound(option) }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "${option.titleEn} (${option.titleAr})",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "${option.reciterEn} • ${option.reciterAr}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
+}
+

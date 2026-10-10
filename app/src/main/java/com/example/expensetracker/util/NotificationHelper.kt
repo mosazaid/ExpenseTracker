@@ -63,6 +63,31 @@ class NotificationHelper @Inject constructor(
         }
     }
 
+    private val mosqueBitmap: android.graphics.Bitmap? by lazy {
+        try {
+            val drawable = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.mosque)
+            if (drawable != null) {
+                if (drawable is android.graphics.drawable.BitmapDrawable) {
+                    drawable.bitmap
+                } else {
+                    val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 96
+                    val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 96
+                    val bitmap = android.graphics.Bitmap.createBitmap(
+                        width,
+                        height,
+                        android.graphics.Bitmap.Config.ARGB_8888
+                    )
+                    val canvas = android.graphics.Canvas(bitmap)
+                    drawable.setBounds(0, 0, canvas.width, canvas.height)
+                    drawable.draw(canvas)
+                    bitmap
+                }
+            } else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     fun showSalaryReminderNotification(recurring: RecurringTransaction) {
         if (!hasPermission()) return
         createChannels()
@@ -249,7 +274,7 @@ class NotificationHelper @Inject constructor(
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
 
-        appIconBitmap?.let { builder.setLargeIcon(it) }
+        (mosqueBitmap ?: appIconBitmap)?.let { builder.setLargeIcon(it) }
 
         NotificationManagerCompat.from(context).notify(notifId, builder.build())
     }

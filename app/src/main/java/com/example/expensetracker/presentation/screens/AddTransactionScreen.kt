@@ -17,7 +17,9 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -163,7 +165,7 @@ fun AddTransactionScreen(
     val availableBalance = when (uiState.accountType) {
         AccountType.CASH -> cashBalance
         AccountType.BANK -> bankBalance
-        AccountType.WALLET -> null
+        AccountType.WALLET, AccountType.DEPOSIT -> null
     }
 
     val timeFormatPref by viewModel.timeFormat.collectAsState()
@@ -433,26 +435,121 @@ fun AddTransactionScreen(
         }
 
         // ── 4. Account Selector (Bank default)
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.account), style = MaterialTheme.typography.labelMedium)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                LIQUID_ACCOUNTS.forEach { type ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(
+                    AccountType.BANK,
+                    AccountType.CASH,
+                    AccountType.WALLET,
+                    AccountType.DEPOSIT
+                ).forEach { type ->
                     FilterChip(
                         selected = uiState.accountType == type,
                         onClick = { viewModel.updateAccountType(type) },
                         leadingIcon = {
                             Icon(
-                                imageVector = if (type == AccountType.BANK) Icons.Default.AccountBalance else Icons.Default.Payments,
+                                imageVector = when (type) {
+                                    AccountType.BANK -> Icons.Default.AccountBalance
+                                    AccountType.CASH -> Icons.Default.Payments
+                                    AccountType.WALLET -> Icons.Outlined.AccountBalanceWallet
+                                    AccountType.DEPOSIT -> Icons.Outlined.Lock
+                                },
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp)
                             )
                         },
                         label = {
                             Text(
-                                if (type == AccountType.BANK) stringResource(R.string.account_bank) else stringResource(R.string.account_cash)
+                                when (type) {
+                                    AccountType.BANK -> stringResource(R.string.account_bank)
+                                    AccountType.CASH -> stringResource(R.string.account_cash)
+                                    AccountType.WALLET -> stringResource(R.string.account_wallet)
+                                    AccountType.DEPOSIT -> stringResource(R.string.account_deposit)
+                                }
                             )
                         }
                     )
+                }
+            }
+
+            // Exclude from Monthly Expenses Toggle (for Wallet or optional)
+            if (uiState.accountType == AccountType.WALLET) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.exclude_from_month_expenses_title),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = stringResource(R.string.exclude_from_month_expenses_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                            )
+                        }
+                        Switch(
+                            checked = uiState.excludeFromMonthExpenses,
+                            onCheckedChange = { viewModel.updateExcludeFromMonthExpenses(it) }
+                        )
+                    }
+                }
+            } else if (uiState.accountType == AccountType.DEPOSIT) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Lock,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.deposit_vault_title),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = stringResource(R.string.deposit_vault_buy_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -909,7 +1006,8 @@ fun AddTransactionScreen(
                         startsNewPeriod = uiState.startsNewPeriod,
                         carriedForwardBalance = uiState.carriedForwardBalance,
                         allowNegativeBalance = uiState.allowNegativeBalance,
-                        createdAt = uiState.createdAt ?: Date()
+                        createdAt = uiState.createdAt ?: Date(),
+                        excludeFromMonthExpenses = uiState.excludeFromMonthExpenses || uiState.accountType == AccountType.DEPOSIT
                     )
 
                     if (uiState.transactionType == TransactionType.EXPENSE) {

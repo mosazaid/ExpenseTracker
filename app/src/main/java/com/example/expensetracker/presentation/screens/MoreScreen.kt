@@ -37,6 +37,7 @@ import com.example.expensetracker.presentation.components.AppTopBar
 import com.example.expensetracker.presentation.navigation.Categories
 import com.example.expensetracker.presentation.navigation.DatabaseBrowser
 import com.example.expensetracker.presentation.navigation.Debts
+import com.example.expensetracker.presentation.navigation.DepositVault
 import com.example.expensetracker.presentation.navigation.Loans
 import com.example.expensetracker.presentation.navigation.NotificationSettings
 import com.example.expensetracker.presentation.navigation.Onboarding
@@ -121,6 +122,16 @@ fun MoreScreen(navController: NavController) {
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            item {
+                MoreMenuCard(
+                    title = stringResource(R.string.deposit_vault_title),
+                    subtitle = stringResource(R.string.deposit_vault_subtitle),
+                    icon = Icons.Outlined.Lock,
+                    accentColor = Color(0xFFD97706),
+                    onClick = { navController.navigate(DepositVault) }
                 )
             }
 

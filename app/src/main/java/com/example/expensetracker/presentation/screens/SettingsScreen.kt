@@ -75,6 +75,7 @@ fun SettingsScreen(
     val themePalette by viewModel.themePalette.collectAsState()
     val timeFormat by viewModel.timeFormat.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
+    val enableDepositWalletTransfer by viewModel.enableDepositWalletTransfer.collectAsState()
     val currencyCode by viewModel.currencyCode.collectAsState()
     val context = LocalContext.current
     val activity = context as? Activity
@@ -675,6 +676,27 @@ fun SettingsScreen(
                 Switch(
                     checked = biometricLockEnabled,
                     onCheckedChange = { viewModel.setBiometricLockEnabled(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.deposit_vault_transfers_config), fontWeight = FontWeight.Medium)
+                    Text(
+                        stringResource(R.string.deposit_vault_transfers_config_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Switch(
+                    checked = enableDepositWalletTransfer,
+                    onCheckedChange = { viewModel.setEnableDepositWalletTransfer(it) }
                 )
             }
 

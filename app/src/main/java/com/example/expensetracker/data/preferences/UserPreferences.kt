@@ -73,6 +73,18 @@ class UserPreferences @Inject constructor(
     private val prayerSavedLngKey = stringPreferencesKey("prayer_saved_lng")
     private val prayerSavedTzKey = stringPreferencesKey("prayer_saved_tz")
     private val prayerSavedElevationKey = stringPreferencesKey("prayer_saved_elevation")
+    private val prayerAdhanSoundKey = stringPreferencesKey("prayer_adhan_sound")
+    private val enableDepositWalletTransferKey = booleanPreferencesKey("enable_deposit_wallet_transfer")
+
+    val enableDepositWalletTransfer: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[enableDepositWalletTransferKey] ?: true
+    }
+
+    suspend fun setEnableDepositWalletTransfer(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[enableDepositWalletTransferKey] = enabled
+        }
+    }
 
     val timeFormat: Flow<TimeFormatPreference> = context.dataStore.data.map { prefs ->
         when (prefs[timeFormatKey]) {
@@ -125,6 +137,14 @@ class UserPreferences @Inject constructor(
                 "isha" -> prefs[ishaAlertKey] = enabled
             }
         }
+    }
+
+    val prayerAdhanSound: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[prayerAdhanSoundKey] ?: "MAKKAH"
+    }
+
+    suspend fun setPrayerAdhanSound(soundKey: String) {
+        context.dataStore.edit { prefs -> prefs[prayerAdhanSoundKey] = soundKey }
     }
 
     val currencyCode: Flow<String> = context.dataStore.data.map { prefs ->

@@ -19,6 +19,7 @@ object AppRoutes {
     const val ONBOARDING = "onboarding"
     const val ZAKAH_CALCULATOR = "zakahCalculator"
     const val PRAYER_QIBLAH = "prayerQiblah"
+    const val DEPOSIT_VAULT = "depositVault"
 
     const val EDIT_TRANSFER = "editTransfer/{transactionId}"
     const val EDIT_TRANSFER_ARG = "transactionId"

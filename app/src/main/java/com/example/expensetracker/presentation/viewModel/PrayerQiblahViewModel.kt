@@ -40,7 +40,8 @@ data class PrayerUiState(
     val dhuhrAlertEnabled: Boolean = true,
     val asrAlertEnabled: Boolean = true,
     val maghribAlertEnabled: Boolean = true,
-    val ishaAlertEnabled: Boolean = true
+    val ishaAlertEnabled: Boolean = true,
+    val selectedAdhanSound: com.example.expensetracker.domain.AdhanSoundOption = com.example.expensetracker.domain.AdhanSoundOption.MAKKAH
 )
 
 @HiltViewModel
@@ -126,6 +127,9 @@ class PrayerQiblahViewModel @Inject constructor(
                 is24Hour = is24
             )
 
+            val savedAdhanKey = userPreferences.prayerAdhanSound.first()
+            val adhanSound = com.example.expensetracker.domain.AdhanSoundOption.fromId(savedAdhanKey)
+
             _uiState.value = _uiState.value.copy(
                 selectedCity = initialCity,
                 isUsingGps = detected != null,
@@ -140,9 +144,17 @@ class PrayerQiblahViewModel @Inject constructor(
                 dhuhrAlertEnabled = dhuhr,
                 asrAlertEnabled = asr,
                 maghribAlertEnabled = maghrib,
-                ishaAlertEnabled = isha
+                ishaAlertEnabled = isha,
+                selectedAdhanSound = adhanSound
             )
             syncAllAlarms()
+        }
+    }
+
+    fun setAdhanSound(sound: com.example.expensetracker.domain.AdhanSoundOption) {
+        viewModelScope.launch {
+            userPreferences.setPrayerAdhanSound(sound.id)
+            _uiState.value = _uiState.value.copy(selectedAdhanSound = sound)
         }
     }
 

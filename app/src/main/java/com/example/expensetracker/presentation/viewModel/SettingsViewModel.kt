@@ -107,6 +107,15 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    val enableDepositWalletTransfer: StateFlow<Boolean> = userPreferences.enableDepositWalletTransfer
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setEnableDepositWalletTransfer(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setEnableDepositWalletTransfer(enabled)
+        }
+    }
+
     private val _exportRequest = MutableStateFlow<ExportShareRequest?>(null)
     val exportRequest: StateFlow<ExportShareRequest?> = _exportRequest.asStateFlow()
 

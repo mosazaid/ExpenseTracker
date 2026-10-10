@@ -107,22 +107,26 @@ class BalanceCalculator @Inject constructor(
         for (transaction in periodTransactions) {
             when (transaction.type) {
                 TransactionType.INCOME -> {
-                    rawIncome += transaction.amount
-                    when (transaction.accountType) {
-                        AccountType.CASH -> cashIncome += transaction.amount
-                        AccountType.BANK -> bankIncome += transaction.amount
-                        AccountType.WALLET -> Unit
+                    if (transaction.accountType == AccountType.DEPOSIT) {
+                        // Deposit income is isolated to the Great Wallet
+                    } else {
+                        rawIncome += transaction.amount
+                        when (transaction.accountType) {
+                            AccountType.CASH -> cashIncome += transaction.amount
+                            AccountType.BANK -> bankIncome += transaction.amount
+                            AccountType.WALLET, AccountType.DEPOSIT -> Unit
+                        }
                     }
                 }
                 TransactionType.EXPENSE -> {
-                    if (transaction.id in loansDeductedTxnIds) {
-                        // Loan payment is deducted directly from income and excluded from monthly expenses
+                    if (transaction.id in loansDeductedTxnIds || transaction.excludeFromMonthExpenses || transaction.accountType == AccountType.DEPOSIT) {
+                        // Loan payments, capital/deposit purchases, and user-excluded expenses are omitted from monthly expenses
                     } else {
                         periodExpense += transaction.amount
                         when (transaction.accountType) {
                             AccountType.CASH -> cashExpense += transaction.amount
                             AccountType.BANK -> bankExpense += transaction.amount
-                            AccountType.WALLET -> Unit
+                            AccountType.WALLET, AccountType.DEPOSIT -> Unit
                         }
                     }
                 }
@@ -130,12 +134,12 @@ class BalanceCalculator @Inject constructor(
                     when (transaction.accountType) {
                         AccountType.CASH -> cashTransferImpact -= transaction.amount
                         AccountType.BANK -> bankTransferImpact -= transaction.amount
-                        AccountType.WALLET -> Unit
+                        AccountType.WALLET, AccountType.DEPOSIT -> Unit
                     }
                     when (transaction.toAccountType) {
                         AccountType.CASH -> cashTransferImpact += transaction.amount
                         AccountType.BANK -> bankTransferImpact += transaction.amount
-                        AccountType.WALLET, null -> Unit
+                        AccountType.WALLET, AccountType.DEPOSIT, null -> Unit
                     }
                 }
             }
@@ -187,14 +191,14 @@ class BalanceCalculator @Inject constructor(
      * rarely matches the real-world balance the user is trying to enter.
      */
     suspend fun setCurrentBalance(account: AccountType, target: Double) {
-        if (account == AccountType.WALLET) return
+        if (account == AccountType.WALLET || account == AccountType.DEPOSIT) return
         val currentComputed = computeBalance(account)
         val currentOpening = getOpeningBalance(account)
         val newOpening = currentOpening + (target - currentComputed)
         when (account) {
             AccountType.CASH -> userPreferences.setOpeningCashBalance(newOpening)
             AccountType.BANK -> userPreferences.setOpeningBankBalance(newOpening)
-            AccountType.WALLET -> Unit
+            AccountType.WALLET, AccountType.DEPOSIT -> Unit
         }
     }
 
@@ -213,7 +217,7 @@ class BalanceCalculator @Inject constructor(
     }
 
     private suspend fun computeBalance(account: AccountType): Double {
-        if (account == AccountType.WALLET) return 0.0
+        if (account == AccountType.WALLET || account == AccountType.DEPOSIT) return 0.0
         val opening = getOpeningBalance(account)
         val income = transactionRepository.getTotalIncomeForAccount(account)
         val expense = transactionRepository.getTotalExpenseForAccount(account)
@@ -228,7 +232,7 @@ class BalanceCalculator @Inject constructor(
         return when (account) {
             AccountType.CASH -> userPreferences.getOpeningCashBalance()
             AccountType.BANK -> userPreferences.getOpeningBankBalance()
-            AccountType.WALLET -> 0.0
+            AccountType.WALLET, AccountType.DEPOSIT -> 0.0
         }
     }
 
@@ -237,7 +241,7 @@ class BalanceCalculator @Inject constructor(
         startDate: Date,
         endDate: Date
     ): Double {
-        if (account == AccountType.WALLET) return 0.0
+        if (account == AccountType.WALLET || account == AccountType.DEPOSIT) return 0.0
         val income = transactionRepository.getPeriodIncomeForAccount(account, startDate, endDate)
         val expense = transactionRepository.getPeriodExpenseForAccount(account, startDate, endDate)
         val transferOut = transactionRepository.getPeriodTransferOut(account, startDate, endDate)

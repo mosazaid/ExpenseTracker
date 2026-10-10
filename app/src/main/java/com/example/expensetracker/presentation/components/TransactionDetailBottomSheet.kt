@@ -162,6 +162,7 @@ fun TransactionDetailBottomSheet(
                                 AccountType.CASH -> "Cash Account"
                                 AccountType.BANK -> "Bank Account"
                                 AccountType.WALLET -> "Wallet Allocation"
+                                AccountType.DEPOSIT -> "Great Wallet (Vault)"
                             } + (transaction.toAccountType?.let { " → " + it.name } ?: ""),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,

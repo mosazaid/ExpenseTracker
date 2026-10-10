@@ -17,7 +17,8 @@ import javax.inject.Inject
 class NotificationSettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val userPreferences: UserPreferences,
-    private val notificationHelper: NotificationHelper
+    private val notificationHelper: NotificationHelper,
+    private val alarmScheduler: com.example.expensetracker.util.AlarmScheduler
 ) : ViewModel() {
 
     val loanAlertsEnabled: StateFlow<Boolean> = userPreferences.loanAlertsEnabled
@@ -54,6 +55,13 @@ class NotificationSettingsViewModel @Inject constructor(
     }
 
     fun setDailyReminder(enabled: Boolean) {
-        viewModelScope.launch { userPreferences.setDailyReminderEnabled(enabled) }
+        viewModelScope.launch {
+            userPreferences.setDailyReminderEnabled(enabled)
+            if (enabled) {
+                alarmScheduler.scheduleDailyExpenseAlarm(21, 0)
+            } else {
+                alarmScheduler.cancelDailyExpenseAlarm()
+            }
+        }
     }
 }

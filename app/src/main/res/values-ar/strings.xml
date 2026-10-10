@@ -420,6 +420,7 @@
     <string name="qiblah_turn_right">أدر الهاتف يميناً بمقدار %1$d°</string>
     <string name="qiblah_turn_left">أدر الهاتف يساراً بمقدار %1$d°</string>
     <string name="qiblah_calibrate_hint">دقة الحساس منخفضة: حرك الهاتف بحركة 8 لمعايرة البوصلة</string>
+    <string name="compass_calibrated">حساس البوصلة جاهز ودقيق</string>
     <string name="qiblah_level_phone_hint">اجعل الهاتف في وضع أفقي مستوٍ لأعلى دقة</string>
     <string name="prayer_reminders_title">تنبيهات الأذان والصلوات</string>
     <string name="prayer_reminders_desc">إشعارات عند حلول أوقات الصلاة</string>
@@ -429,6 +430,9 @@
     <string name="prayer_asr">العصر</string>
     <string name="prayer_maghrib">المغرب</string>
     <string name="prayer_isha">العشاء</string>
+    <string name="adhan_sound_title">صوت نداء الأذان</string>
+    <string name="adhan_sound_desc">اختر صوت المؤذن المفضل لديك لتنبيهات الصلاة</string>
+    <string name="adhan_source_attribution">الأصوات والمؤذنون مختارون من موقع السبيل</string>
 
     <!-- Currency Settings -->
     <string name="currency_settings_title">العملة</string>
@@ -466,5 +470,27 @@
     <string name="full_backup_import_confirm_desc">سيتم استبدال بيانات التطبيق والإعدادات الحالية ببيانات ملف النسخة الاحتياطية. هل أنت متأكد من المتابعة؟</string>
     <string name="full_backup_success">تمت استعادة النسخة بنجاح: %1$d معاملة، %2$d تصنيف، %3$d قرض، وكافة الإعدادات.</string>
     <string name="full_backup_error">فشلت استعادة النسخة الاحتياطية: %1$s</string>
+    <!-- Great Wallet (Deposit Vault) & Expense Exclusions -->
+    <string name="deposit_vault_title">الخزنة (المحفظة الكبرى)</string>
+    <string name="deposit_vault_subtitle">رأس المال ومدخرات الأصول المحفوظة بأمان خارج السيولة اليومية</string>
+    <string name="deposit_vault_balance">رصيد الخزنة الكبرى</string>
+    <string name="deposit_vault_total_deposited">إجمالي المودع</string>
+    <string name="deposit_vault_total_spent">المشتريات الرأسمالية</string>
+    <string name="deposit_vault_action_buy">شراء من الخزنة</string>
+    <string name="deposit_vault_action_deposit">إيداع في الخزنة</string>
+    <string name="deposit_vault_action_transfer">تحويل للمحفظة</string>
+    <string name="deposit_vault_action_transfer_from_wallet">تحويل من المحفظة</string>
+    <string name="deposit_vault_security_prompt">فتح الخزنة الكبرى</string>
+    <string name="deposit_vault_security_sub">يرجى المصادقة بالبصمة أو رمز القفل للوصول إلى الخزنة</string>
+    <string name="deposit_vault_locked_desc">تحتوي هذه الخزنة على رأس مالك ومدخراتك وتتطلب مصادقة أمنية حيوية لحمايتها.</string>
+    <string name="deposit_vault_buy_desc">المشتريات من الخزنة هي أصول واستثمارات رأسمالية. تُستبعد من حاسبة الشهر وتُعرض في التقرير السنوي.</string>
+    <string name="deposit_vault_transfers_config">تفعيل التحويل بين المحفظة والخزنة</string>
+    <string name="deposit_vault_transfers_config_desc">السماح بنقل الأموال بين محفظة المصروف والخزنة الكبرى</string>
+    <string name="deposit_vault_year_tab">مشتريات الخزنة والأصول</string>
+    <string name="deposit_vault_year_desc">المشتريات الرأسمالية الكبرى المدفوعة من الخزنة خلال العام</string>
+    <string name="account_deposit">الخزنة / الإيداع</string>
+    <string name="account_wallet">المحفظة</string>
+    <string name="exclude_from_month_expenses_title">استبعاد من حاسبة مصاريف الشهر</string>
+    <string name="exclude_from_month_expenses_desc">حسم المصروف أو الدين من رصيد المحفظة فقط دون التأثير على ميزانية راتب الشهر.</string>
 </resources>
 

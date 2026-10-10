@@ -139,6 +139,18 @@ class AlarmScheduler @Inject constructor(
         else -> 3100
     }
 
+    fun cancelDailyExpenseAlarm() {
+        val intent = Intent(context, DailyExpenseReminderReceiver::class.java).apply {
+            action = DailyExpenseReminderReceiver.ACTION_DAILY_ALARM
+        }
+        val flags = PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        val pendingIntent = PendingIntent.getBroadcast(context, DAILY_ALARM_REQUEST_CODE, intent, flags)
+        if (pendingIntent != null) {
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
+        }
+    }
+
     companion object {
         const val DAILY_ALARM_REQUEST_CODE = 2100
     }

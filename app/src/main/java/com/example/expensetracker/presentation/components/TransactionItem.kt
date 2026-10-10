@@ -38,6 +38,7 @@ private fun formatAccountLabel(account: AccountType): String {
         AccountType.CASH -> "Cash"
         AccountType.BANK -> "Bank"
         AccountType.WALLET -> "Wallet"
+        AccountType.DEPOSIT -> "Vault"
     }
 }
 
@@ -387,6 +388,7 @@ private fun StandardTransactionItem(
         AccountType.CASH -> "Cash"
         AccountType.BANK -> "Bank"
         AccountType.WALLET -> "Wallet"
+        AccountType.DEPOSIT -> "Vault"
     }
 
     Surface(

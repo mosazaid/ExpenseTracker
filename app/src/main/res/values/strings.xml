@@ -420,6 +420,7 @@
     <string name="qiblah_turn_right">Turn phone right by %1$d°</string>
     <string name="qiblah_turn_left">Turn phone left by %1$d°</string>
     <string name="qiblah_calibrate_hint">Accuracy low: wave phone in ∞ pattern to calibrate</string>
+    <string name="compass_calibrated">Compass sensor ready</string>
     <string name="qiblah_level_phone_hint">Hold phone flat for highest precision</string>
     <string name="prayer_reminders_title">Prayer Reminders</string>
     <string name="prayer_reminders_desc">Receive notifications at prayer times</string>
@@ -429,6 +430,9 @@
     <string name="prayer_asr">Asr</string>
     <string name="prayer_maghrib">Maghrib</string>
     <string name="prayer_isha">Isha</string>
+    <string name="adhan_sound_title">Adhan Call to Prayer Audio</string>
+    <string name="adhan_sound_desc">Select your preferred Adhan voice for prayer notifications</string>
+    <string name="adhan_source_attribution">Audios curated from Assabile</string>
 
     <!-- Currency Settings -->
     <string name="currency_settings_title">Currency</string>
@@ -466,5 +470,27 @@
     <string name="full_backup_import_confirm_desc">This will replace current app data and preferences with the contents of the backup file. Proceed?</string>
     <string name="full_backup_success">Backup restored: %1$d transactions, %2$d categories, %3$d loans, and all preferences restored.</string>
     <string name="full_backup_error">Backup restoration failed: %1$s</string>
+    <!-- Great Wallet (Deposit Vault) & Expense Exclusions -->
+    <string name="deposit_vault_title">Great Wallet (Deposit Vault)</string>
+    <string name="deposit_vault_subtitle">Master reserve &amp; capital assets guarded outside daily circulation</string>
+    <string name="deposit_vault_balance">Vault Balance</string>
+    <string name="deposit_vault_total_deposited">Total Deposited</string>
+    <string name="deposit_vault_total_spent">Capital Purchases</string>
+    <string name="deposit_vault_action_buy">Buy from Vault</string>
+    <string name="deposit_vault_action_deposit">Deposit Funds</string>
+    <string name="deposit_vault_action_transfer">Transfer to Wallet</string>
+    <string name="deposit_vault_action_transfer_from_wallet">Transfer from Wallet</string>
+    <string name="deposit_vault_security_prompt">Unlock Vault</string>
+    <string name="deposit_vault_security_sub">Authenticate using biometrics or device PIN to access your Great Wallet</string>
+    <string name="deposit_vault_locked_desc">This vault holds your capital reserves and requires biometric authentication to view or transact.</string>
+    <string name="deposit_vault_buy_desc">Purchases from the vault are capital/asset investments. They are omitted from monthly budgets and displayed in Annual Capital Expenses.</string>
+    <string name="deposit_vault_transfers_config">Enable Wallet-Vault Transfers</string>
+    <string name="deposit_vault_transfers_config_desc">Allow moving money between your active pocket wallet and the Great Wallet vault</string>
+    <string name="deposit_vault_year_tab">Vault &amp; Capital Expenses</string>
+    <string name="deposit_vault_year_desc">Yearly capital and asset purchases made from the Great Wallet</string>
+    <string name="account_deposit">Deposit / Vault</string>
+    <string name="account_wallet">Wallet</string>
+    <string name="exclude_from_month_expenses_title">Exclude from monthly expense calculation</string>
+    <string name="exclude_from_month_expenses_desc">Keep this expense or debt isolated to wallet pocket balance without deducting from your monthly salary budget.</string>
 </resources>
 

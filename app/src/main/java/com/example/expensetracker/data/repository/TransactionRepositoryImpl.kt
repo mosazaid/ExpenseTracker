@@ -79,11 +79,24 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun deleteTransaction(transaction: Transaction) {
         monthlyLoanPaymentDao?.unmarkPaymentByTransactionId(transaction.id)
+        transaction.receiptImagePath?.let { path ->
+            try {
+                val file = java.io.File(path)
+                if (file.exists()) file.delete()
+            } catch (_: Exception) {}
+        }
         transactionDao.deleteTransaction(transaction)
     }
 
     override suspend fun deleteTransactionById(id: Long) {
         monthlyLoanPaymentDao?.unmarkPaymentByTransactionId(id)
+        val existing = transactionDao.getTransactionById(id)
+        existing?.receiptImagePath?.let { path ->
+            try {
+                val file = java.io.File(path)
+                if (file.exists()) file.delete()
+            } catch (_: Exception) {}
+        }
         transactionDao.deleteTransactionById(id)
     }
 

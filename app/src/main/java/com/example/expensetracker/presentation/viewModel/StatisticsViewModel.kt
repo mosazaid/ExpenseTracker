@@ -71,6 +71,12 @@ data class ThreeMonthStats(
     val combinedCategoryBreakdown: List<CategoryExpenseShare> = emptyList()
 )
 
+data class DepositYearStats(
+    val totalPurchases: Double = 0.0,
+    val transactions: List<com.example.expensetracker.data.database.entities.Transaction> = emptyList(),
+    val percentageOfAnnualExpense: Float = 0f
+)
+
 data class StatisticsState(
     val totalIncome: Double = 0.0,
     val totalExpense: Double = 0.0,
@@ -81,7 +87,9 @@ data class StatisticsState(
     val threeMonthStats: ThreeMonthStats = ThreeMonthStats(),
     val expenseCategories: List<com.example.expensetracker.data.database.entities.Category> = emptyList(),
     val selectedSubCategoryId: Long? = null,
-    val subCategoryComparison: SubCategoryComparisonData? = null
+    val subCategoryComparison: SubCategoryComparisonData? = null,
+    val isYearPeriod: Boolean = false,
+    val depositYearStats: DepositYearStats? = null
 )
 
 @HiltViewModel
@@ -136,6 +144,24 @@ class StatisticsViewModel @Inject constructor(
 
             val subCategoryComparison = defaultTargetId?.let { buildSubCategoryComparison(it) }
 
+            val isYear = period == HistoryPeriod.YEAR
+            val depositYearStats = if (isYear) {
+                val purchases = transactionRepository.getPeriodExpenseForAccount(
+                    com.example.expensetracker.data.database.entities.AccountType.DEPOSIT,
+                    bounds.start,
+                    bounds.end
+                )
+                val depositTxns = transactionRepository.getTransactionsBetweenDatesSnapshot(bounds.start, bounds.end)
+                    .filter { it.accountType == com.example.expensetracker.data.database.entities.AccountType.DEPOSIT && it.type == TransactionType.EXPENSE }
+                val combinedSpend = totalExpense + purchases
+                val pct = if (combinedSpend > 0) ((purchases / combinedSpend) * 100f).toFloat() else 0f
+                DepositYearStats(
+                    totalPurchases = purchases,
+                    transactions = depositTxns,
+                    percentageOfAnnualExpense = pct
+                )
+            } else null
+
             _statisticsState.value = _statisticsState.value.copy(
                 totalIncome = totalIncome,
                 totalExpense = totalExpense,
@@ -146,6 +172,8 @@ class StatisticsViewModel @Inject constructor(
                 expenseCategories = expenseCats,
                 selectedSubCategoryId = defaultTargetId,
                 subCategoryComparison = subCategoryComparison,
+                isYearPeriod = isYear,
+                depositYearStats = depositYearStats,
                 isLoading = false
             )
         }

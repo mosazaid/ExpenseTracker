@@ -26,7 +26,7 @@ data class Transaction(
     val subDescription: String? = null,
     val date: Date,
     val type: TransactionType,
-    val categoryId: Long?,
+    val categoryId: Long? = null,
     val accountType: AccountType,
     val toAccountType: AccountType? = null,
     val startsNewPeriod: Boolean = false,
@@ -39,6 +39,7 @@ data class Transaction(
     val isDebtSettled: Boolean = false,
     val recurringId: Long? = null,
     val receiptImagePath: String? = null,
+    val excludeFromMonthExpenses: Boolean = false,
     val createdAt: Date = Date(),
     val updatedAt: Date = Date()
 )
@@ -48,5 +49,5 @@ enum class TransactionType {
 }
 
 enum class AccountType {
-    CASH, BANK, WALLET
+    CASH, BANK, WALLET, DEPOSIT
 }

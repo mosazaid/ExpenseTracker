@@ -790,4 +790,56 @@ To support complete device migration and offline disaster recovery, `FullBackupM
 
 ---
 
+## 13. Phase 9: Clean Architecture, The Great Wallet (Deposit Vault), and UI/UX Modernization
+
+### 13.1 Clean Architecture Domain UseCases Layer
+To modernize the application from MVVM to Clean Architecture, core business capabilities are encapsulated into single-responsibility domain UseCases (`operator fun invoke`):
+1. **`AddTransactionUseCase`**: Validates transaction amounts, ensures negative balance rules, and delegates split items and transaction persistence.
+2. **`SettleDebtUseCase`**: Coordinates single-transaction debt settlements, split debt settlements, and linked debt reimbursement rollups.
+3. **`GetFinancialSummaryUseCase`**: Derives multi-account period income, expenses, transfer impact, and current available liquid balances.
+4. **`ExecuteRecurringTransactionUseCase`**: Advances recurring templates to the next interval upon bill or subscription execution.
+- **Testing Standard**: Validated via zero-mock, in-memory fake repositories in `UseCaseTest.kt` for fast, deterministic JVM execution.
+
+### 13.2 Modern Android 15 & Reliability Standards
+1. **Edge-to-Edge Display**: Enabled in `MainActivity.kt` via `enableEdgeToEdge()` with dynamic status and navigation bar scrims.
+2. **Predictive Back Navigation**: Enabled in `AndroidManifest.xml` via `android:enableOnBackInvokedCallback="true"`.
+3. **Receipt Storage Garbage Collection**: In `TransactionRepositoryImpl.kt`, deleting a transaction automatically inspects and removes its orphaned receipt file from private storage via `ReceiptStorageHelper.deleteReceiptImage`.
+
+### 13.3 Room Database Migration 17 → 18
+- **Schema Mutation**:
+  ```sql
+  ALTER TABLE transactions ADD COLUMN excludeFromMonthExpenses INTEGER NOT NULL DEFAULT 0;
+  ```
+- **New Account Type**: `AccountType.DEPOSIT` added to the account enum, mapped seamlessly via existing Room String TypeConverters.
+
+### 13.4 The Great Wallet (Deposit Vault) Architecture
+- **Purpose**: Holds capital assets, long-term reserves, and property investments isolated from liquid daily circulation (Cash, Bank, Wallet).
+- **Overview Screen Isolation**: Omitted from `OverviewScreen` and `OverviewViewModel` to prevent distorting daily operational cash flows.
+- **Biometric Security Gate**: Placed in `MoreScreen` and guarded strictly by `BiometricAuthManager` (supporting `BIOMETRIC_STRONG` and `DEVICE_CREDENTIAL`). Cannot be accessed without biometric authentication.
+- **Mathematical Invariant**:
+  $$\text{VaultBalance} = \sum \text{Inflow} - \sum \text{Outflow}$$
+  $$\text{Inflow} = \text{DepositIncome} + \text{DepositTransfersIn} + \text{DepositWalletMovesIn}$$
+  $$\text{Outflow} = \text{DepositExpenses} + \text{DepositTransfersOut} + \text{DepositWalletMovesOut}$$
+- **Capital Purchases (Buy from Vault)**: Purchases made with `AccountType.DEPOSIT` are flagged with `excludeFromMonthExpenses = true`. They are omitted from `periodExpense` in `BalanceCalculator` to protect monthly salary budgets, and displayed in Annual Statistics under a dedicated `DepositYearCard` breakdown.
+- **Wallet-to-Vault Transfers**: Governed by `UserPreferences.enableDepositWalletTransfer` toggle in Settings.
+
+### 13.5 Wallet Debt & Expenses with Calculator Exclusion Toggle
+- Users can record expenses and debt directly from `AccountType.WALLET`.
+- **Calculator Toggle**: In `AddTransactionScreen`, selecting `WALLET` presents a toggle: *"Exclude from monthly expense calculation"*. When checked, the transaction is deducted from pocket wallet reserves while leaving monthly salary expense budgets intact.
+
+### 13.6 Qiblah Compass Zero Layout Shift (CLS = 0)
+- In `PrayerQiblahScreen.kt`, the calibration guidance banner is locked to `Modifier.height(48.dp)` and the sensor warnings are enclosed in a fixed `Modifier.height(26.dp)` container with `R.string.compass_calibrated` fallback, eliminating UI jumping and table shifting.
+
+### 13.7 Prayer Notification & Adhan Audio Options
+- **Mosque Visual Icon**: `NotificationHelper.kt` loads `mosque.png` (using Android's `R.drawable.mosque`) as the prominent large icon for prayer notifications.
+- **Curated Adhan Reciters (Assabile)**: `domain/AdhanSoundOption.kt` exposes reciters from Assabile (Makkah, Madinah, Al-Aqsa, Abdul Basit, Takbeer, System Default) selectable in `PrayerQiblahScreen` and persisted in DataStore.
+
+### 13.8 9:00 PM Night Expense Reminder Safeguards
+- In `AlarmScheduler.kt`, the daily reminder alarm is locked to 21:00 (9:00 PM evening).
+- `DailyExpenseReminderReceiver.kt` verifies `dailyReminderEnabled.first()` and incorporates an evening guard (`Calendar.HOUR_OF_DAY >= 18`).
+- `NotificationSettingsViewModel.kt` invokes `cancelDailyExpenseAlarm()` when toggled off.
+
+---
+
 **Maintenance rule**: When adding features, update this guide and `RELEASE_NOTES.md` first, then `QA_CHECKLIST.md` and `Readme.md`.
+

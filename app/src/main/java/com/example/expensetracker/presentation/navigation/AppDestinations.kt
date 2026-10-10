@@ -22,6 +22,7 @@ import kotlinx.serialization.Serializable
 @Serializable object Onboarding
 @Serializable object ZakahCalculator
 @Serializable object PrayerQiblah
+@Serializable object DepositVault
 
 // ── Parameterised destinations ────────────────────────────────────────────────
 /**

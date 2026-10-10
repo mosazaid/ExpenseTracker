@@ -513,3 +513,7 @@ val MIGRATION_16_17 = Migration(16, 17) { db ->
     db.execSQL("CREATE INDEX IF NOT EXISTS index_transaction_splits_subCategoryId ON transaction_splits(subCategoryId)")
 }
 
+val MIGRATION_17_18 = Migration(17, 18) { db ->
+    db.execSQL("ALTER TABLE transactions ADD COLUMN excludeFromMonthExpenses INTEGER NOT NULL DEFAULT 0")
+}
+

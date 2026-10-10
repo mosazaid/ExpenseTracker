@@ -29,37 +29,67 @@ class WalletCalculator @Inject constructor(
 ) {
 
     suspend fun getCumulativeWalletBalance(excludeTransactionId: Long? = null): Double {
-        val totalIn = if (excludeTransactionId != null) {
+        val totalMoveIn = if (excludeTransactionId != null) {
             transactionRepository.getTotalWalletMoveInExcluding(AccountType.WALLET, excludeTransactionId)
         } else {
             transactionRepository.getTotalWalletMoveIn(AccountType.WALLET)
         }
-        val totalOut = if (excludeTransactionId != null) {
+        val totalMoveOut = if (excludeTransactionId != null) {
             transactionRepository.getTotalWalletMoveOutExcluding(AccountType.WALLET, excludeTransactionId)
         } else {
             transactionRepository.getTotalWalletMoveOut(AccountType.WALLET)
         }
+        val totalTransferIn = if (excludeTransactionId != null) {
+            transactionRepository.getTotalTransferInExcluding(AccountType.WALLET, excludeTransactionId)
+        } else {
+            transactionRepository.getTotalTransferIn(AccountType.WALLET)
+        }
+        val totalTransferOut = if (excludeTransactionId != null) {
+            transactionRepository.getTotalTransferOutExcluding(AccountType.WALLET, excludeTransactionId)
+        } else {
+            transactionRepository.getTotalTransferOut(AccountType.WALLET)
+        }
+        val totalIncome = if (excludeTransactionId != null) {
+            transactionRepository.getTotalIncomeForAccountExcluding(AccountType.WALLET, excludeTransactionId)
+        } else {
+            transactionRepository.getTotalIncomeForAccount(AccountType.WALLET)
+        }
+        val totalExpense = if (excludeTransactionId != null) {
+            transactionRepository.getTotalExpenseForAccountExcluding(AccountType.WALLET, excludeTransactionId)
+        } else {
+            transactionRepository.getTotalExpenseForAccount(AccountType.WALLET)
+        }
+
+        val totalIn = totalMoveIn + totalTransferIn + totalIncome
+        val totalOut = totalMoveOut + totalTransferOut + totalExpense
         return (totalIn - totalOut).coerceAtLeast(0.0)
     }
 
     suspend fun getWalletBalance(startDate: Date, endDate: Date, excludeTransactionId: Long? = null): Double {
         val transactions = transactionRepository.getTransactionsBetweenDatesSnapshot(startDate, endDate)
-        return computeWalletBalanceFromMoves(
-            transactions.filter { it.type == TransactionType.WALLET_MOVE },
-            excludeTransactionId
-        )
+        return computeWalletBalanceFromTransactions(transactions, excludeTransactionId)
     }
 
-    private fun computeWalletBalanceFromMoves(
-        moves: List<Transaction>,
+    private fun computeWalletBalanceFromTransactions(
+        transactions: List<Transaction>,
         excludeTransactionId: Long? = null
     ): Double {
         var walletIn = 0.0
         var walletOut = 0.0
-        for (move in moves) {
-            if (move.id == excludeTransactionId) continue
-            if (move.toAccountType == AccountType.WALLET) walletIn += move.amount
-            if (move.accountType == AccountType.WALLET) walletOut += move.amount
+        for (txn in transactions) {
+            if (txn.id == excludeTransactionId) continue
+            when (txn.type) {
+                TransactionType.WALLET_MOVE, TransactionType.TRANSFER -> {
+                    if (txn.toAccountType == AccountType.WALLET) walletIn += txn.amount
+                    if (txn.accountType == AccountType.WALLET) walletOut += txn.amount
+                }
+                TransactionType.INCOME -> {
+                    if (txn.accountType == AccountType.WALLET) walletIn += txn.amount
+                }
+                TransactionType.EXPENSE -> {
+                    if (txn.accountType == AccountType.WALLET) walletOut += txn.amount
+                }
+            }
         }
         return walletIn - walletOut
     }
@@ -126,14 +156,14 @@ class WalletCalculator @Inject constructor(
         }
     }
 
-    /** Validates WALLET_MOVE: exactly one side is WALLET, the other is CASH or BANK. */
+    /** Validates WALLET_MOVE: exactly one side is WALLET, the other is CASH, BANK, or DEPOSIT. */
     fun validateWalletMove(from: AccountType, to: AccountType?): Boolean {
         if (to == null) return false
         val involvesWallet = from == AccountType.WALLET || to == AccountType.WALLET
         if (!involvesWallet) return false
         if (from == AccountType.WALLET && to == AccountType.WALLET) return false
         val other = if (from == AccountType.WALLET) to else from
-        return other == AccountType.CASH || other == AccountType.BANK
+        return other == AccountType.CASH || other == AccountType.BANK || other == AccountType.DEPOSIT
     }
 
     private fun dayBefore(date: Date): Date {

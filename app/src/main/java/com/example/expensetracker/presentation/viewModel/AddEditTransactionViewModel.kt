@@ -56,6 +56,7 @@ class AddEditTransactionViewModel @Inject constructor(
     private val periodCalculator: PeriodCalculator,
     private val balanceCalculator: BalanceCalculator,
     private val walletCalculator: WalletCalculator,
+    private val depositCalculator: com.example.expensetracker.domain.DepositCalculator,
     private val budgetProgressCalculator: BudgetProgressCalculator,
     private val alertRepository: IAlertRepository,
     private val notificationHelper: NotificationHelper
@@ -123,7 +124,8 @@ class AddEditTransactionViewModel @Inject constructor(
             createdAt = transaction.createdAt,
             receiptImagePath = transaction.receiptImagePath,
             isSplitMode = splitItems.isNotEmpty(),
-            splits = splitItems
+            splits = splitItems,
+            excludeFromMonthExpenses = transaction.excludeFromMonthExpenses
         )
         return true
     }
@@ -184,10 +186,16 @@ class AddEditTransactionViewModel @Inject constructor(
     }
 
     suspend fun getAvailableBalanceForAccount(account: AccountType, excludeId: Long?): Double {
-        return if (excludeId != null) {
-            balanceCalculator.getAvailableBalanceExcluding(account, excludeId)
-        } else {
-            balanceCalculator.getAvailableBalance(account)
+        return when (account) {
+            AccountType.CASH, AccountType.BANK -> {
+                if (excludeId != null) {
+                    balanceCalculator.getAvailableBalanceExcluding(account, excludeId)
+                } else {
+                    balanceCalculator.getAvailableBalance(account)
+                }
+            }
+            AccountType.WALLET -> walletCalculator.getCumulativeWalletBalance(excludeId)
+            AccountType.DEPOSIT -> depositCalculator.getDepositBalance(excludeId)
         }
     }
 
@@ -222,9 +230,11 @@ class AddEditTransactionViewModel @Inject constructor(
     suspend fun saveTransaction(transaction: Transaction): Long {
         val recurringId = _uiState.value.pendingRecurringId
         val receiptPath = _uiState.value.receiptImagePath
+        val isExcluded = _uiState.value.excludeFromMonthExpenses || transaction.accountType == AccountType.DEPOSIT
         val txn = transaction.copy(
             recurringId = recurringId ?: transaction.recurringId,
-            receiptImagePath = receiptPath
+            receiptImagePath = receiptPath,
+            excludeFromMonthExpenses = isExcluded
         )
 
         val splitEntities = if (_uiState.value.isSplitMode) {
@@ -437,7 +447,15 @@ class AddEditTransactionViewModel @Inject constructor(
     }
 
     fun updateAccountType(type: AccountType) {
-        _uiState.value = _uiState.value.copy(accountType = type)
+        val shouldExclude = if (type == AccountType.DEPOSIT) true else _uiState.value.excludeFromMonthExpenses
+        _uiState.value = _uiState.value.copy(
+            accountType = type,
+            excludeFromMonthExpenses = shouldExclude
+        )
+    }
+
+    fun updateExcludeFromMonthExpenses(exclude: Boolean) {
+        _uiState.value = _uiState.value.copy(excludeFromMonthExpenses = exclude)
     }
 
     fun updateSelectedDate(date: Date) {
@@ -511,7 +529,8 @@ data class AddEditTransactionUiState(
     val pendingRecurringId: Long? = null,
     val receiptImagePath: String? = null,
     val isSplitMode: Boolean = false,
-    val splits: List<TransactionSplitItem> = emptyList()
+    val splits: List<TransactionSplitItem> = emptyList(),
+    val excludeFromMonthExpenses: Boolean = false
 )
 
 sealed interface AddEditUiEvent {
