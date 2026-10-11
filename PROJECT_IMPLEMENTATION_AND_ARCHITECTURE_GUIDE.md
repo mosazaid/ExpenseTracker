@@ -839,6 +839,26 @@ To modernize the application from MVVM to Clean Architecture, core business capa
 - `DailyExpenseReminderReceiver.kt` verifies `dailyReminderEnabled.first()` and incorporates an evening guard (`Calendar.HOUR_OF_DAY >= 18`).
 - `NotificationSettingsViewModel.kt` invokes `cancelDailyExpenseAlarm()` when toggled off.
 
+### 13.9 Full Expense Workflow for Vault & Wallet with Strict Balance Enforcement & Biometric Gate
+- **Normal Expense Workflow**: Tapping "Buy from Vault" in `DepositScreen` navigates directly to `AddTransactionScreen` with `initialAccountType = AccountType.DEPOSIT`, providing full access to all standard transaction features (categories, subcategories, tags, notes, receipt photos, split expenses, and recurrence).
+- **Strict Balance Enforcement**:
+  - `walletCalculator.getCumulativeWalletBalance(excludeId)` and `depositCalculator.getDepositBalance(excludeId)` provide the exact liquid and capital reserves.
+  - Unlike Cash and Bank (which offer an optional "Allow negative balance" override), expenses charged to `AccountType.WALLET` or `AccountType.DEPOSIT` strictly block saving if `amount > availableBalance` with an explicit alert dialog, preventing overdrafts.
+  - Active balance status badges dynamically render under the account selector chips.
+- **Biometric Authorization for Vault Expenses**:
+  - Because Great Vault stores long-term capital assets, saving any expense charged to `AccountType.DEPOSIT` triggers `BiometricAuthManager.authenticate()`.
+  - The transaction is committed to Room database only upon successful biometric authentication; failure or cancellation immediately halts saving.
+
+### 13.10 Offline Adhan Audio Architecture, In-App Audio Preview Player & Mosque Status Icon
+- **Offline High-Fidelity Audio Bundling**: Curated MP3 audio clips for all five Adhans (Makkah, Madinah, Al-Aqsa, Abdul Basit, Gentle Takbeer) are bundled offline in `app/src/main/res/raw/`, eliminating network latency and ensuring 100% reliable alarms and previews offline.
+- **Interactive In-App Preview Player**:
+  - In `PrayerQiblahScreen`'s `AdhanSoundSelectionDialog`, an interactive `FilledTonalIconButton` is provided for each Adhan option.
+  - Users can listen to / stop each audio sample before making a selection.
+  - Managed via lifecycle-aware `DisposableEffect` and `MediaPlayer` release guards to prevent audio overlaps and resource leaks.
+- **Mosque Status Bar Icon & Dynamic Notification Channels**:
+  - `NotificationHelper.kt`'s `showPrayerReminderNotification()` explicitly sets `.setSmallIcon(R.drawable.mosque)`, replacing the generic ring icon in the Android status bar.
+  - Creates dedicated high-importance `NotificationChannel` instances mapped to each selected Adhan's audio resource URI (`android.resource://...`) so system alarms sound the exact chosen Adhan recitation.
+
 ---
 
 **Maintenance rule**: When adding features, update this guide and `RELEASE_NOTES.md` first, then `QA_CHECKLIST.md` and `Readme.md`.

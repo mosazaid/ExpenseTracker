@@ -242,7 +242,11 @@ class NotificationHelper @Inject constructor(
         NotificationManagerCompat.from(context).cancel(notifId)
     }
 
-    fun showPrayerReminderNotification(prayerName: String, prayerTime: String) {
+    fun showPrayerReminderNotification(
+        prayerName: String,
+        prayerTime: String,
+        soundOption: com.example.expensetracker.domain.AdhanSoundOption = com.example.expensetracker.domain.AdhanSoundOption.MAKKAH
+    ) {
         if (!hasPermission()) return
         createChannels()
 
@@ -265,14 +269,46 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val builder = NotificationCompat.Builder(context, CHANNEL_PRAYER)
-            .setSmallIcon(R.drawable.ic_notification)
+        val channelId = if (soundOption.rawResId != null) {
+            "${CHANNEL_PRAYER}_${soundOption.id.lowercase(java.util.Locale.US)}"
+        } else {
+            CHANNEL_PRAYER
+        }
+
+        val soundUri = soundOption.rawResId?.let { resId ->
+            android.net.Uri.parse("android.resource://${context.packageName}/$resId")
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = context.getSystemService(NotificationManager::class.java)
+            val audioAttributes = android.media.AudioAttributes.Builder()
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+                .build()
+            val prayerChannel = NotificationChannel(
+                channelId,
+                "Prayer time reminders (${soundOption.titleEn})",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                if (soundUri != null) {
+                    setSound(soundUri, audioAttributes)
+                }
+            }
+            manager?.createNotificationChannel(prayerChannel)
+        }
+
+        val builder = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.mosque)
             .setContentTitle("Time for $prayerName prayer")
             .setContentText("It is now $prayerTime, time to perform $prayerName prayer.")
             .setStyle(NotificationCompat.BigTextStyle().bigText("It is now $prayerTime, time to perform $prayerName prayer."))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
+
+        if (soundUri != null) {
+            builder.setSound(soundUri)
+        }
 
         (mosqueBitmap ?: appIconBitmap)?.let { builder.setLargeIcon(it) }
 

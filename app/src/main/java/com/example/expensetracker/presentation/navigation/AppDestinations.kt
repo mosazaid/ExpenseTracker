@@ -34,7 +34,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AddTransaction(
     val transactionId: Long = -1L,
-    val recurringId: Long = -1L
+    val recurringId: Long = -1L,
+    val accountType: String? = null
 )
 
 /** Edit an existing transfer by its transaction ID. */

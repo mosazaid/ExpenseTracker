@@ -492,5 +492,12 @@
     <string name="account_wallet">Wallet</string>
     <string name="exclude_from_month_expenses_title">Exclude from monthly expense calculation</string>
     <string name="exclude_from_month_expenses_desc">Keep this expense or debt isolated to wallet pocket balance without deducting from your monthly salary budget.</string>
+    <string name="strict_insufficient_balance_title">Insufficient Balance</string>
+    <string name="strict_insufficient_balance_desc">You cannot complete this transaction because your %1$s balance is insufficient.\n\nAvailable Balance: %2$s\nRequired Amount: %3$s</string>
+    <string name="vault_biometric_confirm_title">Authorize Vault Expense</string>
+    <string name="vault_biometric_confirm_sub">Authenticate using biometrics to complete purchase from the Great Vault</string>
+    <string name="adhan_audio_preview_play">Play Adhan Preview</string>
+    <string name="adhan_audio_preview_stop">Stop Audio</string>
+    <string name="available_account_balance_label">Available %1$s Balance:</string>
 </resources>
 

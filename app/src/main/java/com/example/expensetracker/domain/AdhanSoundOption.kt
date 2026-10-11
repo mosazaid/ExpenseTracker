@@ -9,7 +9,8 @@ enum class AdhanSoundOption(
     val titleAr: String,
     val reciterEn: String,
     val reciterAr: String,
-    val referenceUrl: String
+    val referenceUrl: String,
+    @androidx.annotation.RawRes val rawResId: Int? = null
 ) {
     MAKKAH(
         id = "MAKKAH",
@@ -17,7 +18,8 @@ enum class AdhanSoundOption(
         titleAr = "أذان مكة المكرمة",
         reciterEn = "Sheikh Ali Mulla",
         reciterAr = "الشيخ علي ملا",
-        referenceUrl = "https://www.assabile.com/adhan-call-prayer/ali-ahmed-mulla-8.htm"
+        referenceUrl = "https://www.assabile.com/adhan-call-prayer/ali-ahmed-mulla-8.htm",
+        rawResId = com.example.expensetracker.R.raw.adhan_makkah
     ),
     MADINAH(
         id = "MADINAH",
@@ -25,7 +27,8 @@ enum class AdhanSoundOption(
         titleAr = "أذان المدينة المنورة",
         reciterEn = "Sheikh Essam Bukhari",
         reciterAr = "الشيخ عصام بخاري",
-        referenceUrl = "https://www.assabile.com/adhan-call-prayer/essam-boukhari-14.htm"
+        referenceUrl = "https://www.assabile.com/adhan-call-prayer/essam-boukhari-14.htm",
+        rawResId = com.example.expensetracker.R.raw.adhan_madinah
     ),
     AL_AQSA(
         id = "AL_AQSA",
@@ -33,7 +36,8 @@ enum class AdhanSoundOption(
         titleAr = "أذان المسجد الأقصى المبارك",
         reciterEn = "Jerusalem Al-Quds",
         reciterAr = "القدس الشريف",
-        referenceUrl = "https://www.assabile.com/adhan-call-prayer/al-quds-10.htm"
+        referenceUrl = "https://www.assabile.com/adhan-call-prayer/al-quds-10.htm",
+        rawResId = com.example.expensetracker.R.raw.adhan_al_aqsa
     ),
     ABDUL_BASIT(
         id = "ABDUL_BASIT",
@@ -41,7 +45,8 @@ enum class AdhanSoundOption(
         titleAr = "أذان عبد الباسط عبد الصمد",
         reciterEn = "Egypt (Classic)",
         reciterAr = "مصر (التراث الخالد)",
-        referenceUrl = "https://www.assabile.com/adhan-call-prayer/abdelbasset-abdessamad-4.htm"
+        referenceUrl = "https://www.assabile.com/adhan-call-prayer/abdelbasset-abdessamad-4.htm",
+        rawResId = com.example.expensetracker.R.raw.adhan_abdul_basit
     ),
     TAKBEER(
         id = "TAKBEER",
@@ -49,7 +54,8 @@ enum class AdhanSoundOption(
         titleAr = "تكبيرات الأذان الهادئة",
         reciterEn = "Short Tone Reminder",
         reciterAr = "تنبيه تكبيرات هادئ",
-        referenceUrl = "https://www.assabile.com/adhan-call-prayer"
+        referenceUrl = "https://www.assabile.com/adhan-call-prayer",
+        rawResId = com.example.expensetracker.R.raw.adhan_takbeer
     ),
     SYSTEM_DEFAULT(
         id = "SYSTEM_DEFAULT",
@@ -57,7 +63,8 @@ enum class AdhanSoundOption(
         titleAr = "نغمة الجهاز الافتراضية",
         reciterEn = "Device Notification Chime",
         reciterAr = "نغمة الإشعارات القياسية",
-        referenceUrl = ""
+        referenceUrl = "",
+        rawResId = null
     );
 
     companion object {

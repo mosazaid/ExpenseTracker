@@ -1601,9 +1601,29 @@ private fun AdhanSoundSelectionDialog(
     onDismiss: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    var playingSoundId by remember { mutableStateOf<String?>(null) }
+    var mediaPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
+
+    fun stopPlayback() {
+        try {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+        } catch (_: Exception) {}
+        mediaPlayer = null
+        playingSoundId = null
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            stopPlayback()
+        }
+    }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            stopPlayback()
+            onDismiss()
+        },
         title = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
@@ -1627,6 +1647,8 @@ private fun AdhanSoundSelectionDialog(
             ) {
                 com.example.expensetracker.domain.AdhanSoundOption.entries.forEach { option ->
                     val isSelected = option == currentSound
+                    val isPlayingThis = playingSoundId == option.id
+
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
@@ -1643,10 +1665,56 @@ private fun AdhanSoundSelectionDialog(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
+                                .padding(horizontal = 10.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
+                            // Audio Preview Play / Stop Button
+                            FilledTonalIconButton(
+                                onClick = {
+                                    if (isPlayingThis) {
+                                        stopPlayback()
+                                    } else {
+                                        stopPlayback()
+                                        if (option.rawResId != null) {
+                                            try {
+                                                val player = android.media.MediaPlayer.create(context, option.rawResId)
+                                                if (player != null) {
+                                                    mediaPlayer = player
+                                                    playingSoundId = option.id
+                                                    player.setOnCompletionListener {
+                                                        stopPlayback()
+                                                    }
+                                                    player.start()
+                                                }
+                                            } catch (_: Exception) {
+                                                stopPlayback()
+                                            }
+                                        } else {
+                                            try {
+                                                val uri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+                                                val ringtone = android.media.RingtoneManager.getRingtone(context, uri)
+                                                ringtone.play()
+                                            } catch (_: Exception) {}
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.size(38.dp),
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = if (isPlayingThis) MaterialTheme.colorScheme.errorContainer
+                                    else MaterialTheme.colorScheme.secondaryContainer
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = if (isPlayingThis) Icons.Outlined.Stop else Icons.Outlined.PlayArrow,
+                                    contentDescription = if (isPlayingThis) stringResource(R.string.adhan_audio_preview_stop)
+                                    else stringResource(R.string.adhan_audio_preview_play),
+                                    tint = if (isPlayingThis) MaterialTheme.colorScheme.onErrorContainer
+                                    else MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "${option.titleEn} (${option.titleAr})",
@@ -1660,12 +1728,13 @@ private fun AdhanSoundSelectionDialog(
                                     color = MaterialTheme.colorScheme.outline
                                 )
                             }
+
                             if (isSelected) {
                                 Icon(
                                     imageVector = Icons.Outlined.Check,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
@@ -1674,8 +1743,13 @@ private fun AdhanSoundSelectionDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
+            TextButton(
+                onClick = {
+                    stopPlayback()
+                    onDismiss()
+                }
+            ) {
+                Text(stringResource(R.string.ok))
             }
         }
     )

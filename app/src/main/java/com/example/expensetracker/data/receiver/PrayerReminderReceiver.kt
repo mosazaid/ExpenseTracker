@@ -49,7 +49,9 @@ class PrayerReminderReceiver : BroadcastReceiver() {
                                 else -> false
                             }
                             if (isPrayerEnabled) {
-                                notificationHelper.showPrayerReminderNotification(prayerName, prayerTime)
+                                val soundKey = userPreferences.prayerAdhanSound.first()
+                                val soundOption = com.example.expensetracker.domain.AdhanSoundOption.fromId(soundKey)
+                                notificationHelper.showPrayerReminderNotification(prayerName, prayerTime, soundOption)
                             }
                         }
                         // Automatically reschedule for tomorrow at the same prayer time

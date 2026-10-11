@@ -284,7 +284,8 @@ fun MainScreen(
                 AddTransactionScreen(
                     navController = navController,
                     transactionId = route.transactionId.takeIf { it != -1L },
-                    recurringId = route.recurringId.takeIf { it != -1L }
+                    recurringId = route.recurringId.takeIf { it != -1L },
+                    initialAccountType = route.accountType?.let { runCatching { com.example.expensetracker.data.database.entities.AccountType.valueOf(it) }.getOrNull() }
                 )
             }
             composable<EditTransfer> { backStackEntry ->

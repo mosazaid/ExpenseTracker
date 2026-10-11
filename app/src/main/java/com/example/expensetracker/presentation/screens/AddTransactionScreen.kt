@@ -62,6 +62,7 @@ fun AddTransactionScreen(
     navController: NavController,
     transactionId: Long? = null,
     recurringId: Long? = null,
+    initialAccountType: AccountType? = null,
     viewModel: AddEditTransactionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -77,8 +78,11 @@ fun AddTransactionScreen(
 
     var cashBalance by remember { mutableStateOf<Double?>(null) }
     var bankBalance by remember { mutableStateOf<Double?>(null) }
+    var walletBalance by remember { mutableStateOf<Double?>(null) }
+    var depositBalance by remember { mutableStateOf<Double?>(null) }
     var balanceRefreshKey by remember { mutableIntStateOf(0) }
     var showInsufficientDialog by remember { mutableStateOf(false) }
+    var showStrictInsufficientDialog by remember { mutableStateOf(false) }
     var showSalaryMonthDialog by remember { mutableStateOf(false) }
     var showSalaryReminderDialog by remember { mutableStateOf(false) }
     var carryForwardEnabled by remember { mutableStateOf(false) }
@@ -130,6 +134,12 @@ fun AddTransactionScreen(
         }
     }
 
+    LaunchedEffect(initialAccountType) {
+        if (initialAccountType != null && transactionId == null) {
+            viewModel.updateAccountType(initialAccountType)
+        }
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -143,16 +153,10 @@ fun AddTransactionScreen(
 
     LaunchedEffect(balanceRefreshKey, uiState.accountType, uiState.transactionType, uiState.editingTransactionId) {
         val editingId = uiState.editingTransactionId
-        cashBalance = if (editingId != null) {
-            viewModel.getAvailableBalanceForAccount(AccountType.CASH, editingId)
-        } else {
-            viewModel.getAvailableBalanceForAccount(AccountType.CASH, null)
-        }
-        bankBalance = if (editingId != null) {
-            viewModel.getAvailableBalanceForAccount(AccountType.BANK, editingId)
-        } else {
-            viewModel.getAvailableBalanceForAccount(AccountType.BANK, null)
-        }
+        cashBalance = viewModel.getAvailableBalanceForAccount(AccountType.CASH, editingId)
+        bankBalance = viewModel.getAvailableBalanceForAccount(AccountType.BANK, editingId)
+        walletBalance = viewModel.getAvailableBalanceForAccount(AccountType.WALLET, editingId)
+        depositBalance = viewModel.getAvailableBalanceForAccount(AccountType.DEPOSIT, editingId)
     }
 
     LaunchedEffect(uiState.selectedCategory, monthMode) {
@@ -165,7 +169,8 @@ fun AddTransactionScreen(
     val availableBalance = when (uiState.accountType) {
         AccountType.CASH -> cashBalance
         AccountType.BANK -> bankBalance
-        AccountType.WALLET, AccountType.DEPOSIT -> null
+        AccountType.WALLET -> walletBalance
+        AccountType.DEPOSIT -> depositBalance
     }
 
     val timeFormatPref by viewModel.timeFormat.collectAsState()
@@ -203,6 +208,33 @@ fun AddTransactionScreen(
     var budgetWarning by remember { mutableStateOf<com.example.expensetracker.presentation.viewModel.BudgetWarningInfo?>(null) }
     LaunchedEffect(uiState.selectedCategory, uiState.amount, uiState.selectedDate, uiState.transactionType) {
         budgetWarning = viewModel.checkBudgetWarning(uiState.selectedCategory, uiState.amount)
+    }
+
+    if (showStrictInsufficientDialog) {
+        val acctName = if (uiState.accountType == AccountType.WALLET) {
+            stringResource(R.string.account_wallet)
+        } else {
+            stringResource(R.string.deposit_vault_title)
+        }
+        AlertDialog(
+            onDismissRequest = { showStrictInsufficientDialog = false },
+            title = { Text(stringResource(R.string.strict_insufficient_balance_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.strict_insufficient_balance_desc,
+                        acctName,
+                        CurrencyUtils.formatCurrency(availableBalance ?: 0.0),
+                        CurrencyUtils.formatCurrency(uiState.amount.toDoubleOrNull() ?: 0.0)
+                    )
+                )
+            },
+            confirmButton = {
+                Button(onClick = { showStrictInsufficientDialog = false }) {
+                    Text(stringResource(R.string.ok))
+                }
+            }
+        )
     }
 
     if (showInsufficientDialog) {
@@ -507,6 +539,13 @@ fun AddTransactionScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                             )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(R.string.available_account_balance_label, stringResource(R.string.account_wallet)) + " " + CurrencyUtils.formatCurrency(availableBalance ?: 0.0),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                         Switch(
                             checked = uiState.excludeFromMonthExpenses,
@@ -547,6 +586,13 @@ fun AddTransactionScreen(
                                 text = stringResource(R.string.deposit_vault_buy_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(R.string.available_account_balance_label, stringResource(R.string.deposit_vault_title)) + " " + CurrencyUtils.formatCurrency(availableBalance ?: 0.0),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -1016,28 +1062,56 @@ fun AddTransactionScreen(
                             uiState.editingTransactionId
                         )
                         if (amountDouble > balance) {
-                            pendingTransaction = transaction
-                            showInsufficientDialog = true
-                            return@launch
+                            if (uiState.accountType == AccountType.WALLET || uiState.accountType == AccountType.DEPOSIT) {
+                                showStrictInsufficientDialog = true
+                                return@launch
+                            } else {
+                                pendingTransaction = transaction
+                                showInsufficientDialog = true
+                                return@launch
+                            }
                         }
                     }
 
-                    val isSalaryIncomeInSalaryMode = monthMode == MonthMode.SALARY &&
-                        uiState.transactionType == TransactionType.INCOME &&
-                        viewModel.isSalaryCategory(category)
+                    val performActualSave: () -> Unit = {
+                        coroutineScope.launch {
+                            val isSalaryIncomeInSalaryMode = monthMode == MonthMode.SALARY &&
+                                uiState.transactionType == TransactionType.INCOME &&
+                                viewModel.isSalaryCategory(category)
 
-                    if (isSalaryIncomeInSalaryMode && viewModel.shouldPromptSalaryMonth(category, isEditMode)) {
-                        pendingTransaction = transaction
-                        showSalaryMonthDialog = true
+                            if (isSalaryIncomeInSalaryMode && viewModel.shouldPromptSalaryMonth(category, isEditMode)) {
+                                pendingTransaction = transaction
+                                showSalaryMonthDialog = true
+                            } else {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                saveAndNavigate(
+                                    viewModel,
+                                    transaction,
+                                    navController,
+                                    makeRecurringChecked,
+                                    selectedRecurrenceFrequency
+                                )
+                            }
+                        }
+                    }
+
+                    if (uiState.accountType == AccountType.DEPOSIT && uiState.transactionType == TransactionType.EXPENSE) {
+                        val activity = context as? androidx.fragment.app.FragmentActivity
+                        if (activity != null) {
+                            val biometricManager = com.example.expensetracker.core.security.BiometricAuthManager(context.applicationContext)
+                            biometricManager.authenticate(
+                                activity = activity,
+                                title = context.getString(R.string.vault_biometric_confirm_title),
+                                subtitle = context.getString(R.string.vault_biometric_confirm_sub),
+                                onSuccess = { performActualSave() },
+                                onError = { /* Cancelled or auth error */ },
+                                onFailedAttempt = { /* Failed biometric */ }
+                            )
+                        } else {
+                            performActualSave()
+                        }
                     } else {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        saveAndNavigate(
-                            viewModel,
-                            transaction,
-                            navController,
-                            makeRecurringChecked,
-                            selectedRecurrenceFrequency
-                        )
+                        performActualSave()
                     }
                 }
             },

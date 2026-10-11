@@ -307,7 +307,13 @@ fun DepositScreen(
                         }
 
                         OutlinedButton(
-                            onClick = { showBuyDialog = true },
+                            onClick = {
+                                navController.navigate(
+                                    com.example.expensetracker.presentation.navigation.AddTransaction(
+                                        accountType = AccountType.DEPOSIT.name
+                                    )
+                                )
+                            },
                             modifier = Modifier
                                 .weight(1f)
                                 .height(48.dp),

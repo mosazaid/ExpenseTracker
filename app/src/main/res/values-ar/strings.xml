@@ -492,5 +492,12 @@
     <string name="account_wallet">المحفظة</string>
     <string name="exclude_from_month_expenses_title">استبعاد من حاسبة مصاريف الشهر</string>
     <string name="exclude_from_month_expenses_desc">حسم المصروف أو الدين من رصيد المحفظة فقط دون التأثير على ميزانية راتب الشهر.</string>
+    <string name="strict_insufficient_balance_title">رصيد غير كافٍ</string>
+    <string name="strict_insufficient_balance_desc">لا يمكن إتمام هذه العملية لعدم كفاية الرصيد في %1$s.\n\nالرصيد المتاح: %2$s\nالمبلغ المطلوب: %3$s</string>
+    <string name="vault_biometric_confirm_title">تأكيد الصرف من الخزنة</string>
+    <string name="vault_biometric_confirm_sub">يرجى تأكيد المصادقة البيومترية لإتمام الشراء من الخزنة الكبرى</string>
+    <string name="adhan_audio_preview_play">استماع لصوت الأذان</string>
+    <string name="adhan_audio_preview_stop">إيقاف الصوت</string>
+    <string name="available_account_balance_label">رصيد %1$s المتاح:</string>
 </resources>
 
