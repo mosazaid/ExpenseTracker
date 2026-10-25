@@ -760,6 +760,7 @@ fun AddTransactionScreen(
                         text = if (warning.isExceeded) {
                             stringResource(
                                 R.string.budget_warning_exceeded_desc,
+                                CurrencyUtils.formatCurrency(warning.transactionAmount),
                                 warning.categoryName,
                                 CurrencyUtils.formatCurrency(warning.projectedSpent),
                                 CurrencyUtils.formatCurrency(warning.limit)
@@ -767,6 +768,7 @@ fun AddTransactionScreen(
                         } else {
                             stringResource(
                                 R.string.budget_warning_near_desc,
+                                CurrencyUtils.formatCurrency(warning.transactionAmount),
                                 warning.categoryName,
                                 CurrencyUtils.formatCurrency(warning.projectedSpent),
                                 CurrencyUtils.formatCurrency(warning.limit)

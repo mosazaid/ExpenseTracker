@@ -44,7 +44,8 @@ data class BudgetWarningInfo(
     val currentSpent: Double,
     val projectedSpent: Double,
     val limit: Double,
-    val isExceeded: Boolean
+    val isExceeded: Boolean,
+    val transactionAmount: Double = 0.0
 )
 
 @HiltViewModel
@@ -221,7 +222,8 @@ class AddEditTransactionViewModel @Inject constructor(
                 currentSpent = currentSpent,
                 projectedSpent = projected,
                 limit = progress.limit,
-                isExceeded = projected >= progress.limit
+                isExceeded = projected >= progress.limit,
+                transactionAmount = amount
             )
         }
         return null
