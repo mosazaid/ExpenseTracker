@@ -53,7 +53,8 @@ object GlanceDataRepository {
             val pacing = SpendingPacingCalculator.analyze(
                 totalIncome = summary.periodIncome + broughtForward,
                 totalExpense = summary.periodExpense,
-                walletReserved = walletBalance,
+                walletReserved = 0.0,
+                currentAvailableBalance = summary.currentBalances.total,
                 currentDate = now,
                 periodStartDate = bounds.start,
                 periodEndDate = bounds.end,

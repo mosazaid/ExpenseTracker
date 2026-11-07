@@ -143,4 +143,67 @@ class SpendingPacingCalculatorTest {
         // Velocity = (200 / 1100) / (10 / 31) ≈ 0.56, which is in 0.50..1.10 range -> OPTIMAL
         assertEquals(PacingStatus.OPTIMAL, analysis.status)
     }
+
+    @Test
+    fun testPacingAnalysis_WithCurrentAvailableBalance_PreventsFalseDeficit() {
+        val cal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 10, 12, 0, 0)
+        }
+        val startCal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 1, 0, 0, 0)
+        }
+        val endCal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 31, 23, 59, 59)
+        }
+
+        // Scenario: User hasn't recorded new salary yet (income = 0), but has ~500 JOD in real available cash+bank.
+        // Expenses are 105 JOD.
+        val analysis = SpendingPacingCalculator.analyze(
+            totalIncome = 0.0,
+            totalExpense = 105.0,
+            currentAvailableBalance = 495.0,
+            walletReserved = 0.0,
+            currentDate = cal.time,
+            periodStartDate = startCal.time,
+            periodEndDate = endCal.time
+        )
+
+        // Baseline must be 495.0 (real available liquid funds), NOT 100.0 (arbitrary floor)
+        assertEquals(495.0, analysis.baselineBudget, 0.001)
+        // Consumed ratio should be 105 / 495 ≈ 21.2%, NOT 105%
+        assertEquals(105.0 / 495.0, analysis.budgetConsumedRatio.toDouble(), 0.01)
+        // Must NOT trigger DEFICIT_CRITICAL alert
+        assertNotEquals(PacingStatus.DEFICIT_CRITICAL, analysis.status)
+        assertTrue(analysis.projectedDifference > 0 || analysis.status == PacingStatus.OPTIMAL || analysis.status == PacingStatus.SUPER_SAVER)
+        assertTrue(analysis.safeDailySpendRemaining > 15.0)
+    }
+
+    @Test
+    fun testPacingAnalysis_VaultAndWalletSpendingExcluded_ReflectsRealLiquidFunds() {
+        val cal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 12, 12, 0, 0)
+        }
+        val startCal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 1, 0, 0, 0)
+        }
+        val endCal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 31, 23, 59, 59)
+        }
+
+        // User logged small side income 100 JOD, has 500 JOD liquid funds, and 105 JOD expenses
+        val analysis = SpendingPacingCalculator.analyze(
+            totalIncome = 100.0,
+            totalExpense = 105.0,
+            currentAvailableBalance = 500.0,
+            walletReserved = 0.0,
+            currentDate = cal.time,
+            periodStartDate = startCal.time,
+            periodEndDate = endCal.time
+        )
+
+        // Baseline takes max(100, 500) = 500
+        assertEquals(500.0, analysis.baselineBudget, 0.001)
+        assertEquals(0.21f, analysis.budgetConsumedRatio, 0.01f)
+        assertNotEquals(PacingStatus.DEFICIT_CRITICAL, analysis.status)
+    }
 }

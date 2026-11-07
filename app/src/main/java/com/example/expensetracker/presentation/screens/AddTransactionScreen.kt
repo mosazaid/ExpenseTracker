@@ -1380,7 +1380,7 @@ fun AddTransactionScreen(
                         carriedForwardBalance = uiState.carriedForwardBalance,
                         allowNegativeBalance = uiState.allowNegativeBalance,
                         createdAt = uiState.createdAt ?: Date(),
-                        excludeFromMonthExpenses = uiState.excludeFromMonthExpenses || uiState.accountType == AccountType.DEPOSIT,
+                        excludeFromMonthExpenses = uiState.excludeFromMonthExpenses || uiState.accountType == AccountType.DEPOSIT || uiState.accountType == AccountType.WALLET,
                         currency = uiState.currency,
                         originalAmount = uiState.originalAmount.toDoubleOrNull(),
                         exchangeRateUsed = uiState.exchangeRateUsed,

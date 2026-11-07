@@ -39,6 +39,7 @@ object SpendingPacingCalculator {
         totalIncome: Double,
         totalExpense: Double,
         walletReserved: Double = 0.0,
+        currentAvailableBalance: Double = 0.0,
         currentDate: Date = Date(),
         periodStartDate: Date? = null,
         periodEndDate: Date? = null,
@@ -64,9 +65,24 @@ object SpendingPacingCalculator {
 
         val timeElapsedRatio = (dayOfPeriod.toFloat() / totalPeriodDays.toFloat()).coerceIn(0.01f, 1f)
 
-        // Baseline spendable budget is income minus wallet reserves, or fallback to sensible floor
-        val spendableBudget = max(0.0, totalIncome - walletReserved)
-        val baselineBudget = if (spendableBudget > 0) spendableBudget else if (totalIncome > 0) totalIncome else (totalExpense * 1.15).coerceAtLeast(100.0)
+        // Baseline spendable budget:
+        // Priority 1: If currentAvailableBalance > 0 (user's real liquid Cash + Bank), the budget baseline
+        // must reflect actual available funds (e.g. ~500 JOD), preventing false deficit alarms when income
+        // has not yet been logged for the current period or when savings/vault moves occurred.
+        // Priority 2: In cycles where income was recorded, baseline takes the larger of income pool or available balance.
+        // Priority 3: Fallback floor (totalExpense * 1.15).coerceAtLeast(100.0) only if no income and no liquid funds exist.
+        val effectiveIncome = if (currentAvailableBalance > 0.0) {
+            maxOf(totalIncome, currentAvailableBalance)
+        } else {
+            val spendableAfterWallet = max(0.0, totalIncome - walletReserved)
+            if (spendableAfterWallet > 0) spendableAfterWallet else totalIncome
+        }
+
+        val baselineBudget = when {
+            effectiveIncome > 0.0 -> effectiveIncome
+            currentAvailableBalance > 0.0 -> currentAvailableBalance
+            else -> (totalExpense * 1.15).coerceAtLeast(100.0)
+        }
         val budgetConsumedRatio = if (baselineBudget > 0) (totalExpense / baselineBudget).toFloat() else 0f
         val velocityRatio = if (timeElapsedRatio > 0) (budgetConsumedRatio / timeElapsedRatio) else 1f
 

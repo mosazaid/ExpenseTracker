@@ -168,6 +168,7 @@ class WalletViewModel @Inject constructor(
             accountType = from,
             toAccountType = to,
             allowNegativeBalance = false,
+            excludeFromMonthExpenses = true,
             createdAt = state.createdAt ?: Date()
         )
         return if (transaction.id == 0L) {

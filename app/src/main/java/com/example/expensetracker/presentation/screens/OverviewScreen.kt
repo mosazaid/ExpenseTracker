@@ -325,8 +325,9 @@ fun OverviewScreen(
                 FinancialInsightsCard(
                     totalIncome = monthSummary.monthIncome,
                     totalExpense = monthSummary.monthExpense,
-                    totalWallet = monthSummary.walletBalance,
+                    totalWallet = 0.0, // Wallet reserves and vault funds are isolated and not deducted from the budget
                     carriedForwardBalance = monthSummary.broughtForward,
+                    currentAvailableBalance = totalAvailable,
                     periodStartDate = monthSummary.monthBounds?.start,
                     periodEndDate = monthSummary.monthBounds?.end,
                     cycleLabel = monthSummary.monthBounds?.label
