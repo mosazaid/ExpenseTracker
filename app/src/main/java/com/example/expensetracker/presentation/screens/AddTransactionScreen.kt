@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Schedule
@@ -950,6 +951,7 @@ fun AddTransactionScreen(
                 }
             }
         } else {
+            var isCalculatorMode by remember { mutableStateOf(false) }
             val hasMath = ArithmeticEvaluator.hasOperator(uiState.amount)
             val evaluatedAmount = remember(uiState.amount) {
                 if (hasMath) ArithmeticEvaluator.evaluate(uiState.amount) else null
@@ -957,18 +959,44 @@ fun AddTransactionScreen(
 
             OutlinedTextField(
                 value = uiState.amount,
-                onValueChange = { viewModel.updateAmount(ArithmeticEvaluator.cleanArithmeticInput(it)) },
+                onValueChange = { input ->
+                    val cleaned = if (isCalculatorMode || ArithmeticEvaluator.hasOperator(input)) {
+                        ArithmeticEvaluator.cleanArithmeticInput(input)
+                    } else {
+                        CurrencyUtils.cleanDecimalInput(input)
+                    }
+                    viewModel.updateAmount(cleaned)
+                },
                 label = { Text(amountFieldLabel) },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = if (isCalculatorMode) KeyboardType.Text else KeyboardType.Decimal,
+                    imeAction = ImeAction.Next
+                ),
                 trailingIcon = {
-                    if (evaluatedAmount != null) {
-                        TextButton(
-                            onClick = {
-                                viewModel.updateAmount(ArithmeticEvaluator.formatResult(evaluatedAmount))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        if (evaluatedAmount != null) {
+                            TextButton(
+                                onClick = {
+                                    viewModel.updateAmount(ArithmeticEvaluator.formatResult(evaluatedAmount))
+                                }
+                            ) {
+                                Text("= " + ArithmeticEvaluator.formatResult(evaluatedAmount), fontWeight = FontWeight.Bold)
                             }
+                        }
+                        IconButton(
+                            onClick = { isCalculatorMode = !isCalculatorMode },
+                            modifier = Modifier.size(36.dp)
                         ) {
-                            Text("= " + ArithmeticEvaluator.formatResult(evaluatedAmount), fontWeight = FontWeight.Bold)
+                            Icon(
+                                imageVector = Icons.Default.Calculate,
+                                contentDescription = "Toggle Calculator",
+                                tint = if (isCalculatorMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                            )
                         }
                     }
                 },
