@@ -53,6 +53,13 @@ import com.example.expensetracker.presentation.navigation.NotificationSettings
 import com.example.expensetracker.presentation.navigation.ZakahCalculator
 import com.example.expensetracker.presentation.navigation.PrayerQiblah
 import com.example.expensetracker.presentation.navigation.DepositVault
+import com.example.expensetracker.presentation.navigation.CurrencyExchangeTracker
+import com.example.expensetracker.presentation.navigation.TravelModeTrips
+import com.example.expensetracker.presentation.navigation.PriceHistoryTracker
+import com.example.expensetracker.presentation.navigation.SadaqahJar
+import com.example.expensetracker.presentation.navigation.FinancialRunway
+import com.example.expensetracker.presentation.navigation.MurabahaSimulator
+import com.example.expensetracker.presentation.navigation.SubscriptionPlan
 import com.example.expensetracker.presentation.navigation.Statistics
 import com.example.expensetracker.presentation.navigation.Transfer
 import com.example.expensetracker.presentation.navigation.Wallet
@@ -97,6 +104,8 @@ private val bottomNavDestinations = listOf(
 @Composable
 fun MainScreen(
     initialRecurringId: Long? = null,
+    initialNavigateTo: String? = null,
+    onNavigateHandled: () -> Unit = {},
     loansViewModel: LoansViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
@@ -105,6 +114,20 @@ fun MainScreen(
     LaunchedEffect(initialRecurringId) {
         if (initialRecurringId != null) {
             navController.navigate(AddTransaction(recurringId = initialRecurringId))
+        }
+    }
+
+    LaunchedEffect(initialNavigateTo) {
+        if (!initialNavigateTo.isNullOrBlank()) {
+            when (initialNavigateTo) {
+                "add_expense", "add_transaction" -> navController.navigate(AddTransaction())
+                "categories" -> navController.navigate(Categories)
+                "loans" -> navController.navigate(Loans)
+                "prayer_qiblah" -> navController.navigate(PrayerQiblah)
+                "history" -> navController.navigate(History)
+                "stats" -> navController.navigate(Statistics)
+            }
+            onNavigateHandled()
         }
     }
 
@@ -277,6 +300,13 @@ fun MainScreen(
             composable<ZakahCalculator> { ZakahCalculatorScreen(navController) }
             composable<PrayerQiblah>    { PrayerQiblahScreen(navController) }
             composable<DepositVault>    { DepositScreen(navController) }
+            composable<CurrencyExchangeTracker> { CurrencyExchangeScreen(navController) }
+            composable<TravelModeTrips> { TravelModeScreen(navController) }
+            composable<PriceHistoryTracker> { PriceHistoryScreen(navController) }
+            composable<SadaqahJar> { SadaqahJarScreen(navController) }
+            composable<FinancialRunway> { FinancialRunwayScreen(navController) }
+            composable<MurabahaSimulator> { MurabahaSimulatorScreen(navController) }
+            composable<SubscriptionPlan> { SubscriptionScreen(navController) }
 
             // ── Parameterised screens ───────────────────────────────────────
             composable<AddTransaction> { backStackEntry ->

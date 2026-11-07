@@ -23,6 +23,13 @@ import kotlinx.serialization.Serializable
 @Serializable object ZakahCalculator
 @Serializable object PrayerQiblah
 @Serializable object DepositVault
+@Serializable object CurrencyExchangeTracker
+@Serializable object TravelModeTrips
+@Serializable object PriceHistoryTracker
+@Serializable object SadaqahJar
+@Serializable object FinancialRunway
+@Serializable object MurabahaSimulator
+@Serializable object SubscriptionPlan
 
 // ── Parameterised destinations ────────────────────────────────────────────────
 /**

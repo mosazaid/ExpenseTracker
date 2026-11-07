@@ -28,6 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -238,7 +239,7 @@ fun PrayerQiblahScreen(
                 prayerTime = uiState.schedule.nextPrayerTime
             )
 
-            // 5 Daily Prayers Schedule with reminder toggles
+            // 5 Daily Prayers Schedule with reminder toggles & daily salah checklist
             DailyPrayersScheduleCard(
                 schedule = uiState.schedule,
                 fajrAlert = uiState.fajrAlertEnabled,
@@ -246,8 +247,12 @@ fun PrayerQiblahScreen(
                 asrAlert = uiState.asrAlertEnabled,
                 maghribAlert = uiState.maghribAlertEnabled,
                 ishaAlert = uiState.ishaAlertEnabled,
+                prayedTodayList = uiState.prayedTodayList,
                 onTogglePrayerAlert = { prayerName, enabled ->
                     viewModel.toggleIndividualPrayer(prayerName, enabled)
+                },
+                onTogglePrayed = { prayerName ->
+                    viewModel.togglePrayerPrayed(prayerName)
                 }
             )
         }
@@ -1252,8 +1257,14 @@ private fun DailyPrayersScheduleCard(
     asrAlert: Boolean,
     maghribAlert: Boolean,
     ishaAlert: Boolean,
-    onTogglePrayerAlert: (String, Boolean) -> Unit
+    prayedTodayList: Set<String>,
+    onTogglePrayerAlert: (String, Boolean) -> Unit,
+    onTogglePrayed: (String) -> Unit
 ) {
+    val completedCount = remember(prayedTodayList) {
+        listOf("Fajr", "Dhuhr", "Asr", "Maghrib", "Isha").count { prayedTodayList.contains(it) }
+    }
+
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
@@ -1295,6 +1306,44 @@ private fun DailyPrayersScheduleCard(
                 }
             }
 
+            // Daily Salah Checklist Header
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            tint = if (completedCount == 5) FinancePositive else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "سجل الصلوات اليومي • Salah Checklist",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    Text(
+                        text = "$completedCount / 5",
+                        style = MaterialTheme.typography.labelLarge.withTabularNums(),
+                        fontWeight = FontWeight.Bold,
+                        color = if (completedCount == 5) FinancePositive else MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
             val prayerItems = listOf(
                 PrayerRowData("Fajr", "الفجر", schedule.fajr, fajrAlert, canRemind = true),
                 PrayerRowData("Sunrise", "الشروق", schedule.sunrise, false, canRemind = false),
@@ -1306,6 +1355,8 @@ private fun DailyPrayersScheduleCard(
 
             prayerItems.forEach { item ->
                 val isNext = schedule.nextPrayerName == item.nameEn
+                val isPrayed = prayedTodayList.contains(item.nameEn)
+
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = if (isNext) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
@@ -1321,7 +1372,8 @@ private fun DailyPrayersScheduleCard(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.weight(1f, fill = false)
                         ) {
                             Icon(
                                 imageVector = when (item.nameEn) {
@@ -1344,7 +1396,7 @@ private fun DailyPrayersScheduleCard(
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
                                 text = item.time,
@@ -1354,6 +1406,18 @@ private fun DailyPrayersScheduleCard(
                             )
 
                             if (item.canRemind) {
+                                IconButton(
+                                    onClick = { onTogglePrayed(item.nameEn) },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isPrayed) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
+                                        contentDescription = "Mark ${item.nameEn} as prayed",
+                                        tint = if (isPrayed) FinancePositive else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+
                                 IconButton(
                                     onClick = { onTogglePrayerAlert(item.nameEn, !item.alertEnabled) },
                                     modifier = Modifier.size(36.dp)
@@ -1366,7 +1430,7 @@ private fun DailyPrayersScheduleCard(
                                     )
                                 }
                             } else {
-                                Spacer(modifier = Modifier.size(36.dp))
+                                Spacer(modifier = Modifier.size(72.dp))
                             }
                         }
                     }

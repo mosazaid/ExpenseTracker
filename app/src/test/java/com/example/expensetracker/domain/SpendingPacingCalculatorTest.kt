@@ -103,4 +103,44 @@ class SpendingPacingCalculatorTest {
         assertEquals(390.0 / 21, analysis.safeDailySpendRemaining, 0.01)
         assertTrue("Safe daily spend should be around 18.57, not hundreds", analysis.safeDailySpendRemaining < 30.0)
     }
+
+    @Test
+    fun testPacingAnalysis_WithCarriedForwardBalance() {
+        val cal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 10, 12, 0, 0)
+        }
+        val startCal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 1, 0, 0, 0)
+        }
+        val endCal = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 31, 23, 59, 59)
+        }
+
+        val salaryIncome = 1000.0
+        val carriedForward = 250.0
+        val walletReserved = 150.0
+        val expense = 200.0
+
+        // FinancialInsightsCard computes totalIncome = salaryIncome + carriedForward
+        val analysis = SpendingPacingCalculator.analyze(
+            totalIncome = salaryIncome + carriedForward,
+            totalExpense = expense,
+            walletReserved = walletReserved,
+            currentDate = cal.time,
+            periodStartDate = startCal.time,
+            periodEndDate = endCal.time
+        )
+
+        // Baseline = 1000 + 250 - 150 = 1100.0
+        assertEquals(1100.0, analysis.baselineBudget, 0.001)
+        assertEquals(31, analysis.totalPeriodDays)
+        assertEquals(10, analysis.dayOfPeriod)
+        assertEquals(21, analysis.daysRemaining)
+
+        // Remaining = 1100 - 200 = 900.0
+        // Safe daily spend = 900 / 21 ≈ 42.857
+        assertEquals(900.0 / 21, analysis.safeDailySpendRemaining, 0.01)
+        // Velocity = (200 / 1100) / (10 / 31) ≈ 0.56, which is in 0.50..1.10 range -> OPTIMAL
+        assertEquals(PacingStatus.OPTIMAL, analysis.status)
+    }
 }

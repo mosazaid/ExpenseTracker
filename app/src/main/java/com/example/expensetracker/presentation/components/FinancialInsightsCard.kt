@@ -47,6 +47,7 @@ fun FinancialInsightsCard(
     totalIncome: Double,
     totalExpense: Double,
     totalWallet: Double = 0.0,
+    carriedForwardBalance: Double = 0.0,
     periodStartDate: Date? = null,
     periodEndDate: Date? = null,
     cycleLabel: String? = null,
@@ -54,9 +55,9 @@ fun FinancialInsightsCard(
 ) {
     var showInfoDialog by remember { mutableStateOf(false) }
 
-    val analysis = remember(totalIncome, totalExpense, totalWallet, periodStartDate, periodEndDate, cycleLabel) {
+    val analysis = remember(totalIncome, totalExpense, totalWallet, carriedForwardBalance, periodStartDate, periodEndDate, cycleLabel) {
         SpendingPacingCalculator.analyze(
-            totalIncome = totalIncome,
+            totalIncome = totalIncome + carriedForwardBalance,
             totalExpense = totalExpense,
             walletReserved = totalWallet,
             periodStartDate = periodStartDate,

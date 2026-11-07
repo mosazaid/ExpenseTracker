@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
@@ -141,6 +142,7 @@ fun OverviewScreen(
     // Total available balance in header strictly excludes wallet (Cash + Bank only; funds moved to wallet are deducted)
     val totalAvailable = (cashBal + bankBal)
     val recentTransactions = remember(allTransactions) { allTransactions.take(4) }
+    val pendingSmsList by viewModel.pendingSmsList.collectAsState()
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -324,10 +326,22 @@ fun OverviewScreen(
                     totalIncome = monthSummary.monthIncome,
                     totalExpense = monthSummary.monthExpense,
                     totalWallet = monthSummary.walletBalance,
+                    carriedForwardBalance = monthSummary.broughtForward,
                     periodStartDate = monthSummary.monthBounds?.start,
                     periodEndDate = monthSummary.monthBounds?.end,
                     cycleLabel = monthSummary.monthBounds?.label
                 )
+            }
+
+            // 8b. Pending Bank SMS Review Inbox
+            if (pendingSmsList.isNotEmpty()) {
+                item(key = "pending-sms-review-inbox") {
+                    PendingSmsReviewSection(
+                        items = pendingSmsList,
+                        onConfirm = { viewModel.confirmAndSavePendingSms(it) },
+                        onDismiss = { viewModel.dismissPendingSms(it) }
+                    )
+                }
             }
 
             // 9. Recent Activity Preview
@@ -1486,5 +1500,107 @@ private fun WalletYearSummaryCard(
 private fun formatSigned(amount: Double): String {
     val prefix = if (amount >= 0) "+" else ""
     return prefix + CurrencyUtils.formatCurrency(amount)
+}
+
+@Composable
+private fun PendingSmsReviewSection(
+    items: List<com.example.expensetracker.data.database.entities.PendingSmsTransaction>,
+    onConfirm: (com.example.expensetracker.data.database.entities.PendingSmsTransaction) -> Unit,
+    onDismiss: (Long) -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.AccountBalance,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "Unreviewed Bank Transactions (${items.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            items.forEach { item ->
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = item.merchant.ifBlank { item.sender },
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "${item.sender} • ${item.suggestedCategory ?: "Other"}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Text(
+                                text = "${CurrencyUtils.formatAmount(item.amount)} ${item.currency}",
+                                style = MaterialTheme.typography.titleMedium.withTabularNums(),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TextButton(onClick = { onDismiss(item.id) }) {
+                                Text("Dismiss", color = MaterialTheme.colorScheme.outline)
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Button(
+                                onClick = { onConfirm(item) },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                            ) {
+                                Text("Confirm & Save")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 

@@ -19,10 +19,13 @@ import com.example.expensetracker.domain.PeriodCalculator
 import com.example.expensetracker.domain.WalletCalculator
 import com.example.expensetracker.domain.isDept
 import com.example.expensetracker.domain.matchesSystemKey
+import com.example.expensetracker.data.database.entities.Trip
+import com.example.expensetracker.domain.currency.CurrencyRates
 import com.example.expensetracker.domain.repository.IAlertRepository
 import com.example.expensetracker.domain.repository.ICategoryRepository
 import com.example.expensetracker.domain.repository.IRecurringRepository
 import com.example.expensetracker.domain.repository.ITransactionRepository
+import com.example.expensetracker.domain.repository.ITripRepository
 import com.example.expensetracker.util.NotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -34,6 +37,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -53,6 +57,8 @@ class AddEditTransactionViewModel @Inject constructor(
     private val transactionRepository: ITransactionRepository,
     private val categoryRepository: ICategoryRepository,
     private val recurringRepository: IRecurringRepository,
+    private val tripRepository: ITripRepository,
+    private val itemPriceRepository: com.example.expensetracker.domain.repository.IItemPriceRepository,
     private val userPreferences: UserPreferences,
     private val periodCalculator: PeriodCalculator,
     private val balanceCalculator: BalanceCalculator,
@@ -60,7 +66,8 @@ class AddEditTransactionViewModel @Inject constructor(
     private val depositCalculator: com.example.expensetracker.domain.DepositCalculator,
     private val budgetProgressCalculator: BudgetProgressCalculator,
     private val alertRepository: IAlertRepository,
-    private val notificationHelper: NotificationHelper
+    private val notificationHelper: NotificationHelper,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddEditTransactionUiState())
@@ -69,6 +76,26 @@ class AddEditTransactionViewModel @Inject constructor(
     val events = _events.asSharedFlow()
 
     private var originalTransaction: Transaction? = null
+
+    init {
+        viewModelScope.launch {
+            tripRepository.getAllTrips().collect { trips ->
+                _uiState.value = _uiState.value.copy(availableTrips = trips)
+            }
+        }
+        viewModelScope.launch {
+            tripRepository.getActiveTrip().collect { activeTrip ->
+                _uiState.value = _uiState.value.copy(activeTrip = activeTrip)
+                // If creating a brand new transaction and an active trip is ongoing, pre-fill tripId and currency
+                if (_uiState.value.editingTransactionId == null && _uiState.value.tripId == null && activeTrip != null) {
+                    _uiState.value = _uiState.value.copy(
+                        tripId = activeTrip.id,
+                        currency = activeTrip.baseCurrency
+                    )
+                }
+            }
+        }
+    }
 
     val monthMode: StateFlow<MonthMode> = userPreferences.monthMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MonthMode.CALENDAR)
@@ -126,7 +153,13 @@ class AddEditTransactionViewModel @Inject constructor(
             receiptImagePath = transaction.receiptImagePath,
             isSplitMode = splitItems.isNotEmpty(),
             splits = splitItems,
-            excludeFromMonthExpenses = transaction.excludeFromMonthExpenses
+            excludeFromMonthExpenses = transaction.excludeFromMonthExpenses,
+            currency = transaction.currency,
+            originalAmount = transaction.originalAmount?.toString().orEmpty(),
+            exchangeRateUsed = transaction.exchangeRateUsed,
+            tripId = transaction.tripId,
+            availableTrips = _uiState.value.availableTrips,
+            activeTrip = _uiState.value.activeTrip
         )
         return true
     }
@@ -232,11 +265,17 @@ class AddEditTransactionViewModel @Inject constructor(
     suspend fun saveTransaction(transaction: Transaction): Long {
         val recurringId = _uiState.value.pendingRecurringId
         val receiptPath = _uiState.value.receiptImagePath
-        val isExcluded = _uiState.value.excludeFromMonthExpenses || transaction.accountType == AccountType.DEPOSIT
+        val isExcluded = _uiState.value.excludeFromMonthExpenses
+                || transaction.accountType == AccountType.DEPOSIT
+                || transaction.accountType == AccountType.WALLET
         val txn = transaction.copy(
             recurringId = recurringId ?: transaction.recurringId,
             receiptImagePath = receiptPath,
-            excludeFromMonthExpenses = isExcluded
+            excludeFromMonthExpenses = isExcluded,
+            currency = _uiState.value.currency,
+            originalAmount = _uiState.value.originalAmount.toDoubleOrNull() ?: transaction.originalAmount,
+            exchangeRateUsed = _uiState.value.exchangeRateUsed ?: transaction.exchangeRateUsed,
+            tripId = _uiState.value.tripId ?: transaction.tripId
         )
 
         val splitEntities = if (_uiState.value.isSplitMode) {
@@ -276,6 +315,40 @@ class AddEditTransactionViewModel @Inject constructor(
                 transactionRepository.updateTransaction(updatedTxn)
             }
             txn.id
+        }
+
+        // Trigger home screen widget updates in real time
+        com.example.expensetracker.glance.WidgetUpdateHelper.updateAllWidgets(context)
+
+        // Auto-record item prices from split items into price memory
+        if (_uiState.value.isSplitMode) {
+            _uiState.value.splits.forEach { item ->
+                val amt = item.amount.toDoubleOrNull() ?: 0.0
+                val name = item.note.takeIf { it.isNotBlank() } ?: item.subCategoryName
+                if (amt > 0 && !name.isNullOrBlank()) {
+                    runCatching {
+                        itemPriceRepository.recordItemPrice(
+                            itemName = name,
+                            unitPrice = amt,
+                            currency = txn.currency,
+                            subCategoryId = item.subCategoryId,
+                            transactionId = savedId
+                        )
+                    }
+                }
+            }
+        }
+
+        // Optional micro-charity Sadaqah Round-Up
+        if (transaction.type == TransactionType.EXPENSE) {
+            val isRoundUpEnabled = userPreferences.sadaqahRoundUpEnabled.first()
+            if (isRoundUpEnabled && txn.amount > 0) {
+                val ceiling = kotlin.math.ceil(txn.amount)
+                val spareChange = ceiling - txn.amount
+                if (spareChange > 0.001) {
+                    userPreferences.addToSadaqahJar(spareChange)
+                }
+            }
         }
 
         // Post-save checks for Budget notifications & alert records
@@ -449,7 +522,12 @@ class AddEditTransactionViewModel @Inject constructor(
     }
 
     fun updateAccountType(type: AccountType) {
-        val shouldExclude = if (type == AccountType.DEPOSIT) true else _uiState.value.excludeFromMonthExpenses
+        // Wallet and Deposit expenses are always excluded from monthly operational expenses.
+        // The manual toggle is only relevant for CASH/BANK transactions.
+        val shouldExclude = when (type) {
+            AccountType.WALLET, AccountType.DEPOSIT -> true
+            else -> _uiState.value.excludeFromMonthExpenses
+        }
         _uiState.value = _uiState.value.copy(
             accountType = type,
             excludeFromMonthExpenses = shouldExclude
@@ -488,9 +566,72 @@ class AddEditTransactionViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(linkedExpenseId = expenseId)
     }
 
+    fun updateCurrency(newCurrency: String) {
+        val oldCurrency = _uiState.value.currency
+        val rate = CurrencyRates.getDefaultRate(newCurrency, "JOD")
+        _uiState.value = _uiState.value.copy(
+            currency = newCurrency,
+            exchangeRateUsed = rate
+        )
+        // If there's an originalAmount in foreign currency, recalculate home amount
+        val foreign = _uiState.value.originalAmount.toDoubleOrNull()
+        if (foreign != null && newCurrency != "JOD") {
+            val converted = CurrencyRates.convert(foreign, newCurrency, "JOD")
+            _uiState.value = _uiState.value.copy(
+                amount = String.format(Locale.US, "%.3f", converted)
+            )
+        }
+    }
+
+    fun updateOriginalAmount(amountStr: String) {
+        _uiState.value = _uiState.value.copy(originalAmount = amountStr)
+        val foreign = amountStr.toDoubleOrNull()
+        val curr = _uiState.value.currency
+        if (foreign != null && curr != "JOD") {
+            val converted = CurrencyRates.convert(foreign, curr, "JOD", _uiState.value.exchangeRateUsed)
+            _uiState.value = _uiState.value.copy(
+                amount = String.format(Locale.US, "%.3f", converted)
+            )
+        } else if (curr == "JOD") {
+            _uiState.value = _uiState.value.copy(amount = amountStr)
+        }
+    }
+
+    fun updateTripId(tripId: Long?) {
+        _uiState.value = _uiState.value.copy(tripId = tripId)
+        val matchedTrip = _uiState.value.availableTrips.find { it.id == tripId }
+        if (matchedTrip != null && _uiState.value.currency == "JOD") {
+            updateCurrency(matchedTrip.baseCurrency)
+        }
+    }
+
+    fun fillFromBankSms(smsText: String, categories: List<Category>): Boolean {
+        val parsed = com.example.expensetracker.domain.sms.BankSmsParser.parse(smsText) ?: return false
+        updateAmount(parsed.amount.toString())
+        updateDescription(parsed.merchant)
+        updateAccountType(AccountType.BANK)
+        if (parsed.currency != "JOD") {
+            updateCurrency(parsed.currency)
+        }
+        if (!parsed.suggestedCategoryName.isNullOrBlank()) {
+            val matched = categories.firstOrNull { it.name.equals(parsed.suggestedCategoryName, ignoreCase = true) }
+            if (matched != null) {
+                updateSelectedCategory(matched)
+            }
+        }
+        return true
+    }
+
     fun resetForm() {
+        val trips = _uiState.value.availableTrips
+        val active = _uiState.value.activeTrip
         originalTransaction = null
-        _uiState.value = AddEditTransactionUiState()
+        _uiState.value = AddEditTransactionUiState(
+            availableTrips = trips,
+            activeTrip = active,
+            tripId = active?.id,
+            currency = active?.baseCurrency ?: "JOD"
+        )
     }
 
     suspend fun emitNavigateHistory() {
@@ -532,7 +673,13 @@ data class AddEditTransactionUiState(
     val receiptImagePath: String? = null,
     val isSplitMode: Boolean = false,
     val splits: List<TransactionSplitItem> = emptyList(),
-    val excludeFromMonthExpenses: Boolean = false
+    val excludeFromMonthExpenses: Boolean = false,
+    val currency: String = "JOD",
+    val originalAmount: String = "",
+    val exchangeRateUsed: Double? = null,
+    val tripId: Long? = null,
+    val availableTrips: List<Trip> = emptyList(),
+    val activeTrip: Trip? = null
 )
 
 sealed interface AddEditUiEvent {

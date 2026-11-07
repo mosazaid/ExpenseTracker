@@ -91,6 +91,11 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     kapt(libs.androidx.hilt.compiler)
 
+    // Glance (Compose AppWidgets)
+    implementation(libs.androidx.glance)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+
     // Testing
     testImplementation(libs.kotlin.coroutines.test)
     testImplementation(libs.junit)

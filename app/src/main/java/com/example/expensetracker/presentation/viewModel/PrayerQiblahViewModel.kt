@@ -41,7 +41,8 @@ data class PrayerUiState(
     val asrAlertEnabled: Boolean = true,
     val maghribAlertEnabled: Boolean = true,
     val ishaAlertEnabled: Boolean = true,
-    val selectedAdhanSound: com.example.expensetracker.domain.AdhanSoundOption = com.example.expensetracker.domain.AdhanSoundOption.MAKKAH
+    val selectedAdhanSound: com.example.expensetracker.domain.AdhanSoundOption = com.example.expensetracker.domain.AdhanSoundOption.MAKKAH,
+    val prayedTodayList: Set<String> = emptySet()
 )
 
 @HiltViewModel
@@ -57,6 +58,25 @@ class PrayerQiblahViewModel @Inject constructor(
     init {
         loadPreferencesAndLocation()
         observeTimeFormat()
+        observeSalahChecklist()
+    }
+
+    private fun todayDateKey(): String {
+        return java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(Date())
+    }
+
+    private fun observeSalahChecklist() {
+        viewModelScope.launch {
+            userPreferences.getSalahChecklist(todayDateKey()).collect { checkedPrayers ->
+                _uiState.value = _uiState.value.copy(prayedTodayList = checkedPrayers)
+            }
+        }
+    }
+
+    fun togglePrayerPrayed(prayerName: String) {
+        viewModelScope.launch {
+            userPreferences.toggleSalahChecklist(todayDateKey(), prayerName)
+        }
     }
 
     private fun observeTimeFormat() {

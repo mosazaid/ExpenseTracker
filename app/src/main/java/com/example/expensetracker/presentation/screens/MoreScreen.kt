@@ -10,9 +10,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Handshake
+import androidx.compose.material.icons.filled.PriceChange
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Explore
@@ -35,16 +41,25 @@ import androidx.navigation.NavController
 import com.example.expensetracker.R
 import com.example.expensetracker.presentation.components.AppTopBar
 import com.example.expensetracker.presentation.navigation.Categories
+import com.example.expensetracker.presentation.navigation.CurrencyExchangeTracker
 import com.example.expensetracker.presentation.navigation.DatabaseBrowser
 import com.example.expensetracker.presentation.navigation.Debts
 import com.example.expensetracker.presentation.navigation.DepositVault
+import com.example.expensetracker.presentation.navigation.FinancialRunway
 import com.example.expensetracker.presentation.navigation.Loans
+import com.example.expensetracker.presentation.navigation.MurabahaSimulator
 import com.example.expensetracker.presentation.navigation.NotificationSettings
 import com.example.expensetracker.presentation.navigation.Onboarding
 import com.example.expensetracker.presentation.navigation.PrayerQiblah
+import com.example.expensetracker.presentation.navigation.PriceHistoryTracker
 import com.example.expensetracker.presentation.navigation.Recurring
+import com.example.expensetracker.presentation.navigation.SadaqahJar
 import com.example.expensetracker.presentation.navigation.Settings
+import com.example.expensetracker.presentation.navigation.SubscriptionPlan
+import com.example.expensetracker.presentation.navigation.TravelModeTrips
 import com.example.expensetracker.presentation.navigation.ZakahCalculator
+import com.example.expensetracker.presentation.theme.FinancePositive
+import androidx.compose.material.icons.outlined.WorkspacePremium
 
 @Composable
 fun MoreScreen(navController: NavController) {
@@ -114,6 +129,80 @@ fun MoreScreen(navController: NavController) {
                 }
             }
 
+            // ── Pro & 90-Day Trial Banner
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { navController.navigate(SubscriptionPlan) },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            modifier = Modifier.size(46.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.WorkspacePremium,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(26.dp)
+                                )
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "ExpenseTracker Pro",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = FinancePositive.copy(alpha = 0.15f)
+                                ) {
+                                    Text(
+                                        text = "3-Mo Trial",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = FinancePositive,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Full access to Vault, Travel Mode, Multi-Currency & Islamic tools.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
             // ── Section 1: Financial Tools
             item {
                 Spacer(modifier = Modifier.height(6.dp))
@@ -175,6 +264,56 @@ fun MoreScreen(navController: NavController) {
                 )
             }
 
+            item {
+                MoreMenuCard(
+                    title = "Currency Exchanges",
+                    subtitle = "Track exchange rates, fees, and money changer swaps",
+                    icon = Icons.Default.CurrencyExchange,
+                    accentColor = Color(0xFF0284C7),
+                    onClick = { navController.navigate(CurrencyExchangeTracker) }
+                )
+            }
+
+            item {
+                MoreMenuCard(
+                    title = "Travel Mode & Trips",
+                    subtitle = "Manage vacation budgets, foreign currencies, and pacing",
+                    icon = Icons.Default.FlightTakeoff,
+                    accentColor = Color(0xFF6366F1),
+                    onClick = { navController.navigate(TravelModeTrips) }
+                )
+            }
+
+            item {
+                MoreMenuCard(
+                    title = "Price Memory & Inflation",
+                    subtitle = "Track item unit prices over time and monitor grocery inflation",
+                    icon = Icons.Default.PriceChange,
+                    accentColor = Color(0xFFE11D48),
+                    onClick = { navController.navigate(PriceHistoryTracker) }
+                )
+            }
+
+            item {
+                MoreMenuCard(
+                    title = "Emergency Runway Stress-Tester",
+                    subtitle = "Evaluate survival buffer (months) if salary is delayed or lost",
+                    icon = Icons.Default.Shield,
+                    accentColor = Color(0xFF0D9488),
+                    onClick = { navController.navigate(FinancialRunway) }
+                )
+            }
+
+            item {
+                MoreMenuCard(
+                    title = "Murabaha & Loan Simulator",
+                    subtitle = "Calculate bank profit rate vs installment and add to active loans",
+                    icon = Icons.Default.Calculate,
+                    accentColor = Color(0xFF8B5CF6),
+                    onClick = { navController.navigate(MurabahaSimulator) }
+                )
+            }
+
             // ── Section 2: Islamic Finance & Tools
             item {
                 Spacer(modifier = Modifier.height(6.dp))
@@ -183,6 +322,16 @@ fun MoreScreen(navController: NavController) {
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            item {
+                MoreMenuCard(
+                    title = "Virtual Sadaqah Jar",
+                    subtitle = "Spare-change micro charity round-up with Friday reminders",
+                    icon = Icons.Default.Savings,
+                    accentColor = Color(0xFF10B981),
+                    onClick = { navController.navigate(SadaqahJar) }
                 )
             }
 

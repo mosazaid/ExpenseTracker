@@ -119,8 +119,17 @@ class BalanceCalculator @Inject constructor(
                     }
                 }
                 TransactionType.EXPENSE -> {
-                    if (transaction.id in loansDeductedTxnIds || transaction.excludeFromMonthExpenses || transaction.accountType == AccountType.DEPOSIT) {
-                        // Loan payments, capital/deposit purchases, and user-excluded expenses are omitted from monthly expenses
+                    // Automatically exclude:
+                    // • Loan deductions (tracked separately)
+                    // • Wallet expenses (pocket money — always isolated from operational cash flow)
+                    // • Deposit/Vault expenses (capital purchases — always isolated)
+                    // • Any transaction manually flagged excludeFromMonthExpenses
+                    if (transaction.id in loansDeductedTxnIds
+                        || transaction.accountType == AccountType.WALLET
+                        || transaction.accountType == AccountType.DEPOSIT
+                        || transaction.excludeFromMonthExpenses
+                    ) {
+                        // Excluded: deducts from respective account balance only
                     } else {
                         periodExpense += transaction.amount
                         when (transaction.accountType) {

@@ -492,6 +492,7 @@
     <string name="account_wallet">Wallet</string>
     <string name="exclude_from_month_expenses_title">Exclude from monthly expense calculation</string>
     <string name="exclude_from_month_expenses_desc">Keep this expense or debt isolated to wallet pocket balance without deducting from your monthly salary budget.</string>
+    <string name="wallet_auto_excluded_desc">Wallet expenses are automatically isolated from your monthly salary budget and tracked only against your wallet balance.</string>
     <string name="strict_insufficient_balance_title">Insufficient Balance</string>
     <string name="strict_insufficient_balance_desc">You cannot complete this transaction because your %1$s balance is insufficient.\n\nAvailable Balance: %2$s\nRequired Amount: %3$s</string>
     <string name="vault_biometric_confirm_title">Authorize Vault Expense</string>
@@ -499,5 +500,9 @@
     <string name="adhan_audio_preview_play">Play Adhan Preview</string>
     <string name="adhan_audio_preview_stop">Stop Audio</string>
     <string name="available_account_balance_label">Available %1$s Balance:</string>
+    <string name="widget_payday_title">Payday Countdown &amp; Safe Burn</string>
+    <string name="widget_payday_desc">Displays available liquid cash, countdown to next payday, and safe daily spend.</string>
+    <string name="widget_quick_add_title">Quick Add Expense</string>
+    <string name="widget_quick_add_desc">Today\'s spending total and instant one-tap expense logging.</string>
 </resources>
 

@@ -517,3 +517,92 @@ val MIGRATION_17_18 = Migration(17, 18) { db ->
     db.execSQL("ALTER TABLE transactions ADD COLUMN excludeFromMonthExpenses INTEGER NOT NULL DEFAULT 0")
 }
 
+val MIGRATION_18_19 = Migration(18, 19) { db ->
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS currency_exchanges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            soldCurrency TEXT NOT NULL,
+            soldAmount REAL NOT NULL,
+            boughtCurrency TEXT NOT NULL,
+            boughtAmount REAL NOT NULL,
+            exchangeRate REAL NOT NULL,
+            fee REAL NOT NULL DEFAULT 0.0,
+            feeCurrency TEXT NOT NULL DEFAULT 'JOD',
+            location TEXT,
+            date INTEGER NOT NULL,
+            notes TEXT,
+            createdAt INTEGER NOT NULL
+        )
+        """.trimIndent()
+    )
+
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS trips (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            title TEXT NOT NULL,
+            destination TEXT NOT NULL,
+            baseCurrency TEXT NOT NULL,
+            homeCurrency TEXT NOT NULL DEFAULT 'JOD',
+            totalBudget REAL NOT NULL,
+            startDate INTEGER NOT NULL,
+            endDate INTEGER NOT NULL,
+            isActive INTEGER NOT NULL DEFAULT 0,
+            notes TEXT,
+            createdAt INTEGER NOT NULL
+        )
+        """.trimIndent()
+    )
+
+    db.execSQL("ALTER TABLE transactions ADD COLUMN currency TEXT NOT NULL DEFAULT 'JOD'")
+    db.execSQL("ALTER TABLE transactions ADD COLUMN originalAmount REAL")
+    db.execSQL("ALTER TABLE transactions ADD COLUMN exchangeRateUsed REAL")
+    db.execSQL("ALTER TABLE transactions ADD COLUMN tripId INTEGER")
+    db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_tripId ON transactions(tripId)")
+}
+
+val MIGRATION_19_20 = Migration(19, 20) { db ->
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS item_price_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            itemName TEXT NOT NULL,
+            normalizedItemName TEXT NOT NULL,
+            unitPrice REAL NOT NULL,
+            currency TEXT NOT NULL DEFAULT 'JOD',
+            subCategoryId INTEGER,
+            transactionId INTEGER,
+            storeOrVendor TEXT,
+            date INTEGER NOT NULL,
+            notes TEXT,
+            createdAt INTEGER NOT NULL
+        )
+        """.trimIndent()
+    )
+    db.execSQL("CREATE INDEX IF NOT EXISTS index_item_price_history_normalizedItemName ON item_price_history(normalizedItemName)")
+    db.execSQL("CREATE INDEX IF NOT EXISTS index_item_price_history_date ON item_price_history(date)")
+}
+
+val MIGRATION_20_21 = Migration(20, 21) { db ->
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS pending_sms_transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            sender TEXT NOT NULL DEFAULT '',
+            rawBody TEXT NOT NULL,
+            amount REAL NOT NULL,
+            currency TEXT NOT NULL DEFAULT 'JOD',
+            merchant TEXT NOT NULL DEFAULT '',
+            cardOrAccount TEXT,
+            suggestedCategory TEXT,
+            timestamp INTEGER NOT NULL DEFAULT 0,
+            isProcessed INTEGER NOT NULL DEFAULT 0,
+            isDismissed INTEGER NOT NULL DEFAULT 0
+        )
+        """.trimIndent()
+    )
+}
+
+
+

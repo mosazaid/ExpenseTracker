@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.CallSplit
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -51,6 +52,7 @@ import java.util.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.expensetracker.presentation.navigation.Overview
 import com.example.expensetracker.core.format.CurrencyUtils
+import com.example.expensetracker.core.math.ArithmeticEvaluator
 import com.example.expensetracker.core.storage.ReceiptStorageHelper
 import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.presentation.components.ReceiptAttachmentSection
@@ -458,9 +460,111 @@ fun AddTransactionScreen(
                     listOf(TransactionType.EXPENSE, TransactionType.INCOME).forEach { type ->
                         FilterChip(
                             selected = uiState.transactionType == type,
-                            onClick = { viewModel.updateTransactionType(type) },
+                            onClick = {
+                                viewModel.updateTransactionType(type)
+                                // Reset split mode when switching to income
+                                if (type == TransactionType.INCOME) viewModel.setSplitMode(false)
+                            },
                             label = { Text(type.name.lowercase().replaceFirstChar { it.uppercase() }) }
                         )
+                    }
+                }
+            }
+        }
+
+        // ── 3b. Split Mode Segmented Control (Expense only)
+        if (uiState.transactionType == TransactionType.EXPENSE && !isEditMode) {
+            Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // Single Transaction tab
+                    Surface(
+                        shape = RoundedCornerShape(9.dp),
+                        color = if (!uiState.isSplitMode)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            androidx.compose.ui.graphics.Color.Transparent,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { viewModel.setSplitMode(false) }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Payments,
+                                contentDescription = null,
+                                tint = if (!uiState.isSplitMode)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Single",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = if (!uiState.isSplitMode) FontWeight.Bold else FontWeight.Normal,
+                                color = if (!uiState.isSplitMode)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    // Split Items tab
+                    Surface(
+                        shape = RoundedCornerShape(9.dp),
+                        color = if (uiState.isSplitMode)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            androidx.compose.ui.graphics.Color.Transparent,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { viewModel.setSplitMode(true) }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.CallSplit,
+                                contentDescription = null,
+                                tint = if (uiState.isSplitMode)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Split Items",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = if (uiState.isSplitMode) FontWeight.Bold else FontWeight.Normal,
+                                color = if (uiState.isSplitMode)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -510,7 +614,7 @@ fun AddTransactionScreen(
                 }
             }
 
-            // Exclude from Monthly Expenses Toggle (for Wallet or optional)
+            // Wallet info card — expenses are automatically excluded from monthly totals
             if (uiState.accountType == AccountType.WALLET) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -526,16 +630,22 @@ fun AddTransactionScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        Icon(
+                            imageVector = Icons.Outlined.AccountBalanceWallet,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(22.dp)
+                        )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = stringResource(R.string.exclude_from_month_expenses_title),
+                                text = stringResource(R.string.account_wallet),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = stringResource(R.string.exclude_from_month_expenses_desc),
+                                text = stringResource(R.string.wallet_auto_excluded_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                             )
@@ -547,10 +657,6 @@ fun AddTransactionScreen(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-                        Switch(
-                            checked = uiState.excludeFromMonthExpenses,
-                            onCheckedChange = { viewModel.updateExcludeFromMonthExpenses(it) }
-                        )
                     }
                 }
             } else if (uiState.accountType == AccountType.DEPOSIT) {
@@ -595,6 +701,49 @@ fun AddTransactionScreen(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
+                    }
+                }
+            }
+        }
+
+        // ── 4b. Time-of-Day Smart Category Suggestions
+        if (uiState.transactionType == TransactionType.EXPENSE) {
+            val currentHour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
+            val (suggestionLabel, suggestedKeywords) = when (currentHour) {
+                in 5..11 -> "⚡ Morning:" to listOf("Cafés", "Coffee", "Transportation", "Car", "Groceries")
+                in 12..16 -> "⚡ Lunch:" to listOf("Restaurants", "Cafés", "Personal Care", "Shopping")
+                else -> "⚡ Evening:" to listOf("Groceries", "Restaurants", "Entertainment", "Utilities", "Bills")
+            }
+
+            val suggestedCategories = remember(filteredCategories, suggestedKeywords) {
+                filteredCategories.filter { cat ->
+                    suggestedKeywords.any { cat.name.contains(it, ignoreCase = true) }
+                }.take(3)
+            }
+
+            if (suggestedCategories.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = suggestionLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    suggestedCategories.forEach { cat ->
+                        SuggestionChip(
+                            onClick = { viewModel.updateSelectedCategory(cat) },
+                            label = { Text("${cat.icon} ${cat.name}") },
+                            colors = SuggestionChipDefaults.suggestionChipColors(
+                                containerColor = if (uiState.selectedCategory?.id == cat.id)
+                                    MaterialTheme.colorScheme.primaryContainer
+                                else MaterialTheme.colorScheme.surfaceContainerLow
+                            )
+                        )
                     }
                 }
             }
@@ -708,18 +857,124 @@ fun AddTransactionScreen(
             }
         }
 
-        // ── 7. Amount Field
-        OutlinedTextField(
-            value = uiState.amount,
-            onValueChange = { viewModel.updateAmount(CurrencyUtils.cleanDecimalInput(it)) },
-            label = { Text("Amount") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
-            isError = uiState.amount.isNotBlank() && uiState.amount.toDoubleOrNull() == null,
-            modifier = Modifier.fillMaxWidth()
-        )
+        // ── Currency & Trip Selection Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "Currency:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                CurrencyPickerDropdown(
+                    selected = uiState.currency,
+                    onSelected = { viewModel.updateCurrency(it) }
+                )
+            }
+
+            if (uiState.availableTrips.isNotEmpty()) {
+                var tripMenuExpanded by remember { mutableStateOf(false) }
+                val selectedTrip = uiState.availableTrips.find { it.id == uiState.tripId }
+                Box {
+                    AssistChip(
+                        onClick = { tripMenuExpanded = true },
+                        label = {
+                            Text(
+                                text = selectedTrip?.let { "✈️ ${it.title}" } ?: "✈️ Tag Trip",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    )
+                    DropdownMenu(
+                        expanded = tripMenuExpanded,
+                        onDismissRequest = { tripMenuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("No Trip (General)") },
+                            onClick = {
+                                viewModel.updateTripId(null)
+                                tripMenuExpanded = false
+                            }
+                        )
+                        uiState.availableTrips.forEach { trip ->
+                            DropdownMenuItem(
+                                text = { Text("${trip.destination} - ${trip.title}") },
+                                onClick = {
+                                    viewModel.updateTripId(trip.id)
+                                    tripMenuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── 7. Amount Field (hidden in split mode — the SplitTransactionSection owns the amount)
+        if (!uiState.isSplitMode) {
+            if (uiState.currency != "JOD") {
+                OutlinedTextField(
+                    value = uiState.originalAmount,
+                    onValueChange = { viewModel.updateOriginalAmount(CurrencyUtils.cleanDecimalInput(it)) },
+                    label = { Text("Amount (${uiState.currency})") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                val convertedAmount = uiState.amount
+                if (convertedAmount.isNotBlank() && convertedAmount.toDoubleOrNull() != null) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "≈ $convertedAmount JOD (converted to home ledger)",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            } else {
+                val hasMath = ArithmeticEvaluator.hasOperator(uiState.amount)
+                val evaluatedAmount = remember(uiState.amount) {
+                    if (hasMath) ArithmeticEvaluator.evaluate(uiState.amount) else null
+                }
+
+                OutlinedTextField(
+                    value = uiState.amount,
+                    onValueChange = { viewModel.updateAmount(ArithmeticEvaluator.cleanArithmeticInput(it)) },
+                    label = { Text("Amount (JOD)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                    trailingIcon = {
+                        if (evaluatedAmount != null) {
+                            TextButton(
+                                onClick = {
+                                    viewModel.updateAmount(ArithmeticEvaluator.formatResult(evaluatedAmount))
+                                }
+                            ) {
+                                Text("= " + ArithmeticEvaluator.formatResult(evaluatedAmount), fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    },
+                    isError = uiState.amount.isNotBlank() && uiState.amount.toDoubleOrNull() == null && evaluatedAmount == null,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
 
         // ── 7b. Split Transaction Section (Subcategories & Debts)
+        // The top-level segmented control (§3b) drives isSplitMode; the internal header toggle
+        // in SplitTransactionSection is kept for backward-compat but is secondary.
         if (uiState.transactionType == TransactionType.EXPENSE) {
             SplitTransactionSection(
                 isSplitMode = uiState.isSplitMode,
@@ -826,6 +1081,73 @@ fun AddTransactionScreen(
                 viewModel.setReceiptImagePath(null)
             }
         )
+
+        // ── 9c. Paste Bank SMS Auto-Fill
+        var showPasteSmsDialog by remember { mutableStateOf(false) }
+        var pastedSmsText by remember { mutableStateOf("") }
+
+        OutlinedButton(
+            onClick = { showPasteSmsDialog = true },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.AccountBalance, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Paste Bank SMS (Auto-Fill)")
+        }
+
+        if (showPasteSmsDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    showPasteSmsDialog = false
+                    pastedSmsText = ""
+                },
+                title = { Text("Auto-Fill from Bank SMS") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Paste your bank purchase or withdrawal SMS below to auto-fill amount, merchant, and category without typing:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        OutlinedTextField(
+                            value = pastedSmsText,
+                            onValueChange = { pastedSmsText = it },
+                            placeholder = { Text("e.g. Purchase of JOD 25.00 with card ending 1234 at Carrefour...") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp),
+                            maxLines = 5
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val success = viewModel.fillFromBankSms(pastedSmsText, categoryList)
+                            showPasteSmsDialog = false
+                            pastedSmsText = ""
+                            if (success) {
+                                android.widget.Toast.makeText(context, "Transaction details filled from SMS!", android.widget.Toast.LENGTH_SHORT).show()
+                            } else {
+                                android.widget.Toast.makeText(context, "Could not detect amount or merchant from text.", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        enabled = pastedSmsText.isNotBlank()
+                    ) {
+                        Text("Parse & Fill")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showPasteSmsDialog = false
+                        pastedSmsText = ""
+                    }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
 
         var isDept by remember { mutableStateOf(false) }
         LaunchedEffect(selectedCategory) {
@@ -1002,14 +1324,17 @@ fun AddTransactionScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         // ── 11. Save Button
-        val isFormValid = uiState.amount.toDoubleOrNull() != null &&
+        val evaluatedMath = remember(uiState.amount) {
+            if (ArithmeticEvaluator.hasOperator(uiState.amount)) ArithmeticEvaluator.evaluate(uiState.amount) else null
+        }
+        val isFormValid = (uiState.amount.toDoubleOrNull() != null || evaluatedMath != null) &&
             uiState.amount.isNotBlank() &&
             uiState.selectedCategory != null
 
         Button(
             onClick = {
                 coroutineScope.launch {
-                    val amountDouble = uiState.amount.toDoubleOrNull()
+                    val amountDouble = uiState.amount.toDoubleOrNull() ?: evaluatedMath
                     val category = uiState.selectedCategory
                     if (amountDouble == null || category == null) return@launch
 
@@ -1055,7 +1380,11 @@ fun AddTransactionScreen(
                         carriedForwardBalance = uiState.carriedForwardBalance,
                         allowNegativeBalance = uiState.allowNegativeBalance,
                         createdAt = uiState.createdAt ?: Date(),
-                        excludeFromMonthExpenses = uiState.excludeFromMonthExpenses || uiState.accountType == AccountType.DEPOSIT
+                        excludeFromMonthExpenses = uiState.excludeFromMonthExpenses || uiState.accountType == AccountType.DEPOSIT,
+                        currency = uiState.currency,
+                        originalAmount = uiState.originalAmount.toDoubleOrNull(),
+                        exchangeRateUsed = uiState.exchangeRateUsed,
+                        tripId = uiState.tripId
                     )
 
                     if (uiState.transactionType == TransactionType.EXPENSE) {

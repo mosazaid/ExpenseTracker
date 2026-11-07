@@ -37,7 +37,8 @@ class OverviewViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
     private val periodCalculator: PeriodCalculator,
     private val balanceCalculator: BalanceCalculator,
-    private val walletCalculator: WalletCalculator
+    private val walletCalculator: WalletCalculator,
+    private val pendingSmsDao: com.example.expensetracker.data.database.dao.PendingSmsTransactionDao
 ) : ViewModel() {
 
     private val _refreshTrigger = kotlinx.coroutines.flow.MutableStateFlow(0)
@@ -141,5 +142,52 @@ class OverviewViewModel @Inject constructor(
 
     suspend fun dismissRecurringBanner(recurring: RecurringTransaction) {
         userPreferences.dismissRecurringBanner(recurring.id, recurring.nextDueDate.time)
+    }
+
+    val pendingSmsList: StateFlow<List<com.example.expensetracker.data.database.entities.PendingSmsTransaction>> =
+        pendingSmsDao.getPendingSms()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun confirmAndSavePendingSms(item: com.example.expensetracker.data.database.entities.PendingSmsTransaction) {
+        viewModelScope.launch {
+            val allCats = categoryRepository.getAllCategoriesSnapshot()
+            val matchedCat = allCats.firstOrNull { it.name.equals(item.suggestedCategory, ignoreCase = true) }
+                ?: allCats.firstOrNull { it.type == com.example.expensetracker.data.database.entities.TransactionType.EXPENSE }
+
+            val transaction = Transaction(
+                amount = item.amount,
+                description = item.merchant.ifBlank { "Card Purchase" },
+                date = Date(item.timestamp),
+                type = com.example.expensetracker.data.database.entities.TransactionType.EXPENSE,
+                categoryId = matchedCat?.id,
+                accountType = com.example.expensetracker.data.database.entities.AccountType.BANK,
+                currency = item.currency
+            )
+            transactionRepository.insertTransaction(transaction)
+            pendingSmsDao.markProcessed(item.id)
+        }
+    }
+
+    fun dismissPendingSms(id: Long) {
+        viewModelScope.launch {
+            pendingSmsDao.markDismissed(id)
+        }
+    }
+
+    fun addPastedSms(rawText: String) {
+        viewModelScope.launch {
+            val parsed = com.example.expensetracker.domain.sms.BankSmsParser.parse(rawText) ?: return@launch
+            val pending = com.example.expensetracker.data.database.entities.PendingSmsTransaction(
+                sender = parsed.bankName ?: "Bank SMS",
+                rawBody = parsed.rawText,
+                amount = parsed.amount,
+                currency = parsed.currency,
+                merchant = parsed.merchant,
+                cardOrAccount = parsed.cardOrAccountEnding,
+                suggestedCategory = parsed.suggestedCategoryName,
+                timestamp = parsed.date.time
+            )
+            pendingSmsDao.insertPendingSms(pending)
+        }
     }
 }

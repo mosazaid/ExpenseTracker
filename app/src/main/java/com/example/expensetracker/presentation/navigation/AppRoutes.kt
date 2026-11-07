@@ -20,6 +20,13 @@ object AppRoutes {
     const val ZAKAH_CALCULATOR = "zakahCalculator"
     const val PRAYER_QIBLAH = "prayerQiblah"
     const val DEPOSIT_VAULT = "depositVault"
+    const val CURRENCY_EXCHANGE = "currencyExchange"
+    const val TRAVEL_MODE = "travelMode"
+    const val PRICE_HISTORY = "priceHistory"
+    const val SADAQAH_JAR = "sadaqahJar"
+    const val FINANCIAL_RUNWAY = "financialRunway"
+    const val MURABAHA_SIMULATOR = "murabahaSimulator"
+    const val SUBSCRIPTION_PLAN = "subscriptionPlan"
 
     const val EDIT_TRANSFER = "editTransfer/{transactionId}"
     const val EDIT_TRANSFER_ARG = "transactionId"

@@ -13,9 +13,11 @@ import androidx.compose.material.icons.automirrored.filled.CallReceived
 import androidx.compose.material.icons.automirrored.filled.Forward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -158,6 +160,51 @@ fun DebtsScreen(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.outline
                         )
+                    }
+                }
+            }
+
+            // ── Mutual Debt Offsetting Detection Banner
+            val mutualDebtItem = remember(lentDebtItems, borrowedDebtItems) {
+                val lentNames = lentDebtItems.map { it.debtorName.trim().lowercase() }.toSet()
+                borrowedDebtItems.firstOrNull { it.debtorName.trim().lowercase() in lentNames }
+            }
+            if (mutualDebtItem != null) {
+                val personName = mutualDebtItem.debtorName
+                val lentTotal = lentDebtItems.filter { it.debtorName.equals(personName, ignoreCase = true) }.sumOf { it.remainingAmount }
+                val borrowedTotal = borrowedDebtItems.filter { it.debtorName.equals(personName, ignoreCase = true) }.sumOf { it.remainingAmount }
+                val net = lentTotal - borrowedTotal
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.SwapHoriz,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Mutual Balance Detected with $personName",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                            Text(
+                                text = "Owes you ${CurrencyUtils.formatCurrency(lentTotal)}, you owe ${CurrencyUtils.formatCurrency(borrowedTotal)}. Net: ${CurrencyUtils.formatCurrency(kotlin.math.abs(net))} (${if (net >= 0) "in your favor" else "you owe"}).",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
                     }
                 }
             }
@@ -518,6 +565,31 @@ private fun DebtItemCard(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // WhatsApp Courtesy Reminder Button
+                if (item.isOwedToMe && item.remainingAmount > 0) {
+                    val ctx = androidx.compose.ui.platform.LocalContext.current
+                    IconButton(
+                        onClick = {
+                            val amountStr = CurrencyUtils.formatCurrency(item.remainingAmount)
+                            val noteStr = item.transaction.description.ifBlank { "" }
+                            val message = "مرحباً ${item.debtorName}، تذكير لطيف بخصوص المبلغ المتبقي ($amountStr) ${if (noteStr.isNotBlank()) "($noteStr)" else ""}. جزاك الله خيراً!"
+                            val encoded = java.net.URLEncoder.encode(message, "UTF-8")
+                            val uri = android.net.Uri.parse("https://api.whatsapp.com/send?text=$encoded")
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
+                            runCatching { ctx.startActivity(intent) }
+                        },
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Chat,
+                            contentDescription = "Send WhatsApp Reminder",
+                            tint = Color(0xFF25D366),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+
                 // Forgive / Settle button
                 OutlinedButton(
                     onClick = onForgive,

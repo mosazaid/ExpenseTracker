@@ -75,6 +75,91 @@ class UserPreferences @Inject constructor(
     private val prayerSavedElevationKey = stringPreferencesKey("prayer_saved_elevation")
     private val prayerAdhanSoundKey = stringPreferencesKey("prayer_adhan_sound")
     private val enableDepositWalletTransferKey = booleanPreferencesKey("enable_deposit_wallet_transfer")
+    private val sadaqahRoundUpEnabledKey = booleanPreferencesKey("sadaqah_roundup_enabled")
+    private val sadaqahJarBalanceKey = stringPreferencesKey("sadaqah_jar_balance")
+    private val sadaqahFridayReminderEnabledKey = booleanPreferencesKey("sadaqah_friday_reminder_enabled")
+    private val proTrialStartTimestampKey = longPreferencesKey("pro_trial_start_timestamp")
+    private val isProSubscriberKey = booleanPreferencesKey("is_pro_subscriber")
+    private val isOwnerBypassKey = booleanPreferencesKey("is_owner_bypass")
+    private val userPlanTierKey = stringPreferencesKey("user_plan_tier")
+
+    val isOwnerBypass: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[isOwnerBypassKey] ?: false
+    }
+
+    suspend fun setIsOwnerBypass(bypass: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[isOwnerBypassKey] = bypass
+        }
+    }
+
+    val proTrialStartTimestamp: Flow<Long> = context.dataStore.data.map { prefs ->
+        prefs[proTrialStartTimestampKey] ?: 0L
+    }
+
+    suspend fun setProTrialStartTimestamp(timestamp: Long) {
+        context.dataStore.edit { prefs ->
+            prefs[proTrialStartTimestampKey] = timestamp
+        }
+    }
+
+    val isProSubscriber: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[isProSubscriberKey] ?: false
+    }
+
+    suspend fun setIsProSubscriber(isPro: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[isProSubscriberKey] = isPro
+        }
+    }
+
+    val userPlanTier: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[userPlanTierKey] ?: "FREE"
+    }
+
+    suspend fun setUserPlanTier(tier: String) {
+        context.dataStore.edit { prefs ->
+            prefs[userPlanTierKey] = tier
+        }
+    }
+
+    val sadaqahRoundUpEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[sadaqahRoundUpEnabledKey] ?: false
+    }
+
+    suspend fun setSadaqahRoundUpEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[sadaqahRoundUpEnabledKey] = enabled
+        }
+    }
+
+    val sadaqahJarBalance: Flow<Double> = context.dataStore.data.map { prefs ->
+        prefs[sadaqahJarBalanceKey]?.toDoubleOrNull() ?: 0.0
+    }
+
+    suspend fun addToSadaqahJar(spareChange: Double) {
+        if (spareChange <= 0.0) return
+        context.dataStore.edit { prefs ->
+            val current = prefs[sadaqahJarBalanceKey]?.toDoubleOrNull() ?: 0.0
+            prefs[sadaqahJarBalanceKey] = (current + spareChange).toString()
+        }
+    }
+
+    suspend fun emptySadaqahJar() {
+        context.dataStore.edit { prefs ->
+            prefs[sadaqahJarBalanceKey] = "0.0"
+        }
+    }
+
+    val sadaqahFridayReminderEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[sadaqahFridayReminderEnabledKey] ?: true
+    }
+
+    suspend fun setSadaqahFridayReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[sadaqahFridayReminderEnabledKey] = enabled
+        }
+    }
 
     val enableDepositWalletTransfer: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[enableDepositWalletTransferKey] ?: true
@@ -145,6 +230,24 @@ class UserPreferences @Inject constructor(
 
     suspend fun setPrayerAdhanSound(soundKey: String) {
         context.dataStore.edit { prefs -> prefs[prayerAdhanSoundKey] = soundKey }
+    }
+
+    fun getSalahChecklist(dateKey: String): Flow<Set<String>> = context.dataStore.data.map { prefs ->
+        val key = stringSetPreferencesKey("salah_checklist_$dateKey")
+        prefs[key] ?: emptySet()
+    }
+
+    suspend fun toggleSalahChecklist(dateKey: String, prayerName: String) {
+        val key = stringSetPreferencesKey("salah_checklist_$dateKey")
+        context.dataStore.edit { prefs ->
+            val currentSet = prefs[key]?.toMutableSet() ?: mutableSetOf()
+            if (currentSet.contains(prayerName)) {
+                currentSet.remove(prayerName)
+            } else {
+                currentSet.add(prayerName)
+            }
+            prefs[key] = currentSet
+        }
     }
 
     val currencyCode: Flow<String> = context.dataStore.data.map { prefs ->

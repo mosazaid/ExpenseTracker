@@ -24,6 +24,7 @@ import com.example.expensetracker.presentation.components.AppTopBar
 import com.example.expensetracker.presentation.components.CategoryPieChart
 import com.example.expensetracker.presentation.components.StatisticsBarChart
 import com.example.expensetracker.presentation.components.SubcategoryComparisonCard
+import com.example.expensetracker.presentation.components.SubcategoryDrillDownBottomSheet
 import com.example.expensetracker.presentation.components.ThreeMonthMultiChart
 import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.presentation.theme.FinanceNegative
@@ -221,12 +222,17 @@ fun StatisticsScreen(
             // ── 3-Month Category Expense Comparison Donut/Pie Chart
             CategoryPieChart(stats = state.threeMonthStats)
 
-            // ── Subcategory Comparison & Trends (Within Month & Cross-Month)
+            // ── Subcategory Comparison & Trends (Advanced Waterfall, Day Pacing & Leaderboard)
             SubcategoryComparisonCard(
+                advancedComparison = state.advancedComparison,
                 comparisonData = state.subCategoryComparison,
                 availableCategories = state.expenseCategories,
                 selectedCategoryId = state.selectedSubCategoryId,
-                onSelectCategory = { viewModel.selectCategoryForSubCategoryComparison(it) }
+                onSelectCategory = { viewModel.selectCategoryForSubCategoryComparison(it) },
+                onSelectMode = { viewModel.setComparisonMode(it) },
+                onSelectBaseIndex = { viewModel.setBasePeriodIndex(it) },
+                onSelectCompareIndex = { viewModel.setComparePeriodIndex(it) },
+                onSubcategoryClick = { catId, subName -> viewModel.openSubcategoryDrillDown(catId, subName) }
             )
 
             // ── Annual Vault & Capital Purchases Card (Shown in YEAR period)
@@ -235,6 +241,14 @@ fun StatisticsScreen(
             }
 
             Spacer(modifier = Modifier.height(72.dp))
+        }
+
+        // Subcategory Drill-down Bottom Sheet
+        if (state.drillDownData != null) {
+            SubcategoryDrillDownBottomSheet(
+                data = state.drillDownData,
+                onDismiss = { viewModel.closeDrillDown() }
+            )
         }
     }
 }

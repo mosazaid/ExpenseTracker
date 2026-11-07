@@ -101,4 +101,108 @@ class StatisticsCalculationsTest {
         assertEquals(20.0f, share3.percentage, 0.001f)
         assertEquals(100.0f, share1.percentage + share2.percentage + share3.percentage, 0.001f)
     }
+
+    @Test
+    fun testSubcategoryComparisonItem_deltasAndSpikes() {
+        // Chicken & Meat: 110.0 vs 75.0 (+46.7%)
+        val chickenBase = 110.0
+        val chickenComp = 75.0
+        val chickenDelta = chickenBase - chickenComp
+        val chickenPct = (((chickenBase - chickenComp) / chickenComp) * 100f).toFloat()
+
+        val chickenItem = com.example.expensetracker.presentation.model.SubcategoryComparisonItem(
+            name = "Chicken & Meat",
+            baseAmount = chickenBase,
+            compareAmount = chickenComp,
+            deltaAmount = chickenDelta,
+            deltaPercent = chickenPct,
+            baseTxnCount = 4,
+            varianceInsight = "Spike +47% across 4 purchases"
+        )
+
+        assertEquals(35.0, chickenItem.deltaAmount, 0.001)
+        assertEquals(46.666f, chickenItem.deltaPercent ?: 0f, 0.01f)
+        assertNotNull(chickenItem.varianceInsight)
+
+        // Snacks: 65.0 vs 80.0 (-18.75%)
+        val snackBase = 65.0
+        val snackComp = 80.0
+        val snackPct = (((snackBase - snackComp) / snackComp) * 100f).toFloat()
+
+        val snackItem = com.example.expensetracker.presentation.model.SubcategoryComparisonItem(
+            name = "Snacks",
+            baseAmount = snackBase,
+            compareAmount = snackComp,
+            deltaAmount = snackBase - snackComp,
+            deltaPercent = snackPct,
+            baseTxnCount = 2
+        )
+
+        assertEquals(-15.0, snackItem.deltaAmount, 0.001)
+        assertEquals(-18.75f, snackItem.deltaPercent ?: 0f, 0.01f)
+
+        // New item (no compare)
+        val newItem = com.example.expensetracker.presentation.model.SubcategoryComparisonItem(
+            name = "New Equipment",
+            baseAmount = 70.0,
+            compareAmount = 0.0,
+            deltaAmount = 70.0,
+            deltaPercent = null,
+            baseTxnCount = 1
+        )
+        assertEquals(null, newItem.deltaPercent)
+    }
+
+    @Test
+    fun testCategoryComparisonItem_waterfallTotals() {
+        val sub1 = com.example.expensetracker.presentation.model.SubcategoryComparisonItem(
+            name = "Chicken & Meat",
+            baseAmount = 110.0,
+            compareAmount = 75.0,
+            deltaAmount = 35.0,
+            deltaPercent = 46.7f,
+            baseTxnCount = 4
+        )
+        val sub2 = com.example.expensetracker.presentation.model.SubcategoryComparisonItem(
+            name = "Snacks",
+            baseAmount = 65.0,
+            compareAmount = 80.0,
+            deltaAmount = -15.0,
+            deltaPercent = -18.75f,
+            baseTxnCount = 2
+        )
+        val sub3 = com.example.expensetracker.presentation.model.SubcategoryComparisonItem(
+            name = "Other",
+            baseAmount = 70.0,
+            compareAmount = 35.0,
+            deltaAmount = 35.0,
+            deltaPercent = 100f,
+            baseTxnCount = 1
+        )
+
+        val subs = listOf(sub1, sub2, sub3)
+        val baseTotal = subs.sumOf { it.baseAmount } // 245.0
+        val compTotal = subs.sumOf { it.compareAmount } // 190.0
+        val catDelta = baseTotal - compTotal // 55.0
+        val catDeltaPct = (((baseTotal - compTotal) / compTotal) * 100f).toFloat() // +28.947%
+
+        val catItem = com.example.expensetracker.presentation.model.CategoryComparisonItem(
+            categoryId = 10L,
+            categoryName = "Shopping",
+            categoryIcon = "🛒",
+            categoryColor = "#4CAF50",
+            baseTotal = baseTotal,
+            compareTotal = compTotal,
+            deltaAmount = catDelta,
+            deltaPercent = catDeltaPct,
+            subcategories = subs,
+            topSpikeInsight = "Driven by Chicken & Meat (+47%)"
+        )
+
+        assertEquals(245.0, catItem.baseTotal, 0.001)
+        assertEquals(190.0, catItem.compareTotal, 0.001)
+        assertEquals(55.0, catItem.deltaAmount, 0.001)
+        assertEquals(28.947f, catItem.deltaPercent ?: 0f, 0.01f)
+        assertEquals(3, catItem.subcategories.size)
+    }
 }

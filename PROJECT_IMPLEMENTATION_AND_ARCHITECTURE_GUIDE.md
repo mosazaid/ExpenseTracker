@@ -861,5 +861,61 @@ To modernize the application from MVVM to Clean Architecture, core business capa
 
 ---
 
+## 14. Architecture Evolution (Room DB Versions 18 → 21 & Product Expansion)
+
+### 14.1 Room Database Migrations
+- **MIGRATION 18 → 19 (Multi-Currency & Travel Mode)**:
+  - Added `currency_exchanges` and `trips` tables.
+  - Mutated `transactions` table with `currency` (default `'JOD'`), `originalAmount`, `exchangeRateUsed`, `tripId`, and index on `tripId`.
+- **MIGRATION 19 → 20 (Item Price Memory & Inflation Tracker)**:
+  - Added `item_price_history` table storing `normalizedItemName`, `unitPrice`, `currency`, `subCategoryId`, `storeOrVendor`, and `date`.
+  - Added indexes on `normalizedItemName` and `date`.
+- **MIGRATION 20 → 21 (Bank SMS Review Inbox)**:
+  - Added `pending_sms_transactions` table storing `sender`, `rawBody`, `amount`, `currency`, `merchant`, `cardOrAccount`, `suggestedCategory`, `isProcessed`, and `isDismissed`.
+
+### 14.2 Multi-Currency & Scoped Trip Budgets (Travel Mode)
+- **Currency Engine (`CurrencyRates`)**: 12 supported currencies (JOD, USD, EUR, GBP, AED, SAR, KWD, QAR, BHD, OMR, TRY, EGP) with pegged and market exchange rates, 3-decimal formatting, and JOD base normalization.
+- **Trip Pacing Calculator (`TripPacingCalculator`)**:
+  - Safe daily budget allowance: $\text{SafeDailySpend} = \frac{\text{Budget} - \text{TotalSpent}}{\max(1, \text{DaysRemaining})}$.
+  - Status evaluation: `UNDER_BUDGET`, `ON_TRACK`, `PACING_WARNING`, `BUDGET_EXCEEDED`.
+- **Dedicated UI**: `CurrencyExchangeScreen` & `TravelModeScreen` with trip creation, active trip tagging, and currency conversions.
+
+### 14.3 Advanced Category & Subcategory Comparison Engine
+- **Day-Normalized Pacing**: Compares Day 1–N of Base Period vs Day 1–N of Comparison Period to ensure realistic pace comparisons regardless of month length.
+- **Expandable Waterfall Tree**: Category rows expand to reveal full subcategory breakdowns with percentage variance badges.
+- **Smart Variance Diagnosis**: Identifies major drivers of category spikes (e.g. *"Driven by 2 large purchases at Carrefour"*).
+- **Subcategory Drill-Down Bottom Sheet**: Instant tap-to-view transactions, notes, and attached receipt photos.
+
+### 14.4 Home Screen Glance AppWidgets
+- **Payday Pacing Widget (4×2)**: Displays current available balance, days until payday, daily safe spend, and one-tap quick action.
+- **Quick-Add Widget (2×1)**: Compact one-tap home screen shortcut directly launching `AddTransactionScreen`.
+
+### 14.5 Innovative Market-Differentiating Features
+- **Smart Item Price Memory (Inflation Tracker)**: Automatically logs split item prices and provides historical comparisons on subsequent purchases.
+- **Virtual Sadaqah Jar & Friday Reminders**: Rounds up transactions to nearest integer, accumulates spare change in a virtual jar, and prompts on Friday morning with one-tap donation logging.
+- **Financial Runway Stress-Tester**: Evaluates liquid wealth against monthly essential outlays to calculate survival runway in months, with an interactive emergency shock slider.
+- **Murabaha Islamic Loan Simulator**: Computes Islamic bank financing profit margins vs principal, monthly installments, and enables one-click loan configuration.
+- **Auto-Sync Zakah & 354-Day Hawl Tracker**: One-tap auto-sync for Cash, Bank, and Vault balances, gold karat/gram calculator, and Hijri year countdown.
+- **Daily Salah Checklist (سجل الصلوات اليومي)**: In-app daily checkoff for the 5 obligatory prayers with progress indicator.
+
+### 14.6 Existing Feature Enhancements
+- **Quick Amount Numpad (`ArithmeticEvaluator`)**: In-field arithmetic evaluation (`+`, `-`, `*`, `/`, `×`, `÷`) with real-time evaluated result badges.
+- **Contextual Time-of-Day Suggestions**: Dynamic morning, afternoon, and evening category chips.
+- **Debts Screen Enhancements**: One-tap pre-filled Arabic/English WhatsApp courtesy reminders and mutual balance offsetting detection.
+
+### 14.7 Business, Monetization & 90-Day Free Pro Device Trial
+- **Privacy-First 90-Day Local Trial (`ProTrialManager`)**: Stored in DataStore with zero registration or credit card requirement. Dynamically calculates remaining days and expiration.
+- **Tiered Plans**: Free, Pro ($2.99/mo or $24.99/yr), and Pro+ ($4.99/mo or $39.99/yr).
+- **Owner Secret Bypass**: 5-tap gesture on the crown icon toggles permanent Lifetime VIP access for testing and owner usage.
+- **`SubscriptionScreen`**: Trial progress bar, monthly/annual billing cycle toggle, tier comparison matrix, and Google Play compliance.
+
+### 14.8 Bank SMS Auto-Parsing & Recurring Auto-Deductions
+- **Bank SMS Parser (`BankSmsParser`)**: Extracts amount, currency, merchant, card/account ending, and infers categories for Jordan & GCC banks (Arab Bank, Bank al Etihad, Jordan Kuwait Bank, Cairo Amman Bank, Al Rajhi, Emirates NBD, ADCB, FAB).
+- **Review Inbox**: Pending unreviewed bank transactions card on `OverviewScreen` with one-tap "Confirm & Save".
+- **Paste Bank SMS**: Quick-fill dialog in `AddTransactionScreen` requiring zero sensitive SMS runtime permissions.
+- **Recurring Auto-Deductions**: `ExecuteAutoRecurringUseCase` and `AutoDeductRecurringWorker` (WorkManager) executing due recurring bills automatically with local notifications.
+
+---
+
 **Maintenance rule**: When adding features, update this guide and `RELEASE_NOTES.md` first, then `QA_CHECKLIST.md` and `Readme.md`.
 

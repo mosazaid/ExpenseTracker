@@ -51,14 +51,14 @@ fun SplitTransactionSection(
     val diff = (mainAmount - totalSplit)
     val isBalanced = mainAmount > 0 && Math.abs(diff) < 0.01
 
+    // When not in split mode, render nothing — the top-level segmented control in
+    // AddTransactionScreen drives visibility. We only show content when active.
+    if (!isSplitMode) return
+
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(
-            1.dp,
-            if (isSplitMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
@@ -67,154 +67,136 @@ fun SplitTransactionSection(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Header with toggle
+            // Section header (no toggle — controlled by parent segmented control)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.weight(1f)
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    modifier = Modifier.size(38.dp)
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        modifier = Modifier.size(38.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Outlined.CallSplit,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                    Column {
-                        Text(
-                            text = stringResource(R.string.split_transaction_title),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = stringResource(R.string.split_transaction_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Outlined.CallSplit,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
-                Switch(
-                    checked = isSplitMode,
-                    onCheckedChange = onToggleSplitMode
+                Column {
+                    Text(
+                        text = stringResource(R.string.split_transaction_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = stringResource(R.string.split_transaction_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+
+            // Balance status pill
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = when {
+                    isBalanced -> FinancePositive.copy(alpha = 0.12f)
+                    diff < 0 -> FinanceNegative.copy(alpha = 0.12f)
+                    else -> FinanceWarning.copy(alpha = 0.12f)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isBalanced) Icons.Outlined.CheckCircle else Icons.Outlined.Info,
+                            contentDescription = null,
+                            tint = if (isBalanced) FinancePositive else if (diff < 0) FinanceNegative else FinanceWarning,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = stringResource(
+                                R.string.split_total_label,
+                                CurrencyUtils.formatCurrency(totalSplit),
+                                CurrencyUtils.formatCurrency(mainAmount)
+                            ),
+                            style = MaterialTheme.typography.bodySmall.withTabularNums(),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    if (isBalanced) {
+                        Text(
+                            text = stringResource(R.string.split_balanced),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = FinancePositive,
+                            fontWeight = FontWeight.Bold
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.split_difference, CurrencyUtils.formatCurrency(diff)),
+                            style = MaterialTheme.typography.labelSmall.withTabularNums(),
+                            color = if (diff < 0) FinanceNegative else FinanceWarning,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            // Split items list
+            splits.forEachIndexed { index, splitItem ->
+                SplitItemCard(
+                    index = index,
+                    item = splitItem,
+                    availableSubCategories = availableSubCategories,
+                    canDelete = splits.size > 1,
+                    onUpdate = { updated -> onUpdateSplit(index, updated) },
+                    onDelete = { onRemoveSplit(index) }
                 )
             }
 
-            AnimatedVisibility(
-                visible = isSplitMode,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+            // Add button and Auto-balance button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Balance status pill
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = when {
-                            isBalanced -> FinancePositive.copy(alpha = 0.12f)
-                            diff < 0 -> FinanceNegative.copy(alpha = 0.12f)
-                            else -> FinanceWarning.copy(alpha = 0.12f)
+                OutlinedButton(
+                    onClick = onAddSplit,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(stringResource(R.string.add_split_item_btn))
+                }
+
+                if (!isBalanced && diff > 0) {
+                    FilledTonalButton(
+                        onClick = {
+                            val newAmount = CurrencyUtils.cleanDecimalInput(String.format(java.util.Locale.US, "%.2f", diff))
+                            onAddSplit()
+                            onUpdateSplit(splits.size, TransactionSplitItem(amount = newAmount))
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        shape = RoundedCornerShape(10.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (isBalanced) Icons.Outlined.CheckCircle else Icons.Outlined.Info,
-                                    contentDescription = null,
-                                    tint = if (isBalanced) FinancePositive else if (diff < 0) FinanceNegative else FinanceWarning,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Text(
-                                    text = stringResource(
-                                        R.string.split_total_label,
-                                        CurrencyUtils.formatCurrency(totalSplit),
-                                        CurrencyUtils.formatCurrency(mainAmount)
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall.withTabularNums(),
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                            if (isBalanced) {
-                                Text(
-                                    text = stringResource(R.string.split_balanced),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = FinancePositive,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            } else {
-                                Text(
-                                    text = stringResource(R.string.split_difference, CurrencyUtils.formatCurrency(diff)),
-                                    style = MaterialTheme.typography.labelSmall.withTabularNums(),
-                                    color = if (diff < 0) FinanceNegative else FinanceWarning,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-
-                    // Split items list
-                    splits.forEachIndexed { index, splitItem ->
-                        SplitItemCard(
-                            index = index,
-                            item = splitItem,
-                            availableSubCategories = availableSubCategories,
-                            canDelete = splits.size > 1,
-                            onUpdate = { updated -> onUpdateSplit(index, updated) },
-                            onDelete = { onRemoveSplit(index) }
-                        )
-                    }
-
-                    // Add button and Auto-balance button
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = onAddSplit,
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(stringResource(R.string.add_split_item_btn))
-                        }
-
-                        if (!isBalanced && diff > 0) {
-                            FilledTonalButton(
-                                onClick = {
-                                    val newAmount = CurrencyUtils.cleanDecimalInput(String.format(java.util.Locale.US, "%.2f", diff))
-                                    onAddSplit()
-                                    onUpdateSplit(splits.size, TransactionSplitItem(amount = newAmount))
-                                },
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Text("Fill Remainder")
-                            }
-                        }
+                        Text("Fill Remainder")
                     }
                 }
             }

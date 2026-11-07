@@ -395,6 +395,15 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransactions(transactions: List<Transaction>): List<Long>
 
+    @Query("SELECT * FROM transactions WHERE tripId = :tripId ORDER BY date DESC")
+    fun getTransactionsForTrip(tripId: Long): Flow<List<Transaction>>
+
+    @Query("SELECT * FROM transactions WHERE tripId = :tripId ORDER BY date DESC")
+    suspend fun getTransactionsForTripSnapshot(tripId: Long): List<Transaction>
+
+    @Query("SELECT COALESCE(SUM(amount), 0.0) FROM transactions WHERE tripId = :tripId AND type = 'EXPENSE'")
+    fun getTripTotalExpense(tripId: Long): Flow<Double>
+
     @Query("DELETE FROM transactions")
     suspend fun deleteAllTransactions()
 }

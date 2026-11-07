@@ -53,6 +53,7 @@ class App : Application(), Configuration.Provider {
         scheduleSalaryReminderWorker()
         scheduleDailyExpenseReminderWorker()
         scheduleLoanReminderWorker()
+        scheduleAutoDeductRecurringWorker()
         syncPrayerAlarms()
     }
 
@@ -122,6 +123,16 @@ class App : Application(), Configuration.Provider {
             .build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "loan_reminder_check",
+            ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
+    }
+
+    private fun scheduleAutoDeductRecurringWorker() {
+        val request = PeriodicWorkRequestBuilder<com.example.expensetracker.data.worker.AutoDeductRecurringWorker>(1, TimeUnit.DAYS)
+            .build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "auto_deduct_recurring_check",
             ExistingPeriodicWorkPolicy.KEEP,
             request
         )

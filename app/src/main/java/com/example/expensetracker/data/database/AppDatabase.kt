@@ -14,15 +14,23 @@ import com.example.expensetracker.data.database.dao.RecurringTransactionDao
 import com.example.expensetracker.data.database.dao.TransactionDao
 import com.example.expensetracker.data.database.dao.TransactionSplitDao
 import com.example.expensetracker.data.database.dao.SubCategoryDao
+import com.example.expensetracker.data.database.dao.CurrencyExchangeDao
+import com.example.expensetracker.data.database.dao.ItemPriceHistoryDao
+import com.example.expensetracker.data.database.dao.PendingSmsTransactionDao
+import com.example.expensetracker.data.database.dao.TripDao
 import com.example.expensetracker.data.database.entities.AppAlert
 import com.example.expensetracker.data.database.entities.Budget
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.ConfiguredLoan
+import com.example.expensetracker.data.database.entities.CurrencyExchange
+import com.example.expensetracker.data.database.entities.ItemPriceRecord
 import com.example.expensetracker.data.database.entities.MonthlyLoanPayment
+import com.example.expensetracker.data.database.entities.PendingSmsTransaction
 import com.example.expensetracker.data.database.entities.RecurringTransaction
 import com.example.expensetracker.data.database.entities.SubCategory
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionSplit
+import com.example.expensetracker.data.database.entities.Trip
 
 @Database(
     entities = [
@@ -34,9 +42,13 @@ import com.example.expensetracker.data.database.entities.TransactionSplit
         SubCategory::class,
         ConfiguredLoan::class,
         MonthlyLoanPayment::class,
-        AppAlert::class
+        AppAlert::class,
+        CurrencyExchange::class,
+        Trip::class,
+        ItemPriceRecord::class,
+        PendingSmsTransaction::class
     ],
-    version = 18,
+    version = 21,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -51,6 +63,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun configuredLoanDao(): ConfiguredLoanDao
     abstract fun monthlyLoanPaymentDao(): MonthlyLoanPaymentDao
     abstract fun appAlertDao(): AppAlertDao
+    abstract fun currencyExchangeDao(): CurrencyExchangeDao
+    abstract fun tripDao(): TripDao
+    abstract fun itemPriceHistoryDao(): ItemPriceHistoryDao
+    abstract fun pendingSmsTransactionDao(): PendingSmsTransactionDao
 
     companion object {
         @Volatile
@@ -68,7 +84,7 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
                         MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
                         MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-                        MIGRATION_17_18
+                        MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21
                     )
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {

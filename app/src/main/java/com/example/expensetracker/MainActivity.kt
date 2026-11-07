@@ -1,6 +1,7 @@
 package com.example.expensetracker
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -37,8 +39,11 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var userPreferences: UserPreferences
 
+    private val navigationTarget = mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleIntent(intent)
         enableEdgeToEdge()
         setContent {
             val themeMode by userPreferences.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
@@ -70,12 +75,29 @@ class MainActivity : FragmentActivity() {
                         BiometricGate {
                             MainScreen(
                                 initialRecurringId = intent?.getLongExtra("recurringId", -1L)
-                                    ?.takeIf { it != -1L }
+                                    ?.takeIf { it != -1L },
+                                initialNavigateTo = navigationTarget.value,
+                                onNavigateHandled = { navigationTarget.value = null }
                             )
                         }
                     }
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        val target = intent?.getStringExtra("navigate_to")
+            ?: intent?.getStringExtra("nav_destination")
+            ?: intent?.getStringExtra("action")
+        if (!target.isNullOrBlank()) {
+            navigationTarget.value = target
         }
     }
 }

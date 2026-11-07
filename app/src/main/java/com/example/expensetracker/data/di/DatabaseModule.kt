@@ -70,4 +70,24 @@ object DatabaseModule {
     fun provideTransactionSplitDao(database: AppDatabase): com.example.expensetracker.data.database.dao.TransactionSplitDao {
         return database.transactionSplitDao()
     }
+
+    @Provides
+    fun provideCurrencyExchangeDao(database: AppDatabase): com.example.expensetracker.data.database.dao.CurrencyExchangeDao {
+        return database.currencyExchangeDao()
+    }
+
+    @Provides
+    fun provideTripDao(database: AppDatabase): com.example.expensetracker.data.database.dao.TripDao {
+        return database.tripDao()
+    }
+
+    @Provides
+    fun provideItemPriceHistoryDao(database: AppDatabase): com.example.expensetracker.data.database.dao.ItemPriceHistoryDao {
+        return database.itemPriceHistoryDao()
+    }
+
+    @Provides
+    fun providePendingSmsTransactionDao(database: AppDatabase): com.example.expensetracker.data.database.dao.PendingSmsTransactionDao {
+        return database.pendingSmsTransactionDao()
+    }
 }

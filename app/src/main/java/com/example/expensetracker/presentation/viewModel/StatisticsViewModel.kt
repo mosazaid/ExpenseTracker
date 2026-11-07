@@ -2,7 +2,11 @@ package com.example.expensetracker.presentation.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.expensetracker.core.format.CurrencyUtils
 import com.example.expensetracker.core.time.DateUtils
+import com.example.expensetracker.data.database.entities.AccountType
+import com.example.expensetracker.data.database.entities.Transaction
+import com.example.expensetracker.data.database.entities.TransactionSplit
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.data.preferences.UserPreferences
@@ -12,12 +16,16 @@ import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.PeriodBounds
 import com.example.expensetracker.domain.PeriodCalculator
 import com.example.expensetracker.domain.WalletCalculator
+import com.example.expensetracker.presentation.model.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 data class CategoryExpenseShare(
     val categoryId: Long,
@@ -89,7 +97,12 @@ data class StatisticsState(
     val selectedSubCategoryId: Long? = null,
     val subCategoryComparison: SubCategoryComparisonData? = null,
     val isYearPeriod: Boolean = false,
-    val depositYearStats: DepositYearStats? = null
+    val depositYearStats: DepositYearStats? = null,
+    val advancedComparison: AdvancedComparisonData? = null,
+    val comparisonMode: ComparisonMode = ComparisonMode.DAY_NORMALIZED,
+    val basePeriodIndex: Int = 0,
+    val comparePeriodIndex: Int = 1,
+    val drillDownData: SubcategoryDrillDownData? = null
 )
 
 @HiltViewModel
@@ -112,6 +125,8 @@ class StatisticsViewModel @Inject constructor(
     private var cachedMonthLabels: List<String> = emptyList()
     private var cachedSplitsByTxnId: Map<Long, List<com.example.expensetracker.data.database.entities.TransactionSplit>> = emptyMap()
     private var cachedCategories: Map<Long, com.example.expensetracker.data.database.entities.Category> = emptyMap()
+    private var cachedDrillDownBaseTxns: List<Transaction> = emptyList()
+    private var cachedDrillDownBaseBounds: PeriodBounds? = null
 
     fun loadStatisticsForPeriod(period: HistoryPeriod, referenceDate: Date = Date()) {
         viewModelScope.launch {
@@ -162,6 +177,13 @@ class StatisticsViewModel @Inject constructor(
                 )
             } else null
 
+            val advancedComp = buildAdvancedComparison(
+                baseIndex = _statisticsState.value.basePeriodIndex,
+                compareIndex = _statisticsState.value.comparePeriodIndex,
+                mode = _statisticsState.value.comparisonMode,
+                referenceDate = referenceDate
+            )
+
             _statisticsState.value = _statisticsState.value.copy(
                 totalIncome = totalIncome,
                 totalExpense = totalExpense,
@@ -174,8 +196,43 @@ class StatisticsViewModel @Inject constructor(
                 subCategoryComparison = subCategoryComparison,
                 isYearPeriod = isYear,
                 depositYearStats = depositYearStats,
+                advancedComparison = advancedComp,
                 isLoading = false
             )
+        }
+    }
+
+    fun setComparisonMode(mode: ComparisonMode) {
+        viewModelScope.launch {
+            _statisticsState.value = _statisticsState.value.copy(comparisonMode = mode)
+            refreshAdvancedComparison()
+        }
+    }
+
+    fun setBasePeriodIndex(index: Int) {
+        viewModelScope.launch {
+            _statisticsState.value = _statisticsState.value.copy(basePeriodIndex = index)
+            refreshAdvancedComparison()
+        }
+    }
+
+    fun setComparePeriodIndex(index: Int) {
+        viewModelScope.launch {
+            _statisticsState.value = _statisticsState.value.copy(comparePeriodIndex = index)
+            refreshAdvancedComparison()
+        }
+    }
+
+    fun refreshAdvancedComparison(referenceDate: Date = Date()) {
+        viewModelScope.launch {
+            val currentState = _statisticsState.value
+            val advancedComp = buildAdvancedComparison(
+                baseIndex = currentState.basePeriodIndex,
+                compareIndex = currentState.comparePeriodIndex,
+                mode = currentState.comparisonMode,
+                referenceDate = referenceDate
+            )
+            _statisticsState.value = _statisticsState.value.copy(advancedComparison = advancedComp)
         }
     }
 
@@ -288,7 +345,13 @@ class StatisticsViewModel @Inject constructor(
             val rawIncome = txns.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
             val income = (rawIncome - loansDeducted).coerceAtLeast(0.0)
 
-            val expenseTxns = txns.filter { it.type == TransactionType.EXPENSE && it.id !in paidTxnIds }
+            val expenseTxns = txns.filter {
+                it.type == TransactionType.EXPENSE &&
+                it.accountType != AccountType.WALLET &&
+                it.accountType != AccountType.DEPOSIT &&
+                !it.excludeFromMonthExpenses &&
+                it.id !in paidTxnIds
+            }
             val expense = expenseTxns.sumOf { it.amount }
             val wallet = walletCalculator.getWalletBalance(bounds.start, bounds.end)
 
@@ -416,5 +479,280 @@ class StatisticsViewModel @Inject constructor(
         intervals.add(b3)
 
         return intervals
+    }
+
+    private suspend fun buildAdvancedComparison(
+        baseIndex: Int,
+        compareIndex: Int,
+        mode: ComparisonMode,
+        referenceDate: Date
+    ): AdvancedComparisonData {
+        val monthModeVal = monthMode.value
+        val availablePeriods = if (monthModeVal == MonthMode.SALARY) {
+            getAvailableSalaryPeriods(referenceDate)
+        } else {
+            getAvailableCalendarPeriods(referenceDate)
+        }
+
+        val safeBaseIndex = baseIndex.coerceIn(0, (availablePeriods.size - 1).coerceAtLeast(0))
+        val safeCompareIndex = compareIndex.coerceIn(0, (availablePeriods.size - 1).coerceAtLeast(0))
+        val baseOption = availablePeriods.getOrNull(safeBaseIndex) ?: availablePeriods.firstOrNull()
+            ?: PeriodOption("cur", "Current", PeriodBounds(referenceDate, referenceDate, "Current"))
+        val compareOption = availablePeriods.getOrNull(safeCompareIndex) ?: availablePeriods.getOrElse(1) { baseOption }
+
+        val now = Date()
+        val isBaseActive = now.time in baseOption.bounds.start.time..baseOption.bounds.end.time
+        val cutoffDay = if (mode == ComparisonMode.DAY_NORMALIZED) {
+            if (isBaseActive) {
+                max(1, ((now.time - baseOption.bounds.start.time) / (1000L * 60 * 60 * 24)).toInt() + 1)
+            } else {
+                val baseDays = max(1, ((baseOption.bounds.end.time - baseOption.bounds.start.time) / (1000L * 60 * 60 * 24)).toInt() + 1)
+                val compareDays = max(1, ((compareOption.bounds.end.time - compareOption.bounds.start.time) / (1000L * 60 * 60 * 24)).toInt() + 1)
+                min(baseDays, compareDays)
+            }
+        } else null
+
+        val baseRawTxns = transactionRepository.getTransactionsBetweenDatesSnapshot(baseOption.bounds.start, baseOption.bounds.end)
+        val compareRawTxns = transactionRepository.getTransactionsBetweenDatesSnapshot(compareOption.bounds.start, compareOption.bounds.end)
+
+        val paidLoansBase = monthlyLoanPaymentDao?.getPaidLoansBetweenDates(baseOption.bounds.start, baseOption.bounds.end) ?: emptyList()
+        val paidLoansBaseIds = paidLoansBase.filter { it.deductFromIncome }.mapNotNull { it.transactionId }.toSet()
+
+        val paidLoansCompare = monthlyLoanPaymentDao?.getPaidLoansBetweenDates(compareOption.bounds.start, compareOption.bounds.end) ?: emptyList()
+        val paidLoansCompareIds = paidLoansCompare.filter { it.deductFromIncome }.mapNotNull { it.transactionId }.toSet()
+
+        fun filterTxns(txns: List<Transaction>, bounds: PeriodBounds, paidLoanIds: Set<Long>): List<Transaction> {
+            return txns.filter { txn ->
+                txn.type == TransactionType.EXPENSE &&
+                txn.accountType != AccountType.WALLET &&
+                txn.accountType != AccountType.DEPOSIT &&
+                !txn.excludeFromMonthExpenses &&
+                txn.id !in paidLoanIds &&
+                (cutoffDay == null || getDayOffset(txn.date, bounds.start) <= cutoffDay)
+            }
+        }
+
+        val baseTxns = filterTxns(baseRawTxns, baseOption.bounds, paidLoansBaseIds)
+        val compareTxns = filterTxns(compareRawTxns, compareOption.bounds, paidLoansCompareIds)
+
+        cachedDrillDownBaseTxns = baseTxns
+        cachedDrillDownBaseBounds = baseOption.bounds
+
+        val splits = transactionRepository.getAllSplitsSnapshot().groupBy { it.transactionId }
+        val categories = categoryRepository.getAllCategoriesSnapshot().associateBy { it.id }
+
+        val baseCatSubMap = aggregateSpendByCatAndSub(baseTxns, splits)
+        val compareCatSubMap = aggregateSpendByCatAndSub(compareTxns, splits)
+
+        val allCatIds = (baseCatSubMap.keys + compareCatSubMap.keys).distinct()
+
+        val categoryItems = allCatIds.mapNotNull { catId ->
+            val cat = categories[catId] ?: return@mapNotNull null
+            val baseSubs = baseCatSubMap[catId].orEmpty()
+            val compareSubs = compareCatSubMap[catId].orEmpty()
+
+            val allSubNames = (baseSubs.keys + compareSubs.keys).distinct()
+            val subItems = allSubNames.map { subName ->
+                val bInfo = baseSubs[subName]
+                val bAmt = bInfo?.first ?: 0.0
+                val bCount = bInfo?.second?.size ?: 0
+
+                val cAmt = compareSubs[subName]?.first ?: 0.0
+                val delta = bAmt - cAmt
+                val deltaPct = if (cAmt > 0) (((bAmt - cAmt) / cAmt) * 100f).toFloat() else null
+
+                val insight = if (deltaPct != null && deltaPct > 30.0f) {
+                    val topTxn = bInfo?.second?.maxByOrNull { it.amount }
+                    if (topTxn != null && topTxn.description.isNotBlank()) {
+                        "Spike +${deltaPct.roundToInt()}%: Top \"${topTxn.description}\" (${CurrencyUtils.formatCurrency(topTxn.amount)})"
+                    } else {
+                        "Spike +${deltaPct.roundToInt()}% across $bCount purchases"
+                    }
+                } else null
+
+                SubcategoryComparisonItem(
+                    name = subName,
+                    baseAmount = bAmt,
+                    compareAmount = cAmt,
+                    deltaAmount = delta,
+                    deltaPercent = deltaPct,
+                    baseTxnCount = bCount,
+                    varianceInsight = insight
+                )
+            }.sortedByDescending { it.baseAmount }
+
+            val baseTotal = subItems.sumOf { it.baseAmount }
+            val compareTotal = subItems.sumOf { it.compareAmount }
+            val catDelta = baseTotal - compareTotal
+            val catDeltaPct = if (compareTotal > 0) (((baseTotal - compareTotal) / compareTotal) * 100f).toFloat() else null
+
+            val topSpikingSub = subItems.filter { it.deltaPercent != null && it.deltaPercent > 20.0f }
+                .maxByOrNull { it.deltaAmount }
+            val topDriver = topSpikingSub?.let { "Driven by ${it.name} (+${it.deltaPercent?.roundToInt()}%)" }
+
+            CategoryComparisonItem(
+                categoryId = catId,
+                categoryName = cat.name,
+                categoryIcon = cat.icon,
+                categoryColor = cat.color,
+                baseTotal = baseTotal,
+                compareTotal = compareTotal,
+                deltaAmount = catDelta,
+                deltaPercent = catDeltaPct,
+                subcategories = subItems,
+                topSpikeInsight = topDriver
+            )
+        }.sortedByDescending { it.baseTotal }
+
+        val baseTotalExp = categoryItems.sumOf { it.baseTotal }
+        val compareTotalExp = categoryItems.sumOf { it.compareTotal }
+        val overallDelta = if (compareTotalExp > 0) (((baseTotalExp - compareTotalExp) / compareTotalExp) * 100f).toFloat() else null
+
+        return AdvancedComparisonData(
+            basePeriod = baseOption.bounds,
+            comparePeriod = compareOption.bounds,
+            mode = mode,
+            cutoffDay = cutoffDay,
+            baseTotalExpense = baseTotalExp,
+            compareTotalExpense = compareTotalExp,
+            overallDeltaPercent = overallDelta,
+            categories = categoryItems,
+            availablePeriods = availablePeriods
+        )
+    }
+
+    private fun getDayOffset(date: Date, start: Date): Int {
+        val diffMs = date.time - start.time
+        return max(1, (diffMs / (1000L * 60 * 60 * 24)).toInt() + 1)
+    }
+
+    private fun aggregateSpendByCatAndSub(
+        txns: List<Transaction>,
+        splitsByTxnId: Map<Long, List<TransactionSplit>>
+    ): Map<Long, Map<String, Pair<Double, List<Transaction>>>> {
+        val result = mutableMapOf<Long, MutableMap<String, Pair<Double, MutableList<Transaction>>>>()
+        for (txn in txns) {
+            val catId = txn.categoryId ?: continue
+            val splits = splitsByTxnId[txn.id].orEmpty()
+            val catMap = result.getOrPut(catId) { mutableMapOf() }
+            if (splits.isNotEmpty()) {
+                for (split in splits) {
+                    val subName = split.subCategoryName?.trim()?.takeIf { it.isNotBlank() } ?: "Other"
+                    val curr = catMap[subName]
+                    val newAmt = (curr?.first ?: 0.0) + split.amount
+                    val list = curr?.second ?: mutableListOf()
+                    list.add(txn)
+                    catMap[subName] = Pair(newAmt, list)
+                }
+            } else {
+                val subName = txn.subDescription?.trim()?.takeIf { it.isNotBlank() } ?: "Other"
+                val curr = catMap[subName]
+                val newAmt = (curr?.first ?: 0.0) + txn.amount
+                val list = curr?.second ?: mutableListOf()
+                list.add(txn)
+                catMap[subName] = Pair(newAmt, list)
+            }
+        }
+        return result
+    }
+
+    private fun getAvailableCalendarPeriods(referenceDate: Date, count: Int = 12): List<PeriodOption> {
+        val options = mutableListOf<PeriodOption>()
+        val format = SimpleDateFormat("MMM yyyy", Locale.getDefault())
+        for (i in 0 until count) {
+            val c = Calendar.getInstance().apply {
+                time = referenceDate
+                add(Calendar.MONTH, -i)
+            }
+            val start = DateUtils.getStartOfMonth(c.time)
+            val end = DateUtils.getEndOfMonth(c.time)
+            val monthLabel = format.format(start)
+            val label = if (i == 0) "$monthLabel (Current)" else monthLabel
+            options.add(PeriodOption(key = "cal_$i", label = label, bounds = PeriodBounds(start, end, monthLabel)))
+        }
+        return options
+    }
+
+    private suspend fun getAvailableSalaryPeriods(referenceDate: Date, count: Int = 12): List<PeriodOption> {
+        val options = mutableListOf<PeriodOption>()
+        var currentRef = referenceDate
+        for (i in 0 until count) {
+            val bounds = periodCalculator.getBounds(HistoryPeriod.MONTH, currentRef, MonthMode.SALARY)
+            val label = if (i == 0) "${bounds.label} (Current)" else bounds.label
+            options.add(PeriodOption(key = "sal_$i", label = label, bounds = bounds))
+            val nextRefCal = Calendar.getInstance().apply {
+                time = bounds.start
+                add(Calendar.DAY_OF_MONTH, -1)
+            }
+            currentRef = nextRefCal.time
+        }
+        return options
+    }
+
+    fun openSubcategoryDrillDown(categoryId: Long, subcategoryName: String) {
+        val cat = cachedCategories[categoryId] ?: return
+        val baseTxns = cachedDrillDownBaseTxns
+        val splits = cachedSplitsByTxnId
+
+        val matchingItems = mutableListOf<DrillDownTransactionItem>()
+        var totalAmount = 0.0
+
+        for (txn in baseTxns.filter { it.categoryId == categoryId }) {
+            val txnSplits = splits[txn.id].orEmpty()
+            if (txnSplits.isNotEmpty()) {
+                val matchingSplits = txnSplits.filter {
+                    val name = it.subCategoryName?.trim()?.takeIf { s -> s.isNotBlank() } ?: "Other"
+                    name.equals(subcategoryName, ignoreCase = true)
+                }
+                for (split in matchingSplits) {
+                    matchingItems.add(
+                        DrillDownTransactionItem(
+                            id = txn.id,
+                            title = split.note?.takeIf { it.isNotBlank() } ?: txn.description.takeIf { it.isNotBlank() } ?: cat.name,
+                            note = "Part of Split: ${CurrencyUtils.formatCurrency(txn.amount)}",
+                            amount = split.amount,
+                            date = txn.date,
+                            accountType = txn.accountType,
+                            isSplit = true,
+                            parentAmount = txn.amount
+                        )
+                    )
+                    totalAmount += split.amount
+                }
+            } else {
+                val subName = txn.subDescription?.trim()?.takeIf { it.isNotBlank() } ?: "Other"
+                if (subName.equals(subcategoryName, ignoreCase = true)) {
+                    matchingItems.add(
+                        DrillDownTransactionItem(
+                            id = txn.id,
+                            title = txn.description.takeIf { it.isNotBlank() } ?: subcategoryName,
+                            note = txn.subDescription,
+                            amount = txn.amount,
+                            date = txn.date,
+                            accountType = txn.accountType,
+                            isSplit = false
+                        )
+                    )
+                    totalAmount += txn.amount
+                }
+            }
+        }
+
+        _statisticsState.value = _statisticsState.value.copy(
+            drillDownData = SubcategoryDrillDownData(
+                categoryId = categoryId,
+                categoryName = cat.name,
+                categoryIcon = cat.icon,
+                subcategoryName = subcategoryName,
+                periodLabel = cachedDrillDownBaseBounds?.label.orEmpty(),
+                totalAmount = totalAmount,
+                transactionCount = matchingItems.size,
+                transactions = matchingItems.sortedByDescending { it.date }
+            )
+        )
+    }
+
+    fun closeDrillDown() {
+        _statisticsState.value = _statisticsState.value.copy(drillDownData = null)
     }
 }

@@ -116,6 +116,33 @@ class NotificationHelper @Inject constructor(
         NotificationManagerCompat.from(context).notify(recurring.id.toInt(), builder.build())
     }
 
+    fun showRecurringAutoDeductNotification(description: String, amount: Double, txId: Long) {
+        if (!hasPermission()) return
+        createChannels()
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            txId.toInt() + 8000,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_SALARY)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("Recurring Expense Auto-Deducted")
+            .setContentText("$description: ${CurrencyUtils.formatCurrency(amount)}")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+
+        appIconBitmap?.let { builder.setLargeIcon(it) }
+
+        NotificationManagerCompat.from(context).notify(txId.toInt() + 8000, builder.build())
+    }
+
     fun showDailyExpenseReminderNotification() {
         if (!hasPermission()) return
         createChannels()
@@ -310,7 +337,9 @@ class NotificationHelper @Inject constructor(
             builder.setSound(soundUri)
         }
 
-        (mosqueBitmap ?: appIconBitmap)?.let { builder.setLargeIcon(it) }
+        // Large icon always shows the app launcher icon (consistent with all other notifications).
+        // The mosque icon is kept as the small status-bar icon to identify prayer alerts.
+        appIconBitmap?.let { builder.setLargeIcon(it) }
 
         NotificationManagerCompat.from(context).notify(notifId, builder.build())
     }

@@ -228,6 +228,58 @@ class DepositAndWalletTest {
     }
 
     @Test
+    fun balanceCalculator_automaticallyExcludesWalletAndDepositExpensesEvenIfFlagFalse() = runBlocking {
+        val repo = FakeTransactionRepo()
+        val mockPrefs = mock(UserPreferences::class.java)
+        val balanceCalculator = BalanceCalculator(repo, mockPrefs)
+
+        val txns = listOf(
+            Transaction(
+                amount = 1500.0,
+                description = "Salary",
+                date = Date(),
+                type = TransactionType.INCOME,
+                accountType = AccountType.BANK
+            ),
+            Transaction(
+                amount = 400.0,
+                description = "Cash Grocery",
+                date = Date(),
+                type = TransactionType.EXPENSE,
+                accountType = AccountType.CASH
+            ),
+            // Wallet expense with excludeFromMonthExpenses = FALSE (MUST STILL BE EXCLUDED)
+            Transaction(
+                amount = 85.0,
+                description = "Wallet snack with flag false",
+                date = Date(),
+                type = TransactionType.EXPENSE,
+                accountType = AccountType.WALLET,
+                excludeFromMonthExpenses = false
+            ),
+            // Deposit expense with excludeFromMonthExpenses = FALSE (MUST STILL BE EXCLUDED)
+            Transaction(
+                amount = 1200.0,
+                description = "Deposit buy with flag false",
+                date = Date(),
+                type = TransactionType.EXPENSE,
+                accountType = AccountType.DEPOSIT,
+                excludeFromMonthExpenses = false
+            )
+        )
+
+        val currentBalances = AccountBalances(cash = 600.0, bank = 2000.0)
+        val summary = balanceCalculator.computeMonthFinancialSummary(txns, currentBalances)
+
+        // Income = 1500.0
+        assertEquals(1500.0, summary.periodIncome, 0.001)
+        // Period expense should ONLY be 400.0 (Wallet 85 and Deposit 1200 are auto-excluded)
+        assertEquals(400.0, summary.periodExpense, 0.001)
+        // Net = 1500 - 400 = 1100
+        assertEquals(1100.0, summary.periodNet, 0.001)
+    }
+
+    @Test
     fun walletCalculator_deductsDirectExpensesAndAllowsDepositTransfer() = runBlocking {
         val repo = FakeTransactionRepo()
         val mockCategoryRepo = mock(ICategoryRepository::class.java)

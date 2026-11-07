@@ -16,7 +16,7 @@ import java.util.Date
             onDelete = ForeignKey.SET_NULL
         )
     ],
-    indices = [Index("categoryId"), Index("linkedExpenseId"), Index("recurringId")]
+    indices = [Index("categoryId"), Index("linkedExpenseId"), Index("recurringId"), Index("tripId")]
 )
 data class Transaction(
     @PrimaryKey(autoGenerate = true)
@@ -40,6 +40,10 @@ data class Transaction(
     val recurringId: Long? = null,
     val receiptImagePath: String? = null,
     val excludeFromMonthExpenses: Boolean = false,
+    val currency: String = "JOD",
+    val originalAmount: Double? = null,
+    val exchangeRateUsed: Double? = null,
+    val tripId: Long? = null,
     val createdAt: Date = Date(),
     val updatedAt: Date = Date()
 )
