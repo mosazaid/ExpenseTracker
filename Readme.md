@@ -8,6 +8,63 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 
 ---
 
+## What's New (Version 2.0 — Master Product & Architecture Program)
+
+### 1. Advanced Category & Subcategory Comparison Engine
+- **Day-Normalized Pacing**: Compare Day 1–N of the active month against Day 1–N of any previous month to assess true spending velocity without unfair partial-month distortions.
+- **Interactive Waterfall Tree (Accordion)**: Expandable parent categories revealing all subcategories simultaneously with proportional spending bars and month-over-month percentage deltas (`+/−%`).
+- **Instant Transaction Drill-Down**: Tap any subcategory to slide up a filtered bottom sheet showing its exact transactions, split item breakdown, and zoomable attached receipts.
+- **Smart Variance Diagnosis**: Automatic insight chips flagging categories and subcategories that jumped >30% with merchant driver attribution.
+
+### 2. Android Home Screen Glance App Widgets
+- **Payday Pacing Widget (4×2)**: Live home screen widget displaying current spendable balance (`Cash + Bank`), days remaining until next salary, and calculated safe daily burn rate.
+- **Quick-Add Widget (2×1)**: Compact widget showing today's total spending with a one-tap shortcut into `AddTransactionScreen`.
+- **Instant Reactive Updates**: Synchronized via `WidgetUpdateHelper` whenever transactions, balances, or salary preferences update.
+
+### 3. Multi-Currency & Travel Mode Platform
+- **Multi-Currency Support**: Native handling for JOD, USD, AED, SAR, EUR, and GBP with offline exchange rates, reciprocal conversions, and currency exchange records.
+- **Dedicated Travel Mode**: Track vacations and business trips (`Trip` entity) with individual budgets, travel dates, trip-scoped pacing, and total spend breakdown.
+
+### 4. Differentiating Market & Islamic Finance Features
+- **Item Price History & Inflation Tracker**: Automatically records unit prices from receipts/split descriptions, tracking price changes over time (e.g., *"+16.6% price increase since last month"*).
+- **Virtual Sadaqah Jar (حصّالة الصدقة)**: Optional micro-savings that rounds up daily purchases to the nearest integer and pools spare change into a virtual charity jar with an automated Friday morning reminder.
+- **Financial Runway & Emergency Stress-Tester**: Evaluates liquid reserves (`Cash + Bank + Vault`) against monthly essential burn rate to calculate financial survival runway in months.
+- **Islamic Murabaha & Loan Simulator**: Computes bank profit rates, principal repayment, and installment schedules for Islamic financing, with direct import into Configured Loans.
+- **Zakah Auto-Sync & Hawl Lunar Tracker**: Auto-syncs liquid bank/cash balances and gold holdings against live Nisab thresholds.
+
+### 5. Freemium Monetization, 90-Day Pro Trial & Owner VIP Bypass
+- **Transparent 3-Tier Architecture**: `FREE`, `PRO`, and `PRO_PLUS` feature gates with rich comparison matrix in `SubscriptionScreen`.
+- **Automatic 90-Day Local Pro Trial**: New installs automatically enjoy 90 days of full Pro access with zero login, zero credit card, and local DataStore tracking.
+- **Secret Owner VIP Bypass**: Tapping the Crown Hero icon **5 times** in `SubscriptionScreen` activates permanent lifetime VIP access (`PRO_PLUS`), bypassing Play Billing while allowing full testing of trial flows.
+
+### 6. Bank SMS Ingestion & Background Auto-Deductions (Room Schema V21)
+- **Regional Bank SMS Parser**: High-accuracy regex parser supporting Arab Bank, Bank al Etihad, Jordan Kuwait Bank, Cairo Amman Bank, Al Rajhi, Emirates NBD, ADCB, and FAB in Arabic & English.
+- **Unreviewed Bank Inbox**: Unreviewed incoming SMS transactions appear in an actionable card on `OverviewScreen` for one-tap confirmation.
+- **"Paste Bank SMS" Fast Fill**: Dedicated paste button in `AddTransactionScreen` that auto-fills amount, merchant, and category in seconds.
+- **Background Recurring Auto-Deductions**: Configured recurring expenses set for auto-deduction run automatically daily via WorkManager (`AutoDeductRecurringWorker`), posting transactions and sending confirmation notifications.
+
+### 7. Notification Management Overhaul
+- **Clear All Active Notifications**: Added "Clear All" with confirmation dialog to `AlertsScreen` and `AppTopBar`, instantly clearing all active alert inbox items.
+- **Sticky / Ongoing Foreground Notifications**: Configurable option in Notification Settings to pin critical notification types (Prayer/Adhan, Daily 9 PM check-in, Budget limit warnings, Loan reminders, Salary notices) to the status bar so they cannot be accidentally swiped away.
+
+---
+
+## What's New (Phase 13 Releases)
+
+### 1. Overview Hero Asset Distribution & Wallet Proportionality
+- **Liquid Available Balance Preserved**: Hero balance card strictly reflects spendable liquid cash (`Cash + Bank`), completely excluding funds held in Wallet or Deposit Vault.
+- **3-Way Proportional Asset Bar**: Dynamic segmented bar rendering Cash (Green), Bank (Blue), and Wallet (Purple) with independent percentages.
+
+---
+
+## What's New (Phase 12 Releases)
+
+### 1. GPS Elevation Inheritance & Maghrib Prayer Calibration
+- Calibrated reference elevation for Amman in `PRESET_CITIES` to 1000m (King Hussein Mosque / Dabouq baseline used by Jordan Ministry of Awqaf).
+- Added `maghribOffsetMinutes` to `PrayerCalculationMethod` matching the official Awqaf calendar.
+
+---
+
 ## What's New (Phase 11 Releases)
 
 ### 1. Complete App Backup & Device Migration (Full JSON)

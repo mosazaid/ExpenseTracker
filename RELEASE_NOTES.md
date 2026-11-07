@@ -1,5 +1,46 @@
 # Release Notes
 
+## Version 2.0.0 — Master Product & Architecture Program & Notification Overhaul (November 2026)
+
+### Highlights
+- **Advanced Category & Subcategory Comparison Engine**:
+  - Added **Day-Normalized Pacing Toggle**: compare Day 1–N of the current period against Day 1–N of prior months for realistic, un-skewed velocity assessments.
+  - Interactive **Waterfall Accordion Tree**: parent categories expand to reveal all subcategories with proportional progress bars, spend totals, and month-over-month deltas (`+/−%`).
+  - **Instant Subcategory Drill-Down**: tap any subcategory in the comparison view to open a bottom sheet showing filtered transactions, notes, splits, and zoomable receipt images.
+  - **Smart Variance Diagnosis**: auto-identifies categories spiking >30% and attributes the jump to top merchant purchases.
+- **Android Home Screen Glance App Widgets**:
+  - `PaydayPacingWidget` (4×2): live display of current liquid balance (`Cash + Bank`), countdown days until next payday, and safe daily burn rate.
+  - `QuickAddWidget` (2×1): displays today's spending total and provides instant one-tap entry into `AddTransactionScreen`.
+  - Reactive sync powered by `WidgetUpdateHelper` for immediate updates on transaction entry.
+- **Multi-Currency Platform & Dedicated Travel Mode**:
+  - Native multi-currency engine supporting JOD, USD, AED, SAR, EUR, and GBP with offline rate tables and reciprocal conversions.
+  - New `currency_exchanges` table for tracking real-world conversions between accounts.
+  - Dedicated `trips` table with budget pacing, trip date tracking, and vacation-specific spend isolation.
+- **Market-Differentiating & Islamic Finance Modules**:
+  - **Item Price History & Inflation Tracker**: logs unit price points across split receipts (`item_price_history`), displaying price delta chips on recurring items.
+  - **Virtual Sadaqah Jar (حصّالة الصدقة)**: optional micro-charity rounding up daily expenses to nearest integer, accumulating change with an automated Friday morning reminder.
+  - **Financial Runway & Emergency Stress-Tester**: computes liquid survival duration in months (`(Cash + Bank + Vault) / Essential Monthly Burn`).
+  - **Islamic Murabaha & Loan Simulator**: computes bank profit rates, principal repayment, and installment schedules for Islamic financing, with direct import into Configured Loans.
+  - **Zakah Auto-Sync & Hawl Lunar Tracker**: calculates eligible assets across liquid cash, bank accounts, and gold grams against dynamic Nisab thresholds.
+- **Freemium Monetization, 90-Day Local Pro Trial & Owner VIP Bypass**:
+  - 3-tier structure (`FREE`, `PRO`, `PRO_PLUS`) with rich feature matrix in `SubscriptionScreen`.
+  - Automatic 90-day device trial starting from first launch with zero login or credit card required.
+  - **Secret Owner VIP Bypass**: tap the Crown Hero icon **5 times** in `SubscriptionScreen` to toggle permanent Lifetime VIP access.
+- **Bank SMS Ingestion & Background Auto-Deductions (Room Schema V21)**:
+  - Database updated to version 21 with new `pending_sms_transactions` table and `MIGRATION_20_21`.
+  - Regional Bank SMS parser (`BankSmsParser`) for Jordan & GCC banks (Arab Bank, Etihad, JKB, Cairo Amman, Al Rajhi, Emirates NBD, ADCB, FAB).
+  - Unreviewed Bank Transactions review card on `OverviewScreen` with one-tap confirm/dismiss.
+  - "Paste Bank SMS" auto-fill button in `AddTransactionScreen`.
+  - Daily WorkManager worker (`AutoDeductRecurringWorker`) automatically posting due recurring expenses with system confirmation notifications.
+- **Notification Management Overhaul**:
+  - Added **Clear All Active Notifications** button in `AlertsScreen` and `AppTopBar` with safety confirmation dialog.
+  - Added **Sticky / Ongoing Foreground Notifications** preferences in `NotificationSettingsScreen` (pinned Prayer times, 9 PM daily expense reminder, budget exceeded warnings, loan dues, and salary notifications) preventing accidental swipe dismissals.
+- **Smart Financial Insights Pacing & Vault/Wallet Isolation Fix**:
+  - **Liquid Balance Grounding**: Resolved false "Deficit Alert with 105% Budget Consumed" by grounding the pacing baseline against the user's actual liquid funds (`totalAvailable = cashBal + bankBal`, e.g. ~500 JOD) when current cycle income has not yet been logged or when previous cycle savings exist.
+  - **Strict Vault & Wallet Isolation**: Excluded pocket wallet and vault (deposit) funds from artificially shrinking the spendable budget baseline. Payments from vault (`AccountType.DEPOSIT`) and pocket wallet (`AccountType.WALLET`) are strictly excluded from monthly operational expenses, keeping the AI insight accurately pacing ~21% consumed rather than false deficit spikes.
+
+---
+
 ## Version: Feature Expansion Phase 13 — Overview Hero Asset Distribution & Wallet Proportionality (October 2026)
 
 ### Highlights

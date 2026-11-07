@@ -349,6 +349,19 @@ Upon completion of each phase, the 4 core repository documents are systematicall
 * Every new domain calculator, pacing formula, and comparison algorithm must achieve 100% unit test coverage in `app/src/test/`.
 * Zero mock regressions; verify all 28+ existing tests continue to pass with `./gradlew testDebugUnitTest`.
 
+### 10.3 Post-Phase 9 Enhancements (Notification System Overhaul)
+- **Clear All Active Notifications (`AppAlertDao.dismissAllActiveAlerts`)**:
+  - Added "Clear All" in `AlertsScreen` and `AppTopBar` with safety confirmation dialog.
+  - Atomically marks all active alerts as dismissed, clearing the list and top-bar badge.
+- **Sticky / Ongoing Foreground Notifications (`NotificationCompat.Builder.setOngoing(true)`)**:
+  - Added user toggles in `NotificationSettingsScreen` allowing individual notification types to be pinned to the foreground status bar:
+    1. Sticky Prayer Times & Adhan alerts
+    2. Sticky Daily 9 PM Expense Reminder
+    3. Sticky Budget Warning & Exceeded alerts
+    4. Sticky Loan & Debt payment dues
+    5. Sticky Salary & Recurring payment notices
+  - Persisted in DataStore (`UserPreferences`) and exported in full JSON device migration.
+
 ---
 
 ## 11. Decisions & Strategic Questions (Next Steps)

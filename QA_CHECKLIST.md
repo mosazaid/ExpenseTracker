@@ -230,10 +230,86 @@
 - [ ] Transaction history records corresponding payment item with proper transaction type and debtor reference.
 - [ ] Paying full balance removes debt reminder alert from notification list.
 
+## Category & Subcategory Comparison Overhaul (Version 2.0)
+- [ ] Open `StatisticsScreen` and scroll to `SubcategoryComparisonCard`.
+- [ ] Base period vs Comparison period pickers allow selecting any two months (e.g. Current vs Previous Month).
+- [ ] Toggle **Day-Normalized Pacing**:
+  - [ ] If today is Day 15, verify Day 1–15 of Month A is compared against Day 1–15 of Month B.
+  - [ ] Progress bars and delta percentages reflect accurate day-pace spend.
+- [ ] **Waterfall Accordion Tree**:
+  - [ ] Tap parent category row: expands to show all child subcategories with spend bars and +/- % badges.
+  - [ ] Tap any subcategory row: opens `SubcategoryDrillDownBottomSheet` displaying filtered transactions.
+  - [ ] In drill-down sheet, tap a receipt thumbnail to open high-resolution `ZoomableImageDialog`.
+- [ ] Categories jumping >30% display smart insight diagnosis chips.
+
+## Android Home Screen Glance App Widgets
+- [ ] Add `PaydayPacingWidget` (4×2) to Android home screen:
+  - [ ] Shows current liquid balance (`Cash + Bank`), days until next payday, and safe daily burn rate.
+  - [ ] Tap anywhere on the widget to open `MainActivity`.
+- [ ] Add `QuickAddWidget` (2×1) to home screen:
+  - [ ] Shows today's spend total.
+  - [ ] Tap '+' icon button to immediately open `AddTransactionScreen`.
+- [ ] Adding a new transaction inside the app triggers `WidgetUpdateHelper` to refresh widget data immediately.
+
+## Multi-Currency & Travel Mode Platform
+- [ ] Open **More -> Multi-Currency & Exchanges**:
+  - [ ] Live exchange rates displayed for JOD, USD, AED, SAR, EUR, GBP.
+  - [ ] Record a currency exchange (e.g. 500 JOD -> 705 USD).
+  - [ ] Verify Cash/Bank balances adjust accordingly and exchange is saved in `currency_exchanges`.
+- [ ] Open **More -> Travel Mode**:
+  - [ ] Create a new trip (e.g. "Dubai Vacation", budget 1,000 AED, departure/return dates).
+  - [ ] Log an expense assigned to the trip; verify trip-scoped daily pacing and budget remaining.
+
+## Innovative Features & Islamic Finance
+- [ ] **Item Price Memory & Inflation Tracker**:
+  - [ ] Record split items with items and prices (e.g. "1kg Chicken: 2.800 JOD").
+  - [ ] Open `PriceHistoryScreen` (More -> Price History): verify price trend chart, latest price, and percentage changes.
+- [ ] **Virtual Sadaqah Jar**:
+  - [ ] Enable round-up in `SadaqahJarScreen` (More -> Sadaqah Jar).
+  - [ ] Record an expense of 4.350 JOD: verify 0.650 JOD is added to Sadaqah Jar balance.
+  - [ ] Friday morning notification fires when balance > 0 JOD.
+  - [ ] Tap "Donate & Empty Jar": records a charity transaction and resets jar balance to zero.
+- [ ] **Financial Runway Stress-Tester**:
+  - [ ] Open `FinancialRunwayScreen` (More -> Financial Runway).
+  - [ ] Displays liquid survival gauge in months (`(Cash + Bank + Vault) / Monthly Burn`).
+- [ ] **Murabaha & Islamic Loan Simulator**:
+  - [ ] Open `MurabahaSimulatorScreen` (More -> Murabaha Calculator).
+  - [ ] Enter principal, profit percentage, and tenor years; computes monthly installment and total bank profit.
+  - [ ] Tap "Add to Configured Loans": creates an active loan with payment schedule.
+- [ ] **Zakah Auto-Sync & Hawl Tracker**:
+  - [ ] Open `ZakahCalculatorScreen`: tap "Auto-Sync App Balances" to pull liquid balances.
+  - [ ] Computes Nisab threshold and calculates exact 2.5% payable Zakah.
+
+## Monetization, 90-Day Pro Trial & Owner VIP Bypass
+- [ ] Fresh app install automatically has 90 days of Pro Trial without account creation.
+- [ ] Open `SubscriptionScreen` (More -> Subscription & Plans):
+  - [ ] Displays days remaining in trial with feature breakdown.
+- [ ] **Owner VIP Bypass**:
+  - [ ] In `SubscriptionScreen`, tap the large Crown Hero icon **5 times in rapid succession**.
+  - [ ] Toast confirms *"Owner VIP Access activated! All features unlocked permanently."*
+  - [ ] Top banner displays "Lifetime VIP Access (Owner Bypass Active)".
+  - [ ] Tap "Revoke Owner Bypass" to revert to standard user trial state for testing.
+
+## Bank SMS Ingestion & Recurring Auto-Deductions
+- [ ] In `AddTransactionScreen`, tap "Paste Bank SMS (Auto-Fill)":
+  - [ ] Paste SMS from Arab Bank, Etihad, Al Rajhi, Emirates NBD, etc.
+  - [ ] Auto-extracts amount, merchant name, and selects appropriate category.
+- [ ] Incoming pending bank SMS items display in "Unreviewed Transactions" card on `OverviewScreen` with single-tap Confirm / Dismiss actions.
+- [ ] Set a recurring transaction to "Auto-Deduct":
+  - [ ] `AutoDeductRecurringWorker` runs daily via WorkManager, logs expense on due date, and dispatches notification.
+
+## Notification Management (Clear All & Sticky Notifications)
+- [ ] Open `AlertsScreen` with active alerts:
+  - [ ] Tap "Clear All" in top bar or header; confirmation dialog appears.
+  - [ ] Confirming dismisses all active alerts; screen immediately displays "All Caught Up" empty state.
+- [ ] Open `NotificationSettingsScreen`:
+  - [ ] Enable **Sticky Notifications** for Prayer, Daily Reminder, Budget Warning, Loan Due, or Salary.
+  - [ ] When notification triggers, verify it is ongoing (`setOngoing(true)`) and cannot be dismissed by swiping away from the status bar.
+
 ## Regression Checks
 - [ ] Categories and Subcategories CRUD still works.
-- [ ] Existing historical data remains readable after v16 → v17 migration.
+- [ ] Existing historical data remains readable after v16 → v17 → v21 migration path.
 - [ ] Currency numbers formatted with proper decimal places across all screens.
-- [ ] Database browser includes `transaction_splits`, `configured_loans`, `monthly_loan_payments`, and `app_alerts`.
+- [ ] Database browser includes all Room tables (`transactions`, `categories`, `sub_categories`, `budgets`, `configured_loans`, `monthly_loan_payments`, `recurring_transactions`, `app_alerts`, `transaction_splits`, `trips`, `currency_exchanges`, `item_price_history`, `pending_sms_transactions`).
 
 

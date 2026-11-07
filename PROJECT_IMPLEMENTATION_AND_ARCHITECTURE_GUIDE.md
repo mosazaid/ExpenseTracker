@@ -1,6 +1,6 @@
 # ExpenseTracker Implementation and Architecture Guide
 
-This document is the technical and business reference for the current app state through Room DB version **17** (October 2026).
+This document is the technical and business reference for the current app state through Room DB version **21** (November 2026).
 
 ## 1. Project Purpose (Business View)
 
@@ -107,27 +107,56 @@ Android MVVM with Compose + Room + Hilt.
 
 | ViewModel | Responsibility |
 |-----------|----------------|
+| `OverviewViewModel` | Hero balance distribution (Cash, Bank, Wallet, Vault), salary period countdown, unreviewed bank SMS inbox, pending review card |
 | `HistoryViewModel` | Period bounds, month summary, filters, grouping, wallet year summary, delete guards |
-| `AddEditTransactionViewModel` | Add/edit income/expense form, sub-description, salary/dept flows, budget warning evaluation |
-| `TransferViewModel` | Cash ↔ Bank transfers |
+| `AddEditTransactionViewModel` | Add/edit income/expense form, inline arithmetic calculator, time-of-day suggestions, bank SMS fast auto-fill, salary/debt flows, budget warning evaluation |
+| `TransferViewModel` | Cash ↔ Bank transfers with balance overdraft protection |
 | `WalletViewModel` | Wallet ↔ Cash/Bank moves, validation, closed-period guards |
+| `DepositViewModel` | Master Great Wallet (Vault) capital assets, biometric gate, capital purchases isolation |
 | `BudgetViewModel` | Category budgets from Categories screen |
 | `SettingsViewModel` | Balances, language, export/import, salary reminder controls |
-| `StatisticsViewModel` | Period totals, 3-month multi-chart stats, 3-month category expense shares |
-| `DatabaseBrowserViewModel` | Table listing and filtered raw queries |
-| `BiometricLockViewModel` | Unlock state, error message, lock on background |
-| `DebtsViewModel` | Track lent vs borrowed debts, debtor filters, settle actions, month rollover |
+| `StatisticsViewModel` | Period totals, 3-month multi-chart stats, category comparison waterfall engine, day-normalized pacing, transaction drilldown |
+| `DatabaseBrowserViewModel` | Table listing and filtered raw queries across all 13 Room tables |
+| `BiometricLockViewModel` | Unlock state, error message, lock on background lifecycle events |
+| `DebtsViewModel` | Track lent vs borrowed debts, WhatsApp reminder generation, mutual debt offsetting, debtor filters, settle actions, month rollover |
 | `LoansViewModel` | Configured loan definitions, monthly payment schedules, salary protection |
-| `AlertsViewModel` | Persistent budget alerts and reminder history, dismissal actions |
+| `AlertsViewModel` | Persistent budget alerts and reminder history, individual and "Clear All" dismissal actions |
+| `NotificationSettingsViewModel` | Channels master switches, daily 9 PM reminder scheduling, and sticky / ongoing foreground notification toggles |
+| `TopBarViewModel` | Unread notifications count reactive flow |
+| `PrayerQiblahViewModel` | 12 calculation methods, sensor compass, TimesPrayer Amman elevation calibration, audio preview player, GPS location sync |
+| `ZakahViewModel` | Auto-sync liquid cash/bank/vault balances, gold karat Nisab calculator, 354-day lunar Hawl tracking |
+| `CurrencyExchangeViewModel` | Multi-currency conversions (JOD, USD, AED, SAR, EUR, GBP), offline exchange rate table, exchange history persistence |
+| `TravelModeViewModel` | Trip budget creation, trip-scoped daily pacing, travel expense assignment |
+| `PriceHistoryViewModel` | Inflation tracking per item/grocery, price trend charts, percentage deltas |
+| `SadaqahJarViewModel` | Micro-charity spare change round-up balance, Friday reminder, one-tap donation logging |
+| `FinancialRunwayViewModel` | Liquid wealth vs essential monthly burn rate stress-tester, emergency financial shock slider |
+| `MurabahaSimulatorViewModel` | Islamic banking profit margin calculator, installment schedule, one-tap import into Configured Loans |
+| `SubscriptionViewModel` | 3-tier monetization (`FREE`, `PRO`, `PRO_PLUS`), 90-day local trial tracking, secret 5-tap Crown Owner VIP bypass |
 
-### 2.3 Domain services
+### 2.3 Domain Services, Calculators & Workers
 
-| Service | Role |
-|---------|------|
+| Service / Component | Role |
+|---------------------|------|
 | `PeriodCalculator` | Day/week/month/year bounds; salary month anchors |
 | `BalanceCalculator` | Cash/Bank available balance; unified month financial summary |
+| `SpendingPacingCalculator` | Safe daily spend, spending velocity ratio ($V$), projected surplus/deficit, early-cycle damping |
 | `WalletCalculator` | Period wallet balance; open/closed period; salary-year timeline |
 | `BudgetProgressCalculator` | Spent vs limit per category for active period |
+| `TripPacingCalculator` | Travel mode daily safe spend and status evaluation |
+| `CurrencyRates` | Offline exchange rates and reciprocal conversion math for 12 currencies |
+| `FinancialRunwayCalculator` | Liquid survival runway in months (`Liquid Wealth / Essential Monthly Outlays`) |
+| `MurabahaCalculator` | Islamic financing profit rate, total repayment, and monthly installment math |
+| `ArithmeticEvaluator` | On-screen arithmetic expression parser (`+`, `-`, `*`, `/`, `×`, `÷`) for amount fields |
+| `BankSmsParser` | Multi-bank Arabic/English SMS regex extractor for Jordan & GCC financial institutions |
+| `ProTrialManager` | 90-day local device trial manager with zero account requirements & secret owner bypass |
+| `ZakahCalculator` | 85g gold Nisab assessment, net zakat-eligible wealth, and 2.5% obligation math |
+| `PrayerTimesCalculator` | High-precision NOAA solar coordinates, elevation horizon dip, 12 global calculation methods |
+| `QiblahCalculator` | Spherical forward azimuth calculation to Al-Kaaba in Makkah |
+| `CompassSensorManager` | Hardware sensor fusion (rotation vector / accelerometer + magnetometer) with circular low-pass filter |
+| `FullBackupManager` | Complete app backup and atomic FK-safe restore across all 13 Room tables and DataStore preferences |
+| `ReceiptStorageHelper` | Internal storage photo handling with EXIF orientation correction |
+| `GlanceDataRepository` | Prepares cached lightweight payloads for Android Home Screen widgets |
+| `WidgetUpdateHelper` | Broadcasts immediate update intents to `PaydayPacingWidget` and `QuickAddWidget` |
 | `TransactionExportLoader` | Filtered rows for export |
 | `CsvExporter` | Plain import-compatible CSV (with `#` comment header) |
 | `StyledExcelExporter` | Styled `.xls` (HTML Excel) with icon, title, colors |
@@ -136,10 +165,12 @@ Android MVVM with Compose + Room + Hilt.
 | `DatabaseInspector` | `PRAGMA table_info` + filtered `SELECT` on allowed tables |
 | `BiometricAuthManager` | Device capability check + `BiometricPrompt` authentication |
 | `AlarmScheduler` | Dual-mode daily 9 PM alarm scheduling (`setExactAndAllowWhileIdle` vs `setAndAllowWhileIdle`) |
-| `NotificationHelper` | Android 13/14 notification channel setup, reminder notifications, budget breach warnings |
+| `NotificationHelper` | Android notification channel setup, reminder notifications, sticky/ongoing flags, large app icon |
 | `DailyExpenseReminderReceiver` | BroadcastReceiver waking at 9 PM to inspect today's expenses and emit reminder if 0 expenses |
+| `PrayerReminderReceiver` | Exact-alarm broadcast receiver triggering adhan audio and prayer notifications |
 | `DailyExpenseReminderWorker` | WorkManager failsafe executing at 9 PM to protect against OEM background kills |
 | `LoanReminderWorker` | Periodic background worker evaluating active loans on new salary/calendar periods |
+| `AutoDeductRecurringWorker` | WorkManager daily job executing due recurring bills and auto-deductions |
 
 ### 2.4 Compose patterns
 
@@ -267,7 +298,7 @@ Single calculator pass (`BalanceCalculator.buildMonthFinancialSummary`):
 
 ## 4. Database and Migration State
 
-**Current Room Database Version: 17**
+**Current Room Database Version: 21 (November 2026)**
 
 | Migration | Summary |
 |-----------|---------|
@@ -286,21 +317,39 @@ Single calculator pass (`BalanceCalculator.buildMonthFinancialSummary`):
 | 14→15 | `isDebtSettled` & `settledAt` on `Transaction` for debt management |
 | 15→16 | Expanded shopping subcategories: `Chicken & Meat` and `Snacks & Sweets` |
 | 16→17 | `transaction_splits` table with foreign key cascade deletion for multi-item split transactions |
+| 17→18 | Great Vault & Capital Assets: added `isPaidFromVault` and `capitalYear` to `transactions` table |
+| 18→19 | Multi-Currency & Travel Mode: added `currency_exchanges` and `trips` tables; added `currency`, `originalAmount`, `exchangeRateUsed`, and `tripId` to `transactions` |
+| 19→20 | Inflation Tracker & Price Memory: added `item_price_history` table with indexes on normalized name & date |
+| 20→21 | Bank SMS Ingestion & Auto-Deduct: added `pending_sms_transactions` table with status indexes |
 
-### Core Entities & Key Fields
+### Core Entities & Key Fields (13 Tables)
 
-- **`Transaction` (`transactions`)**:
-  `id, amount, description, subDescription, date, type, categoryId, subCategoryId, accountType, toAccountType, startsNewPeriod, carriedForwardBalance, allowNegativeBalance, linkedExpenseId, debtorNote, awaitingReimbursement, isDebtSettled, settledAt, receiptUri, createdAt, updatedAt`
-- **`TransactionSplit` (`transaction_splits`)**:
-  `id, transactionId (FK), subCategoryId, amount, description, debtorName, debtType, createdAt`
-- **`SubCategory` (`sub_categories`)**:
-  `id, categoryId (FK), nameEn, nameAr, isDefault`
-- **`ConfiguredLoan` (`configured_loans`)**:
-  `id, loanName, lenderName, totalPrincipal, monthlyInstallment, remainingAmount, dueDayOfMonth, startDate, endDate, isActive`
-- **`MonthlyLoanPayment` (`monthly_loan_payments`)**:
-  `id, loanId (FK), periodYearMonth, paymentAmount, isPaid, paidDate, transactionId`
-- **`AppAlert` (`app_alerts`)**:
-  `id, alertType, title, message, categoryId, thresholdPercentage, isDismissed, createdAt`
+1. **`Transaction` (`transactions`)**:
+   `id, amount, description, subDescription, date, type, categoryId, subCategoryId, accountType, toAccountType, startsNewPeriod, carriedForwardBalance, allowNegativeBalance, linkedExpenseId, debtorNote, awaitingReimbursement, isDebtSettled, settledAt, receiptUri, isPaidFromVault, capitalYear, currency, originalAmount, exchangeRateUsed, tripId, createdAt, updatedAt`
+2. **`TransactionSplit` (`transaction_splits`)**:
+   `id, transactionId (FK), subCategoryId, amount, description, debtorName, debtType, createdAt`
+3. **`SubCategory` (`sub_categories`)**:
+   `id, categoryId (FK), nameEn, nameAr, isDefault`
+4. **`Category` (`categories`)**:
+   `id, name, nameAr, iconName, colorHex, isDefault, isExpense`
+5. **`Budget` (`budgets`)**:
+   `id, categoryId (FK), amount, period`
+6. **`ConfiguredLoan` (`configured_loans`)**:
+   `id, loanName, lenderName, totalPrincipal, monthlyInstallment, remainingAmount, dueDayOfMonth, startDate, endDate, isActive`
+7. **`MonthlyLoanPayment` (`monthly_loan_payments`)**:
+   `id, loanId (FK), periodYearMonth, paymentAmount, isPaid, paidDate, transactionId`
+8. **`RecurringTransaction` (`recurring_transactions`)**:
+   `id, amount, description, categoryId, accountType, dayOfMonth, isActive, isAutoDeduct, lastExecutedDate`
+9. **`AppAlert` (`app_alerts`)**:
+   `id, alertType, title, message, categoryId, thresholdPercentage, isDismissed, createdAt`
+10. **`CurrencyExchange` (`currency_exchanges`)**:
+    `id, sourceAccount, fromCurrency, fromAmount, toCurrency, toAmount, exchangeRate, feeAmount, vendorOrLocation, date, notes, createdAt`
+11. **`Trip` (`trips`)**:
+    `id, name, destination, startDate, endDate, budgetAmount, currency, isActive, notes, createdAt`
+12. **`ItemPriceRecord` (`item_price_history`)**:
+    `id, normalizedItemName, rawItemName, unitPrice, currency, subCategoryId, storeOrVendor, date, transactionId, splitId, createdAt`
+13. **`PendingSmsTransaction` (`pending_sms_transactions`)**:
+    `id, sender, rawBody, amount, currency, merchant, cardOrAccount, transactionDate, suggestedCategory, isProcessed, isDismissed, createdAt`
 
 ---
 
@@ -444,9 +493,17 @@ The financial intelligence engine computes real-time pacing metrics relative to 
    - **Calendar Month**: From 1st day to last day of current month.
    - **Salary Month**: Starts on latest salary transaction date ($D_{\text{start}}$). Natural end date ($D_{\text{end}}$) is $D_{\text{start}} + 1\text{ month} - 1\text{ day}$, preventing premature cycle end when no next salary is recorded yet.
 
-2. **Baseline Budget Formulation**:
-   Preserves pocket-money / wallet reserves as untouchable savings:
-   $$\text{BaselineBudget} = \max(0.0, \; \text{TotalIncome} - \text{WalletReserved})$$
+2. **Baseline Budget Formulation & Liquid Balance Grounding**:
+   The engine grounds the baseline budget against the user's actual liquid funds ($\text{CurrentAvailableBalance} = \text{Cash} + \text{Bank}$, e.g. ~500 JOD), preventing false deficit alarms when income has not yet been recorded in the active period or when capital moves occurred:
+   $$\text{BaselineBudget} = \begin{cases}
+   \max(\text{TotalIncome}, \; \text{CurrentAvailableBalance}) & \text{if } \text{CurrentAvailableBalance} > 0 \\
+   \text{TotalIncome} & \text{if } \text{TotalIncome} > 0 \\
+   \max(100.0, \; \text{TotalExpense} \cdot 1.15) & \text{otherwise}
+   \end{cases}$$
+
+   **Strict Isolation of Vault and Pocket Wallet**:
+   - **Vault (Deposit) Transactions**: Isolated as long-term capital assets. Purchases or withdrawals from the Vault have `accountType = DEPOSIT` and `excludeFromMonthExpenses = true`, completely excluding them from operational monthly expenses ($\text{PeriodExpense}$) and pacing calculations.
+   - **Pocket Wallet Movements**: Internal cash allocations (`type = WALLET_MOVE`) are isolated personal money and do not artificially deflate the spendable budget baseline ($\text{WalletReserved} = 0.0$ in pacing calculations).
 
 3. **Temporal & Budget Progress Ratios**:
    $$\text{TimeElapsedRatio} = \frac{\text{DayOfPeriod}}{\text{TotalPeriodDays}}$$
@@ -523,6 +580,122 @@ Room DB version 17 introduces parent-child transactional decomposition:
 $$\text{TotalTransactionAmount} = \sum_{i=1}^{N} \text{SplitAmount}_i$$
 - When calculating subcategory totals (`subCategorySpendMap`), the engine inspects each split item. If a transaction has splits, its base amount is bypassed and individual split amounts are credited to their respective `subCategoryId`.
 - Split lines with `debtType = LENT` allocate debt balances to `debtorName`, preventing lent amounts from polluting personal expense categories.
+
+---
+
+### 6.8 Day-Normalized Category Pacing & Waterfall Variance Engine
+
+1. **The Partial-Month Normalization Problem**:
+   Comparing Month A (on Day 12) directly against Month B (full 30 days) yields a distorted delta (e.g. Month A appears 60% lower simply because 18 days haven't happened yet).
+
+2. **Day-to-Day Normalized Formulation**:
+   Given current day-of-period $d \in [1, 31]$:
+   $$\text{NormalizedSpend}(M_A, d) = \sum_{t \in M_A, \text{day}(t) \le d} \text{Amount}(t)$$
+   $$\text{NormalizedSpend}(M_B, d) = \sum_{t \in M_B, \text{day}(t) \le d} \text{Amount}(t)$$
+   $$\Delta\% = \begin{cases} 0.0 & \text{if } \text{Spend}(M_B, d) = 0 \\ \left(\frac{\text{Spend}(M_A, d) - \text{Spend}(M_B, d)}{\text{Spend}(M_B, d)}\right) \cdot 100\% & \text{otherwise} \end{cases}$$
+
+3. **Subcategory Proportionality & Waterfall Hierarchy**:
+   For parent category $C$ with child subcategories $S_1, S_2, \dots, S_k$:
+   $$\text{Weight}(S_j) = \frac{\text{Spend}(S_j)}{\sum_{i=1}^{k} \text{Spend}(S_i)}$$
+   Renders proportional horizontal spend bars and flags variance spikes ($|\Delta\%| > 30\%$) with driver merchant diagnoses.
+
+---
+
+### 6.9 Scoped Trip Pacing & Safe Burn Rate (`TripPacingCalculator.kt`)
+
+1. **Trip Days Elapsed & Remaining**:
+   $$d_{\text{total}} = \max\left(1, \; \frac{T_{\text{end}} - T_{\text{start}}}{86400000} + 1\right)$$
+   $$d_{\text{remaining}} = \max\left(1, \; \frac{T_{\text{end}} - T_{\text{now}}}{86400000} + 1\right)$$
+
+2. **Safe Daily Travel Allowance**:
+   $$\text{SafeDailySpend} = \max\left(0.0, \; \frac{\text{TripBudget} - \text{TotalTripSpend}}{d_{\text{remaining}}}\right)$$
+
+3. **Trip Velocity & Status Thresholds**:
+   $$\text{PacingRatio} = \frac{\text{TotalTripSpend} / \text{TripBudget}}{(d_{\text{total}} - d_{\text{remaining}} + 1) / d_{\text{total}}}$$
+   - `UNDER_BUDGET`: $\text{PacingRatio} < 0.85$
+   - `ON_TRACK`: $0.85 \le \text{PacingRatio} \le 1.05$
+   - `PACING_WARNING`: $1.05 < \text{PacingRatio} \le 1.25$
+   - `BUDGET_EXCEEDED`: $\text{TotalTripSpend} > \text{TripBudget}$
+
+---
+
+### 6.10 Financial Runway Stress-Testing (`FinancialRunwayCalculator.kt`)
+
+1. **Total Liquid & Reserve Assets ($A_{\text{liquid}}$)**:
+   $$A_{\text{liquid}} = \text{CashBalance} + \text{BankBalance} + \text{VaultBalance}$$
+
+2. **Monthly Essential Burn Rate ($B_{\text{essential}}$)**:
+   Computed from the past 3 to 6 months of essential category spending:
+   $$B_{\text{essential}} = \frac{1}{N} \sum_{m=1}^{N} \left(\text{Rent}_m + \text{Groceries}_m + \text{Utilities}_m + \text{Loans}_m + \text{Fuel}_m\right)$$
+
+3. **Survival Runway Duration ($R$ in months)**:
+   $$R = \begin{cases} 99.0 & \text{if } B_{\text{essential}} \le 0 \\ \frac{A_{\text{liquid}}}{B_{\text{essential}}} & \text{otherwise} \end{cases}$$
+
+4. **Runway Vulnerability Gauge**:
+   - $R < 1.0\text{ month}$: 🔴 High Vulnerability (Critical cash cushion deficit)
+   - $1.0 \le R < 3.0\text{ months}$: 🟠 Fragile (Building essential safety buffer)
+   - $3.0 \le R < 6.0\text{ months}$: 🟡 Moderate Security (Standard 3-month fund)
+   - $R \ge 6.0\text{ months}$: 🟢 Rock-Solid Security (Complete independence)
+
+---
+
+### 6.11 Murabaha Islamic Financing vs Conventional Loans (`MurabahaCalculator.kt`)
+
+1. **Murabaha Total Cost & Bank Profit ($P$)**:
+   Given Principal ($C$), Annual Profit Rate ($r_{\text{profit}}$ as a decimal), and Tenor in Years ($Y$):
+   $$\text{TotalProfit} = C \cdot r_{\text{profit}} \cdot Y$$
+   $$\text{TotalRepayment} = C + \text{TotalProfit} = C \cdot (1 + r_{\text{profit}} \cdot Y)$$
+
+2. **Fixed Monthly Installment ($M$)**:
+   $$n_{\text{months}} = Y \cdot 12$$
+   $$M = \frac{\text{TotalRepayment}}{n_{\text{months}}} = \frac{C \cdot (1 + r_{\text{profit}} \cdot Y)}{12 \cdot Y}$$
+
+3. **Zero Compounding Invariant**:
+   Unlike conventional compound interest loans ($C \cdot (1 + r)^Y$), Murabaha specifies the cost of goods plus agreed fixed profit upfront, guaranteeing that late fees never capitalize into principal.
+
+---
+
+### 6.12 Virtual Sadaqah Jar Round-up Algorithm (`SadaqahJarViewModel.kt`)
+
+1. **Transaction Spare Change Round-up ($\Delta_{\text{sadaqah}}$)**:
+   For an expense of amount $X$:
+   $$\Delta_{\text{sadaqah}} = \begin{cases} 0.0 & \text{if } X = \lceil X \rceil \\ \lceil X \rceil - X & \text{otherwise} \end{cases}$$
+   *Example: An expense of $4.350\text{ JOD}$ produces $\lceil 4.350 \rceil - 4.350 = 5.000 - 4.350 = 0.650\text{ JOD}$ added to the virtual jar.*
+
+2. **Accumulation & Friday Jumu'ah Dispatch**:
+   Every Friday at 09:00 AM, if $\text{JarBalance} > 0.0$, a system notification alerts the user to donate their accumulated micro-charity, recording an official expense upon tap.
+
+---
+
+### 6.13 Inline Arithmetic Evaluator Parsing Engine (`ArithmeticEvaluator.kt`)
+
+1. **Grammar & Operator Precedence**:
+   Standard left-associative PEMDAS parsing with unary negation:
+   - Level 1: `+`, `-` (Addition, Subtraction)
+   - Level 2: `*`, `/`, `×`, `÷` (Multiplication, Division)
+   - Level 3: Unary `+`, `-`
+
+2. **Zero-Crash Evaluation Pipeline**:
+   - Sanitizes comma groupings, Arabic-Indic numerals (`٠-٩` $\rightarrow$ `0-9`), and unicode operators.
+   - Guard against divide-by-zero: if $|divisor| < 10^{-9}$, falls back to previous valid operand or displays warning indicator without crashing the compose UI.
+
+---
+
+### 6.14 Regional Bank SMS Regex Extraction Grammar (`BankSmsParser.kt`)
+
+1. **Amount & Currency Grammar**:
+   Matches both English and Arabic currency tokens:
+   `(?i)(?:amount|amt|مبلغ|بقيمة|بقيمه|بمبلغ|قيمة|شراء)\s*[:=]?\s*(?:JOD|JD|SAR|AED|USD|EUR|GBP|د\.أ|ر\.س|د\.إ)?\s*([0-9]+(?:[\.,][0-9]{1,3})?)\s*(JOD|JD|SAR|AED|USD|EUR|GBP|د\.أ|ر\.س|د\.إ)?`
+
+2. **Merchant Extraction Pipeline**:
+   Extracts text following store prepositions (`at`, `at:`, `لدى`, `من`, `في`):
+   `(?:at|لدى|من|في)\s+([A-Za-z0-9\u0600-\u06FF\s\.\-_&']{2,35}?)(?=\s+(?:on|in|بتاريخ|في|الساعة|بطاقة|card|avl|balance|\.|\n|$))`
+
+3. **Keyword-to-Category Lexicon**:
+   - `Groceries`: Carrefour, Cozmo, Panda (`بندة`), Othaim (`عثيم`), Safeway, C-Town, Hypermarket, Supermarket.
+   - `Fuel / Transportation`: Shell, Manaseer, Total, JoPetrol, Gas Station, Careem, Uber, Taxi.
+   - `Dining Out`: McDonald's, Starbucks, KFC, Pizza, Burger, Café, Restaurant, Shawarma.
+   - `Shopping`: Zara, H&M, Amazon, Shein, Mall, Boutique.
 
 ---
 
@@ -914,6 +1087,100 @@ To modernize the application from MVVM to Clean Architecture, core business capa
 - **Review Inbox**: Pending unreviewed bank transactions card on `OverviewScreen` with one-tap "Confirm & Save".
 - **Paste Bank SMS**: Quick-fill dialog in `AddTransactionScreen` requiring zero sensitive SMS runtime permissions.
 - **Recurring Auto-Deductions**: `ExecuteAutoRecurringUseCase` and `AutoDeductRecurringWorker` (WorkManager) executing due recurring bills automatically with local notifications.
+
+### 14.9 Notification Inbox Management & Sticky / Ongoing Foreground Notifications
+- **Clear All Active Notifications (`AppAlertDao.dismissAllActiveAlerts`)**:
+  - `AlertsScreen` and `AppTopBar` feature a "Clear All" action with a safety confirmation dialog.
+  - Atomically marks all active alerts as dismissed (`UPDATE app_alerts SET isDismissed = 1 WHERE isDismissed = 0`), clearing the inbox and top-bar badge count instantly.
+- **Sticky / Ongoing Foreground Notifications (`NotificationCompat.Builder.setOngoing(true)`)**:
+  - Granular toggles under `NotificationSettingsScreen` allowing users to pin specific notification types in the Android foreground / status bar.
+  - Supported sticky types:
+    1. **Sticky Prayer & Adhan Alerts**: Pins prayer notification until prayer is completed or opened.
+    2. **Sticky Daily Expense Reminder**: Pins 9 PM reminder until daily expenses are logged.
+    3. **Sticky Budget Limit Warnings**: Pins urgent overspend warnings so they cannot be accidentally swiped away.
+    4. **Sticky Loan & Debt Dues**: Keeps upcoming payment deadlines persistent in the status bar.
+    5. **Sticky Salary & Recurring Notices**: Keeps salary arrival and recurring auto-deduction notices pinned.
+  - Persisted in DataStore via `UserPreferences` (`stickyPrayerAlertsEnabled`, `stickyDailyReminderEnabled`, `stickyBudgetAlertsEnabled`, `stickyLoanAlertsEnabled`, `stickySalaryAlertsEnabled`) and exported in full JSON backup/restore.
+  - `NotificationHelper.kt` dynamically inspects the respective sticky preference, configuring `.setOngoing(true)` and `.setAutoCancel(false)` when enabled.
+
+---
+
+## 15. Android Home Screen Glance App Widgets Architecture
+
+ExpenseTracker leverages **Jetpack Glance 1.1.1** (declarative Compose-like UI for RemoteViews) to render high-performance, battery-efficient home screen widgets.
+
+### 15.1 Component Structure
+- **`PaydayPacingWidget` (`GlanceAppWidget`)**:
+  - XML Provider: `res/xml/payday_pacing_widget_info.xml` (Size: 4×2, minWidth: 260dp, minHeight: 110dp).
+  - Displays: Liquid Available Balance (`Cash + Bank`), Payday Countdown (`X days remaining`), Safe Daily Burn Rate (`Y JOD/day`), and a quick action link to open the app.
+- **`QuickAddWidget` (`GlanceAppWidget`)**:
+  - XML Provider: `res/xml/quick_add_widget_info.xml` (Size: 2×1, minWidth: 140dp, minHeight: 60dp).
+  - Displays: Today's accumulated spending total and an instant one-tap floating `+` button triggering `actionStartActivity<MainActivity>()` directly into `AddTransaction`.
+- **`GlanceDataRepository`**:
+  - Thread-safe repository calculating cached widget payloads (`PaydayWidgetData` & `QuickAddWidgetData`) directly from Room and DataStore without launching the main UI.
+- **`WidgetUpdateHelper`**:
+  - Broadcasts update requests to both widgets upon:
+    - New transaction added/edited/deleted.
+    - Currency or salary cycle anchor changes.
+    - System boot and midnight date rollover.
+
+---
+
+## 16. Freemium Monetization, 90-Day Pro Trial & Owner VIP Bypass
+
+ExpenseTracker employs a privacy-first, zero-registration monetization architecture that honors Islamic financial ethics (transparent pricing, zero predatory subscriptions).
+
+### 16.1 Plan Tiers (`PlanTier.kt`)
+1. **`FREE` Tier**: Core daily expense logging, Cash & Bank accounts, standard categories, and basic prayer timetable.
+2. **`PRO` Tier** ($2.99/mo or $24.99/yr): Great Vault (Deposit), unlimited subcategories, receipt photo attachments, PDF export, AI spending pacing, and multi-currency conversions.
+3. **`PRO_PLUS` Tier** ($4.99/mo or $39.99/yr): All Pro features + Bank SMS auto-ingestion, recurring auto-deductions, inflation tracker, travel mode trip budgets, and full JSON device migration.
+
+### 16.2 90-Day Local Device Trial Engine (`ProTrialManager.kt`)
+- **Zero Registration**: Upon first application launch, `pro_trial_start_timestamp` is written to local DataStore.
+- **Trial Status Calculation**:
+  $$\text{DaysElapsed} = \frac{\text{CurrentTimeMillis} - \text{TrialStartTimestamp}}{86400000\text{ ms}}$$
+  $$\text{DaysRemaining} = \max(0, \; 90 - \text{DaysElapsed})$$
+  - Active trial ($0 \le \text{DaysElapsed} \le 90$) unlocks full `PRO_PLUS` capabilities for 3 complete calendar months.
+  - Upon expiration, the app gracefully reverts to `FREE` tier without data loss or access lockouts.
+
+### 16.3 Owner Lifetime VIP Access (Secret Bypass)
+- **Activation Gesture**: Tapping the large Crown Hero icon **5 times** in `SubscriptionScreen` toggles `isOwnerBypass`.
+- **Permanent Access**: When `isOwnerBypass = true`, `ProTrialManager.calculateStatus()` returns permanent `PRO_PLUS` access with zero trial countdown expiration.
+- **Testing Safeguard**: Includes a visible "Revoke Owner Bypass" button allowing the developer/owner to return to standard user trial states at any time to verify end-user paywall flows.
+
+---
+
+## 17. Complete Screen & Navigation Catalog (27 Type-Safe Destinations)
+
+| Destination Route | Screen Composable | Description & Primary Actions |
+|-------------------|-------------------|--------------------------------|
+| `Overview` | `OverviewScreen` | Hero balance distribution (Cash, Bank, Wallet, Vault), salary period countdown, unreviewed bank SMS inbox card, quick GPS sync. |
+| `History` | `HistoryScreen` | Grouped transaction list, subcategory badges, receipt thumbnail previews, swipe-to-delete, type/category filters. |
+| `AddTransaction` | `AddTransactionScreen` | Single vs Split toggle, inline calculator numpad, time-of-day suggestions, "Paste Bank SMS" fast-fill, receipt photo picker. |
+| `Statistics` | `StatisticsScreen` | Periodic overview charts, 3-month multi-chart (spline/bar), category pie chart, waterfall comparison accordion, subcategory drill-down. |
+| `More` | `MoreScreen` | Central hub linking to all auxiliary modules, settings, and Islamic tools with pro badges. |
+| `Transfer` | `TransferScreen` | Cash ↔ Bank transfer form with overdraft protection. |
+| `Wallet` | `WalletScreen` | Scoped monthly wallet (pocket money) movements with closed-period guards. |
+| `Deposit` | `DepositScreen` | Great Vault capital assets, annual capital purchases breakdown, biometric unlock gate. |
+| `Categories` | `CategoriesScreen` | Category & subcategory manager, icon picker, usage-sorted lists, budget limit setup. |
+| `Debts` | `DebtsScreen` | Lent vs Borrowed debt tracker, WhatsApp courtesy reminders, mutual balance offsetting, partial repayments. |
+| `Loans` | `LoansScreen` | Configured loan definitions, monthly payment schedules, salary protection reminders. |
+| `Alerts` | `AlertsScreen` | In-app notification center with per-item dismissal and "Clear All" confirmation action. |
+| `NotificationSettings` | `NotificationSettingsScreen` | Notification channels master toggles, daily 9 PM check-in scheduler, and sticky foreground alerts. |
+| `Settings` | `SettingsScreen` | Currency picker, 12h/24h time format, language (AR/EN), theme palette, opening balance recalibration, full JSON backup/restore. |
+| `DatabaseBrowser` | `DatabaseBrowserScreen` | Developer-grade SQLite table browser with dynamic PRAGMA filtering across all 13 tables. |
+| `PrayerQiblah` | `PrayerQiblahScreen` | Real-time sensor Qiblah compass, 12 calculation methods, elevation calibration, Adhan audio preview player. |
+| `ZakahCalculator` | `ZakahCalculatorScreen` | Auto-sync liquid balances, gold karat Nisab calculator, 354-day lunar Hawl tracking. |
+| `CurrencyExchange` | `CurrencyExchangeScreen` | Real-time / offline currency exchange rates (JOD, USD, AED, SAR, EUR, GBP) and exchange logs. |
+| `TravelMode` | `TravelModeScreen` | Vacation trip manager, destination picker, trip-scoped safe daily spend pacing. |
+| `PriceHistory` | `PriceHistoryScreen` | Grocery & item inflation tracker, unit price timeline charts, percentage variance. |
+| `SadaqahJar` | `SadaqahJarScreen` | Micro-charity spare change round-up jar, Friday reminder, one-tap donation logging. |
+| `FinancialRunway` | `FinancialRunwayScreen` | Liquid wealth vs essential monthly burn rate stress-tester with interactive emergency shock slider. |
+| `MurabahaSimulator` | `MurabahaSimulatorScreen` | Islamic financing profit rate simulator, monthly installment schedule, one-tap import into Configured Loans. |
+| `Subscription` | `SubscriptionScreen` | 3-tier comparison matrix, 90-day device trial tracker, secret 5-tap Crown Owner VIP bypass. |
+| `Onboarding` | `OnboardingScreen` | First-run setup wizard for language, currency, month mode, and initial account balances. |
+| `BiometricLock` | `BiometricLockScreen` | Branded biometric and device PIN gate preventing unauthorized access on launch/resume. |
+| `LoanPaymentHistory` | `LoanPaymentHistoryScreen` | Historical installment records per configured loan with payment timestamps. |
 
 ---
 
