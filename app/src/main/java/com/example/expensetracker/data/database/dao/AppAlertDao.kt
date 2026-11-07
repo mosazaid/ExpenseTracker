@@ -34,6 +34,9 @@ interface AppAlertDao {
     @Query("UPDATE app_alerts SET isDismissed = 1 WHERE id = :id")
     suspend fun dismissAlert(id: Long)
 
+    @Query("UPDATE app_alerts SET isDismissed = 1 WHERE isDismissed = 0")
+    suspend fun dismissAllActiveAlerts()
+
     @Query("UPDATE app_alerts SET isDismissed = 1 WHERE type = :type AND relatedId = :relatedId")
     suspend fun dismissAlertsByTypeAndRelatedId(type: String, relatedId: Long)
 

@@ -24,4 +24,10 @@ class AlertsViewModel @Inject constructor(
             alertRepository.dismissAlert(id)
         }
     }
+
+    fun dismissAllAlerts() {
+        viewModelScope.launch {
+            alertRepository.dismissAllAlerts()
+        }
+    }
 }

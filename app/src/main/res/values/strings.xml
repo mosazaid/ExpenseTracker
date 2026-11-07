@@ -504,5 +504,21 @@
     <string name="widget_payday_desc">Displays available liquid cash, countdown to next payday, and safe daily spend.</string>
     <string name="widget_quick_add_title">Quick Add Expense</string>
     <string name="widget_quick_add_desc">Today\'s spending total and instant one-tap expense logging.</string>
+
+    <!-- Notification Clear All & Sticky Notifications -->
+    <string name="clear_all_notifications_title">Clear All Notifications?</string>
+    <string name="clear_all_notifications_desc">Are you sure you want to dismiss all active notifications? This cannot be undone.</string>
+    <string name="sticky_notifications_header">Sticky Notifications (Pin to Foreground)</string>
+    <string name="sticky_notifications_desc">Pin selected notification types to the status bar so they cannot be accidentally dismissed by swiping.</string>
+    <string name="sticky_prayer_title">Sticky Prayer &amp; Adhan Alerts</string>
+    <string name="sticky_prayer_desc">Keep prayer reminders persistent in status bar until opened.</string>
+    <string name="sticky_daily_title">Sticky Daily Expense Reminder</string>
+    <string name="sticky_daily_desc">Keep the 9 PM check-in pinned until daily expenses are logged.</string>
+    <string name="sticky_budget_title">Sticky Budget Warning Alerts</string>
+    <string name="sticky_budget_desc">Keep category budget limit warnings persistent in status bar.</string>
+    <string name="sticky_loan_title">Sticky Loan &amp; Debt Reminders</string>
+    <string name="sticky_loan_desc">Keep loan and debt due notices pinned until reviewed.</string>
+    <string name="sticky_salary_title">Sticky Salary &amp; Recurring Notices</string>
+    <string name="sticky_salary_desc">Keep salary arrival and recurring payment notices pinned.</string>
 </resources>
 

@@ -499,5 +499,21 @@
     <string name="adhan_audio_preview_play">استماع لصوت الأذان</string>
     <string name="adhan_audio_preview_stop">إيقاف الصوت</string>
     <string name="available_account_balance_label">رصيد %1$s المتاح:</string>
+
+    <!-- Notification Clear All & Sticky Notifications -->
+    <string name="clear_all_notifications_title">مسح كافة التنبيهات؟</string>
+    <string name="clear_all_notifications_desc">هل أنت متأكد من رغبتك في مسح جميع التنبيهات النشطة؟ لا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="sticky_notifications_header">الإشعارات المثبتة (عدم الإزالة من شريط الإشعارات)</string>
+    <string name="sticky_notifications_desc">تثبيت الإشعارات في شريط الحالة لمنع مسحها بالسحب بالخطأ حتى يتم النقر عليها أو التعامل معها.</string>
+    <string name="sticky_prayer_title">تثبيت تنبيهات الصلاة والأذان</string>
+    <string name="sticky_prayer_desc">إبقاء إشعار الصلاة معلقاً في شريط الحالة حتى أداء الصلاة أو فتحه.</string>
+    <string name="sticky_daily_title">تثبيت التذكير اليومي</string>
+    <string name="sticky_daily_desc">إبقاء تذكير الساعة 9 مساءً مثبتاً حتى تقوم بتسجيل مصاريفك اليومية.</string>
+    <string name="sticky_budget_title">تثبيت تنبيهات الميزانية</string>
+    <string name="sticky_budget_desc">إبقاء تنبيه تجاوز حد الميزانية معلقاً في شريط الإشعارات لتجنب تجاهله.</string>
+    <string name="sticky_loan_title">تثبيت تذكيرات القروض والديون</string>
+    <string name="sticky_loan_desc">إبقاء مواعيد استحقاق الدفعات مثبتة لتجنب نسيان موعد السداد.</string>
+    <string name="sticky_salary_title">تثبيت إشعارات الراتب والمصاريف الدورية</string>
+    <string name="sticky_salary_desc">إبقاء إشعارات استلام الراتب والخصم التلقائي مثبتة في شريط التنبيهات.</string>
 </resources>
 

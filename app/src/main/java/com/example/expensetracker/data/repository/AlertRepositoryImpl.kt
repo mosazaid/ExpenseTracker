@@ -26,6 +26,14 @@ class AlertRepositoryImpl @Inject constructor(
         appAlertDao.dismissAlert(id)
     }
 
+    override suspend fun dismissAllAlerts() {
+        appAlertDao.dismissAllActiveAlerts()
+    }
+
+    override suspend fun deleteAllAlerts() {
+        appAlertDao.deleteAllAlerts()
+    }
+
     override suspend fun dismissAlertsByTypeAndRelatedId(type: String, relatedId: Long) {
         appAlertDao.dismissAlertsByTypeAndRelatedId(type, relatedId)
     }

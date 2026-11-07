@@ -8,6 +8,8 @@ interface IAlertRepository {
     suspend fun getActiveAlerts(): List<AppAlert>
     fun getActiveAlertsCountFlow(): Flow<Int>
     suspend fun dismissAlert(id: Long)
+    suspend fun dismissAllAlerts()
+    suspend fun deleteAllAlerts()
     suspend fun dismissAlertsByTypeAndRelatedId(type: String, relatedId: Long)
     suspend fun postBudgetAlert(
         categoryId: Long,

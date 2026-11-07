@@ -12,14 +12,38 @@ import com.example.expensetracker.MainActivity
 import com.example.expensetracker.R
 import com.example.expensetracker.data.database.entities.RecurringTransaction
 import com.example.expensetracker.core.format.CurrencyUtils
+import com.example.expensetracker.data.preferences.UserPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class NotificationHelper @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val userPreferences: UserPreferences
 ) {
+
+    private fun isStickyPrayer(): Boolean = runBlocking {
+        try { userPreferences.stickyPrayerAlertsEnabled.first() } catch (_: Exception) { false }
+    }
+
+    private fun isStickyDaily(): Boolean = runBlocking {
+        try { userPreferences.stickyDailyReminderEnabled.first() } catch (_: Exception) { false }
+    }
+
+    private fun isStickyBudget(): Boolean = runBlocking {
+        try { userPreferences.stickyBudgetAlertsEnabled.first() } catch (_: Exception) { false }
+    }
+
+    private fun isStickyLoan(): Boolean = runBlocking {
+        try { userPreferences.stickyLoanAlertsEnabled.first() } catch (_: Exception) { false }
+    }
+
+    private fun isStickySalary(): Boolean = runBlocking {
+        try { userPreferences.stickySalaryAlertsEnabled.first() } catch (_: Exception) { false }
+    }
 
     fun areNotificationsEnabled(): Boolean {
         return NotificationManagerCompat.from(context).areNotificationsEnabled()
@@ -103,13 +127,15 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val sticky = isStickySalary()
         val builder = NotificationCompat.Builder(context, CHANNEL_SALARY)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Salary reminder")
             .setContentText("Record ${CurrencyUtils.formatCurrency(recurring.amount)} salary")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
+            .setOngoing(sticky)
+            .setAutoCancel(!sticky)
 
         appIconBitmap?.let { builder.setLargeIcon(it) }
 
@@ -130,13 +156,15 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val sticky = isStickySalary()
         val builder = NotificationCompat.Builder(context, CHANNEL_SALARY)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Recurring Expense Auto-Deducted")
             .setContentText("$description: ${CurrencyUtils.formatCurrency(amount)}")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
+            .setOngoing(sticky)
+            .setAutoCancel(!sticky)
 
         appIconBitmap?.let { builder.setLargeIcon(it) }
 
@@ -158,13 +186,15 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val sticky = isStickyDaily()
         val builder = NotificationCompat.Builder(context, CHANNEL_DAILY)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.notif_daily_expense_title))
             .setContentText(context.getString(R.string.notif_daily_expense_desc))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
+            .setOngoing(sticky)
+            .setAutoCancel(!sticky)
 
         appIconBitmap?.let { builder.setLargeIcon(it) }
 
@@ -209,6 +239,7 @@ class NotificationHelper @Inject constructor(
             )
         }
 
+        val sticky = isStickyBudget()
         val builder = NotificationCompat.Builder(context, CHANNEL_BUDGET)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
@@ -216,7 +247,8 @@ class NotificationHelper @Inject constructor(
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setPriority(if (isExceeded) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
+            .setOngoing(sticky)
+            .setAutoCancel(!sticky)
 
         appIconBitmap?.let { builder.setLargeIcon(it) }
 
@@ -250,6 +282,7 @@ class NotificationHelper @Inject constructor(
             )
         }
 
+        val sticky = isStickyLoan()
         val builder = NotificationCompat.Builder(context, CHANNEL_LOANS)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
@@ -257,7 +290,8 @@ class NotificationHelper @Inject constructor(
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
+            .setOngoing(sticky)
+            .setAutoCancel(!sticky)
 
         appIconBitmap?.let { builder.setLargeIcon(it) }
 
@@ -324,6 +358,7 @@ class NotificationHelper @Inject constructor(
             manager?.createNotificationChannel(prayerChannel)
         }
 
+        val sticky = isStickyPrayer()
         val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.mosque)
             .setContentTitle("Time for $prayerName prayer")
@@ -331,7 +366,8 @@ class NotificationHelper @Inject constructor(
             .setStyle(NotificationCompat.BigTextStyle().bigText("It is now $prayerTime, time to perform $prayerName prayer."))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
+            .setOngoing(sticky)
+            .setAutoCancel(!sticky)
 
         if (soundUri != null) {
             builder.setSound(soundUri)

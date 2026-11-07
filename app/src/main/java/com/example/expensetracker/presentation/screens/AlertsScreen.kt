@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PriceCheck
 import androidx.compose.material.icons.filled.Warning
@@ -14,6 +15,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -38,6 +42,7 @@ fun AlertsScreen(
     viewModel: AlertsViewModel = hiltViewModel()
 ) {
     val alerts by viewModel.alerts.collectAsState()
+    var showClearAllDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -45,7 +50,18 @@ fun AlertsScreen(
                 title = stringResource(R.string.notifications_alerts),
                 navController = navController,
                 canNavigateBack = true,
-                showNotificationsBadge = false
+                showNotificationsBadge = false,
+                actions = {
+                    if (alerts.isNotEmpty()) {
+                        IconButton(onClick = { showClearAllDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.DeleteSweep,
+                                contentDescription = stringResource(R.string.clear_all),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
             )
         }
     ) { padding ->
@@ -92,6 +108,35 @@ fun AlertsScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(top = 12.dp, bottom = 40.dp)
             ) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${alerts.size} Active ${if (alerts.size == 1) "Alert" else "Alerts"}",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        TextButton(
+                            onClick = { showClearAllDialog = true },
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DeleteSweep,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(stringResource(R.string.clear_all), fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
                 items(alerts, key = { it.id }) { alert ->
                     AlertCard(
                         alert = alert,
@@ -108,6 +153,52 @@ fun AlertsScreen(
                 }
             }
         }
+    }
+
+    if (showClearAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearAllDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.DeleteSweep,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.clear_all_notifications_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.clear_all_notifications_desc),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.dismissAllAlerts()
+                        showClearAllDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Text(stringResource(R.string.clear_all), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showClearAllDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 }
 

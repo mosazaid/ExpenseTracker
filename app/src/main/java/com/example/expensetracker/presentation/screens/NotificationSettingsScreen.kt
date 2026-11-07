@@ -54,6 +54,12 @@ fun NotificationSettingsScreen(
     val budgetAlerts by viewModel.budgetAlertsEnabled.collectAsState()
     val dailyReminder by viewModel.dailyReminderEnabled.collectAsState()
 
+    val stickyPrayer by viewModel.stickyPrayerEnabled.collectAsState()
+    val stickyDaily by viewModel.stickyDailyEnabled.collectAsState()
+    val stickyBudget by viewModel.stickyBudgetEnabled.collectAsState()
+    val stickyLoan by viewModel.stickyLoanEnabled.collectAsState()
+    val stickySalary by viewModel.stickySalaryEnabled.collectAsState()
+
     var systemNotificationsEnabled by remember {
         mutableStateOf(viewModel.areSystemNotificationsEnabled())
     }
@@ -275,6 +281,73 @@ fun NotificationSettingsScreen(
                 description = stringResource(R.string.alert_daily_desc),
                 checked = dailyReminder,
                 onCheckedChange = { viewModel.setDailyReminder(it) }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Sticky / Ongoing Foreground Notifications Section
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = stringResource(R.string.sticky_notifications_header),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = stringResource(R.string.sticky_notifications_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+
+            // 1. Sticky Prayer & Adhan Alerts
+            AlertPreferenceRow(
+                icon = Icons.Outlined.Mosque,
+                iconColor = Color(0xFF10B981),
+                title = stringResource(R.string.sticky_prayer_title),
+                description = stringResource(R.string.sticky_prayer_desc),
+                checked = stickyPrayer,
+                onCheckedChange = { viewModel.setStickyPrayer(it) }
+            )
+
+            // 2. Sticky Daily Expense Reminder
+            AlertPreferenceRow(
+                icon = Icons.Outlined.Alarm,
+                iconColor = Color(0xFF8B5CF6),
+                title = stringResource(R.string.sticky_daily_title),
+                description = stringResource(R.string.sticky_daily_desc),
+                checked = stickyDaily,
+                onCheckedChange = { viewModel.setStickyDaily(it) }
+            )
+
+            // 3. Sticky Budget Warning Alerts
+            AlertPreferenceRow(
+                icon = Icons.Outlined.Warning,
+                iconColor = Color(0xFFF59E0B),
+                title = stringResource(R.string.sticky_budget_title),
+                description = stringResource(R.string.sticky_budget_desc),
+                checked = stickyBudget,
+                onCheckedChange = { viewModel.setStickyBudget(it) }
+            )
+
+            // 4. Sticky Loan & Debt Reminders
+            AlertPreferenceRow(
+                icon = Icons.Outlined.AccountBalance,
+                iconColor = MaterialTheme.colorScheme.primary,
+                title = stringResource(R.string.sticky_loan_title),
+                description = stringResource(R.string.sticky_loan_desc),
+                checked = stickyLoan,
+                onCheckedChange = { viewModel.setStickyLoan(it) }
+            )
+
+            // 5. Sticky Salary & Recurring Notices
+            AlertPreferenceRow(
+                icon = Icons.Outlined.Payments,
+                iconColor = Color(0xFF0284C7),
+                title = stringResource(R.string.sticky_salary_title),
+                description = stringResource(R.string.sticky_salary_desc),
+                checked = stickySalary,
+                onCheckedChange = { viewModel.setStickySalary(it) }
             )
         }
     }

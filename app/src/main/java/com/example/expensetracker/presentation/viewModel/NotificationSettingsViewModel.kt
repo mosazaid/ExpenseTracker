@@ -36,6 +36,21 @@ class NotificationSettingsViewModel @Inject constructor(
     val dailyReminderEnabled: StateFlow<Boolean> = userPreferences.dailyReminderEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val stickyPrayerEnabled: StateFlow<Boolean> = userPreferences.stickyPrayerAlertsEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val stickyDailyEnabled: StateFlow<Boolean> = userPreferences.stickyDailyReminderEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val stickyBudgetEnabled: StateFlow<Boolean> = userPreferences.stickyBudgetAlertsEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val stickyLoanEnabled: StateFlow<Boolean> = userPreferences.stickyLoanAlertsEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val stickySalaryEnabled: StateFlow<Boolean> = userPreferences.stickySalaryAlertsEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     fun areSystemNotificationsEnabled(): Boolean = notificationHelper.areNotificationsEnabled()
 
     fun setLoanAlerts(enabled: Boolean) {
@@ -52,6 +67,26 @@ class NotificationSettingsViewModel @Inject constructor(
 
     fun setBudgetAlerts(enabled: Boolean) {
         viewModelScope.launch { userPreferences.setBudgetAlertsEnabled(enabled) }
+    }
+
+    fun setStickyPrayer(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setStickyPrayerAlertsEnabled(enabled) }
+    }
+
+    fun setStickyDaily(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setStickyDailyReminderEnabled(enabled) }
+    }
+
+    fun setStickyBudget(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setStickyBudgetAlertsEnabled(enabled) }
+    }
+
+    fun setStickyLoan(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setStickyLoanAlertsEnabled(enabled) }
+    }
+
+    fun setStickySalary(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setStickySalaryAlertsEnabled(enabled) }
     }
 
     fun setDailyReminder(enabled: Boolean) {

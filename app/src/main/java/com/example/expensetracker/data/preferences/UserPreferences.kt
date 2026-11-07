@@ -82,6 +82,51 @@ class UserPreferences @Inject constructor(
     private val isProSubscriberKey = booleanPreferencesKey("is_pro_subscriber")
     private val isOwnerBypassKey = booleanPreferencesKey("is_owner_bypass")
     private val userPlanTierKey = stringPreferencesKey("user_plan_tier")
+    private val stickyPrayerAlertsKey = booleanPreferencesKey("sticky_prayer_alerts_enabled")
+    private val stickyDailyReminderKey = booleanPreferencesKey("sticky_daily_reminder_enabled")
+    private val stickyBudgetAlertsKey = booleanPreferencesKey("sticky_budget_alerts_enabled")
+    private val stickyLoanAlertsKey = booleanPreferencesKey("sticky_loan_alerts_enabled")
+    private val stickySalaryAlertsKey = booleanPreferencesKey("sticky_salary_alerts_enabled")
+
+    val stickyPrayerAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[stickyPrayerAlertsKey] ?: false
+    }
+
+    suspend fun setStickyPrayerAlertsEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[stickyPrayerAlertsKey] = enabled }
+    }
+
+    val stickyDailyReminderEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[stickyDailyReminderKey] ?: false
+    }
+
+    suspend fun setStickyDailyReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[stickyDailyReminderKey] = enabled }
+    }
+
+    val stickyBudgetAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[stickyBudgetAlertsKey] ?: false
+    }
+
+    suspend fun setStickyBudgetAlertsEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[stickyBudgetAlertsKey] = enabled }
+    }
+
+    val stickyLoanAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[stickyLoanAlertsKey] ?: false
+    }
+
+    suspend fun setStickyLoanAlertsEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[stickyLoanAlertsKey] = enabled }
+    }
+
+    val stickySalaryAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[stickySalaryAlertsKey] ?: false
+    }
+
+    suspend fun setStickySalaryAlertsEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[stickySalaryAlertsKey] = enabled }
+    }
 
     val isOwnerBypass: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[isOwnerBypassKey] ?: false
@@ -503,6 +548,11 @@ class UserPreferences @Inject constructor(
             map[prayerSavedLngKey.name]?.let { prefs[prayerSavedLngKey] = it }
             map[prayerSavedTzKey.name]?.let { prefs[prayerSavedTzKey] = it }
             map[prayerSavedElevationKey.name]?.let { prefs[prayerSavedElevationKey] = it }
+            map[stickyPrayerAlertsKey.name]?.toBooleanStrictOrNull()?.let { prefs[stickyPrayerAlertsKey] = it }
+            map[stickyDailyReminderKey.name]?.toBooleanStrictOrNull()?.let { prefs[stickyDailyReminderKey] = it }
+            map[stickyBudgetAlertsKey.name]?.toBooleanStrictOrNull()?.let { prefs[stickyBudgetAlertsKey] = it }
+            map[stickyLoanAlertsKey.name]?.toBooleanStrictOrNull()?.let { prefs[stickyLoanAlertsKey] = it }
+            map[stickySalaryAlertsKey.name]?.toBooleanStrictOrNull()?.let { prefs[stickySalaryAlertsKey] = it }
             map[lastLoanSheetDateKey.name]?.let { prefs[lastLoanSheetDateKey] = it }
             map[lastDebtRolloverMonthKey.name]?.let { prefs[lastDebtRolloverMonthKey] = it }
             map[dismissedRecurringKey.name]?.let {
