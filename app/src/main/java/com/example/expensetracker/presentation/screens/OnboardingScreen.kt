@@ -21,7 +21,6 @@ import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.Security
-import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable

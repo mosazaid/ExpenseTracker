@@ -94,8 +94,9 @@ class HistoryGroupingComprehensiveTest {
         }
         val options = HistoryGrouping.buildMonthOptionsForYear(cal.time)
         assertEquals(12, options.size)
-        assertTrue(options.first().label.contains("January") || options.first().label.contains("Jan"))
-        assertTrue(options.last().label.contains("December") || options.last().label.contains("Dec"))
+        // Descending order: starts with December and ends with January
+        assertTrue(options.first().label.contains("December") || options.first().label.contains("Dec"))
+        assertTrue(options.last().label.contains("January") || options.last().label.contains("Jan"))
     }
 
     @Test

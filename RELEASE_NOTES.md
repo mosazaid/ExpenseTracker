@@ -41,6 +41,7 @@
 - **Yearly Transaction History Month Filtering & Category/Subcategory Isolation**:
   - Added dynamic Month filtering dropdown on `HistoryScreen` when reviewing Annual history (`selectedPeriod == HistoryPeriod.YEAR`), alongside full integration into `TransactionFilterBottomSheet`.
   - When filtering by a specific month (e.g. October 2026), the Category dropdown, Subcategory dropdown, and active transaction sections immediately recalculate to display the exact expenses, subcategory breakdowns, and transactions for that specific month only. One-tap 'X' button restores full-year inspection.
+  - **Descending Chronological Ordering**: Month options in the filter dropdown and bottom sheet chips are sorted descending (December down to January in Calendar mode; most recent cycle first in Salary mode), putting the latest months at the top.
 - **Statistics Comparisons Redesign (Zero Ellipsis Architecture)**:
   - Eliminated all truncation and ugly ellipsis (`...`) across category names, subcategory titles, merchant driver insights, and variance alerts in `SubcategoryComparisonCard`, `SubcategoryDrillDownBottomSheet`, and `StatisticsScreen`.
   - Re-architected subcategory waterfall items into modern, multi-tiered cards:

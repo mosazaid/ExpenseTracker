@@ -254,7 +254,7 @@ Single calculator pass (`BalanceCalculator.buildMonthFinancialSummary`):
 
 ### 3.12.1 Annual History Month Filtering & Dynamic Subcategory Isolation
 - In `HistoryScreen`, when `selectedPeriod == HistoryPeriod.YEAR`, a dynamic **Month Filter** dropdown appears immediately above the Category selector.
-- `HistoryGrouping.buildMonthOptionsForYear(startDate, monthMode, salaryPeriods)` generates the 12 calendar months (`HistoryMonthOption`) or active salary periods for the selected year.
+- `HistoryGrouping.buildMonthOptionsForYear(startDate, monthMode, salaryPeriods)` generates the 12 calendar months (`HistoryMonthOption`) or active salary periods for the selected year in **descending chronological order** (December down to January, or most recent salary cycle first), placing recent spending front and center.
 - Selecting a specific month dynamically scopes:
   1. **Category Dropdown**: `periodUiState` recalculates category totals and budget adherence solely within that month's date bounds.
   2. **Subcategory Dropdown**: `subCategorySpendMap` aggregates splits and subcategories for the filtered month only (`Subcategory — $XX.XX`).

@@ -49,18 +49,20 @@ object HistoryGrouping {
         salaryPeriods: List<SalaryWalletPeriodSummary> = emptyList()
     ): List<HistoryMonthOption> {
         return if (monthMode == MonthMode.SALARY && salaryPeriods.isNotEmpty()) {
-            salaryPeriods.map { period ->
-                HistoryMonthOption(
-                    id = "salary-${period.start.time}-${period.end.time}",
-                    label = period.label,
-                    start = period.start,
-                    end = period.end
-                )
-            }
+            salaryPeriods
+                .sortedByDescending { it.start.time }
+                .map { period ->
+                    HistoryMonthOption(
+                        id = "salary-${period.start.time}-${period.end.time}",
+                        label = period.label,
+                        start = period.start,
+                        end = period.end
+                    )
+                }
         } else {
             val cal = Calendar.getInstance().apply { time = referenceDate }
             val year = cal.get(Calendar.YEAR)
-            (0..11).map { monthIdx ->
+            (11 downTo 0).map { monthIdx ->
                 val mCal = Calendar.getInstance().apply {
                     set(Calendar.YEAR, year)
                     set(Calendar.MONTH, monthIdx)
