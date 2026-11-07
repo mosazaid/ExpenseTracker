@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.domain.HistoryPeriod
+import com.example.expensetracker.presentation.screens.HistoryMonthOption
 import com.example.expensetracker.presentation.screens.TransactionSortOrder
 import com.example.expensetracker.presentation.screens.TransactionTypeFilter
 
@@ -17,9 +18,12 @@ fun TransactionFilterBottomSheet(
     selectedType: TransactionTypeFilter,
     selectedPeriod: HistoryPeriod,
     selectedSortOrder: TransactionSortOrder = TransactionSortOrder.DESC,
+    monthOptions: List<HistoryMonthOption> = emptyList(),
+    selectedMonth: HistoryMonthOption? = null,
     onTypeSelected: (TransactionTypeFilter) -> Unit,
     onPeriodSelected: (HistoryPeriod) -> Unit,
     onSortOrderSelected: (TransactionSortOrder) -> Unit = {},
+    onMonthSelected: (HistoryMonthOption?) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(
@@ -56,6 +60,37 @@ fun TransactionFilterBottomSheet(
                             onClick = { onPeriodSelected(period) },
                             label = { Text(period.label) }
                         )
+                    }
+                }
+            }
+
+            // Month Filter Section (When Year period is active)
+            if (selectedPeriod == HistoryPeriod.YEAR && monthOptions.isNotEmpty()) {
+                HorizontalDivider()
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Filter by Month",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = selectedMonth == null,
+                            onClick = { onMonthSelected(null) },
+                            label = { Text("All Months") }
+                        )
+                        monthOptions.forEach { month ->
+                            FilterChip(
+                                selected = selectedMonth?.id == month.id,
+                                onClick = { onMonthSelected(month) },
+                                label = { Text(month.label) }
+                            )
+                        }
                     }
                 }
             }

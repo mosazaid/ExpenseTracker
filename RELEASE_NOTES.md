@@ -38,6 +38,9 @@
 - **Smart Financial Insights Pacing & Vault/Wallet Isolation Fix**:
   - **Liquid Balance Grounding**: Resolved false "Deficit Alert with 105% Budget Consumed" by grounding the pacing baseline against the user's actual liquid funds (`totalAvailable = cashBal + bankBal`, e.g. ~500 JOD) when current cycle income has not yet been logged or when previous cycle savings exist.
   - **Strict Vault & Wallet Isolation**: Excluded pocket wallet and vault (deposit) funds from artificially shrinking the spendable budget baseline. Payments from vault (`AccountType.DEPOSIT`) and pocket wallet (`AccountType.WALLET`) are strictly excluded from monthly operational expenses, keeping the AI insight accurately pacing ~21% consumed rather than false deficit spikes.
+- **Yearly Transaction History Month Filtering & Category/Subcategory Isolation**:
+  - Added dynamic Month filtering dropdown on `HistoryScreen` when reviewing Annual history (`selectedPeriod == HistoryPeriod.YEAR`), alongside full integration into `TransactionFilterBottomSheet`.
+  - When filtering by a specific month (e.g. October 2026), the Category dropdown, Subcategory dropdown, and active transaction sections immediately recalculate to display the exact expenses, subcategory breakdowns, and transactions for that specific month only. One-tap 'X' button restores full-year inspection.
 
 ---
 

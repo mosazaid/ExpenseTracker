@@ -520,5 +520,10 @@
     <string name="sticky_loan_desc">Keep loan and debt due notices pinned until reviewed.</string>
     <string name="sticky_salary_title">Sticky Salary &amp; Recurring Notices</string>
     <string name="sticky_salary_desc">Keep salary arrival and recurring payment notices pinned.</string>
+
+    <!-- History Year Month Filter -->
+    <string name="all_months">All Months</string>
+    <string name="filter_by_month">Filter by Month</string>
+    <string name="month_filter_label">Month</string>
 </resources>
 

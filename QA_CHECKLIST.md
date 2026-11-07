@@ -33,6 +33,13 @@
   - [ ] Category dropdowns sorted by usage frequency.
   - [ ] Subcategory filter: shows subcategories for selected category plus **"Other"** option with accurate spend total.
   - [ ] Categories without subcategories hide the subcategory dropdown.
+  - [ ] **Year Period Month Filter**:
+    - [ ] Selecting Year period reveals Month filter dropdown ("All Months" default).
+    - [ ] Selecting a specific month (e.g. October 2026) scopes category totals and budget progress to that month.
+    - [ ] Subcategory dropdown spend amounts match the selected month only.
+    - [ ] Transactions list renders only transactions belonging to the selected month.
+    - [ ] Clear 'X' button or selecting "All Months" restores full annual view.
+    - [ ] Works seamlessly across both Calendar Mode (12 calendar months) and Salary Mode (salary periods).
 
 ## Add/Edit Transactions
 - [ ] Add income and expense with validation (types restricted to Income & Expense).

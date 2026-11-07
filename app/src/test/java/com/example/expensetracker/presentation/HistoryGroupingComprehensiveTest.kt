@@ -86,4 +86,56 @@ class HistoryGroupingComprehensiveTest {
         assertEquals(1, filtered.size)
         assertEquals(100L, filtered.first().categoryId)
     }
+
+    @Test
+    fun testBuildMonthOptionsForYear_CalendarMode() {
+        val cal = java.util.Calendar.getInstance().apply {
+            set(2026, java.util.Calendar.JULY, 15, 12, 0, 0)
+        }
+        val options = HistoryGrouping.buildMonthOptionsForYear(cal.time)
+        assertEquals(12, options.size)
+        assertTrue(options.first().label.contains("January") || options.first().label.contains("Jan"))
+        assertTrue(options.last().label.contains("December") || options.last().label.contains("Dec"))
+    }
+
+    @Test
+    fun testYearPeriodWithMonthFilter_IsolatesSpecificMonth() {
+        val octCal = java.util.Calendar.getInstance().apply {
+            set(2026, java.util.Calendar.OCTOBER, 10, 12, 0, 0)
+        }
+        val novCal = java.util.Calendar.getInstance().apply {
+            set(2026, java.util.Calendar.NOVEMBER, 12, 12, 0, 0)
+        }
+
+        val octTxn = Transaction(id = 1L, amount = 105.0, type = TransactionType.EXPENSE, categoryId = 10L, subDescription = "Groceries", accountType = AccountType.CASH, date = octCal.time, description = "Supermarket")
+        val novTxn = Transaction(id = 2L, amount = 250.0, type = TransactionType.EXPENSE, categoryId = 10L, subDescription = "Groceries", accountType = AccountType.CASH, date = novCal.time, description = "Wholesale")
+
+        val options = HistoryGrouping.buildMonthOptionsForYear(octCal.time)
+        val octOption = options.first { it.id.endsWith("-9") } // Month 9 is October (0-indexed)
+
+        // Group with month filter for October
+        val sections = HistoryGrouping.group(
+            transactions = listOf(octTxn, novTxn),
+            period = HistoryPeriod.YEAR,
+            typeFilter = TransactionTypeFilter.ALL,
+            monthOptionFilter = octOption
+        )
+
+        assertEquals(1, sections.size)
+        assertEquals(1, sections.first().transactions.size)
+        assertEquals(1L, sections.first().transactions.first().id)
+        assertEquals(105.0, sections.first().expenseTotal, 0.001)
+
+        // Also test with category and subcategory filter in October
+        val subFilteredSections = HistoryGrouping.group(
+            transactions = listOf(octTxn, novTxn),
+            period = HistoryPeriod.YEAR,
+            typeFilter = TransactionTypeFilter.EXPENSE,
+            categoryIdFilter = 10L,
+            subCategoryFilter = "Groceries",
+            monthOptionFilter = octOption
+        )
+        assertEquals(1, subFilteredSections.size)
+        assertEquals(105.0, subFilteredSections.first().expenseTotal, 0.001)
+    }
 }

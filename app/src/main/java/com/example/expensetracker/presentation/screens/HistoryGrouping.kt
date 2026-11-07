@@ -8,6 +8,7 @@ import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.domain.SalaryWalletPeriodSummary
 import com.example.expensetracker.core.time.DateUtils
+import java.util.Calendar
 import java.util.Date
 
 enum class TransactionTypeFilter(val label: String) {
@@ -30,10 +31,57 @@ data class HistorySection(
     val transactions: List<Transaction>
 )
 
+data class HistoryMonthOption(
+    val id: String,
+    val label: String,
+    val start: Date,
+    val end: Date
+)
+
 const val SUBCATEGORY_OTHER = "Other"
 
 object HistoryGrouping {
     const val SUBCATEGORY_OTHER = "Other"
+
+    fun buildMonthOptionsForYear(
+        referenceDate: Date,
+        monthMode: MonthMode = MonthMode.CALENDAR,
+        salaryPeriods: List<SalaryWalletPeriodSummary> = emptyList()
+    ): List<HistoryMonthOption> {
+        return if (monthMode == MonthMode.SALARY && salaryPeriods.isNotEmpty()) {
+            salaryPeriods.map { period ->
+                HistoryMonthOption(
+                    id = "salary-${period.start.time}-${period.end.time}",
+                    label = period.label,
+                    start = period.start,
+                    end = period.end
+                )
+            }
+        } else {
+            val cal = Calendar.getInstance().apply { time = referenceDate }
+            val year = cal.get(Calendar.YEAR)
+            (0..11).map { monthIdx ->
+                val mCal = Calendar.getInstance().apply {
+                    set(Calendar.YEAR, year)
+                    set(Calendar.MONTH, monthIdx)
+                    set(Calendar.DAY_OF_MONTH, 1)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val start = DateUtils.getStartOfMonth(mCal.time)
+                val end = DateUtils.getEndOfMonth(mCal.time)
+                val label = DateUtils.formatMonthYear(start)
+                HistoryMonthOption(
+                    id = "month-$year-$monthIdx",
+                    label = label,
+                    start = start,
+                    end = end
+                )
+            }
+        }
+    }
 
     fun group(
         transactions: List<Transaction>,
@@ -45,14 +93,21 @@ object HistoryGrouping {
         reimbursedExpenseIds: Set<Long> = emptySet(),
         monthMode: MonthMode = MonthMode.CALENDAR,
         salaryPeriods: List<SalaryWalletPeriodSummary> = emptyList(),
-        splitsMap: Map<Long, List<TransactionSplit>> = emptyMap()
+        splitsMap: Map<Long, List<TransactionSplit>> = emptyMap(),
+        monthOptionFilter: HistoryMonthOption? = null
     ): List<HistorySection> {
+        val baseTransactions = if (period == HistoryPeriod.YEAR && monthOptionFilter != null) {
+            transactions.filter { it.date.time in monthOptionFilter.start.time..monthOptionFilter.end.time }
+        } else {
+            transactions
+        }
+
         var filtered = when (typeFilter) {
-            TransactionTypeFilter.ALL -> transactions
-            TransactionTypeFilter.INCOME -> transactions.filter { it.type == TransactionType.INCOME }
-            TransactionTypeFilter.EXPENSE -> transactions.filter { it.type == TransactionType.EXPENSE }
-            TransactionTypeFilter.WALLET -> transactions.filter { it.type == TransactionType.WALLET_MOVE }
-            TransactionTypeFilter.OWED -> transactions.filter {
+            TransactionTypeFilter.ALL -> baseTransactions
+            TransactionTypeFilter.INCOME -> baseTransactions.filter { it.type == TransactionType.INCOME }
+            TransactionTypeFilter.EXPENSE -> baseTransactions.filter { it.type == TransactionType.EXPENSE }
+            TransactionTypeFilter.WALLET -> baseTransactions.filter { it.type == TransactionType.WALLET_MOVE }
+            TransactionTypeFilter.OWED -> baseTransactions.filter {
                 it.type == TransactionType.EXPENSE &&
                     it.awaitingReimbursement &&
                     it.id !in reimbursedExpenseIds
@@ -88,14 +143,14 @@ object HistoryGrouping {
         if (filtered.isEmpty()) return emptyList()
 
         return when (period) {
-            HistoryPeriod.DAY -> listOf(buildDaySection(transactions, filtered, sortOrder))
-            HistoryPeriod.WEEK -> buildDaySections(transactions, filtered, sortOrder)
-            HistoryPeriod.MONTH -> buildWeekSections(transactions, filtered, sortOrder)
+            HistoryPeriod.DAY -> listOf(buildDaySection(baseTransactions, filtered, sortOrder))
+            HistoryPeriod.WEEK -> buildDaySections(baseTransactions, filtered, sortOrder)
+            HistoryPeriod.MONTH -> buildWeekSections(baseTransactions, filtered, sortOrder)
             HistoryPeriod.YEAR -> {
                 if (monthMode == MonthMode.SALARY && salaryPeriods.isNotEmpty()) {
-                    buildSalaryMonthSections(transactions, filtered, salaryPeriods, sortOrder)
+                    buildSalaryMonthSections(baseTransactions, filtered, salaryPeriods, sortOrder)
                 } else {
-                    buildMonthSections(transactions, filtered, sortOrder)
+                    buildMonthSections(baseTransactions, filtered, sortOrder)
                 }
             }
         }

@@ -515,5 +515,10 @@
     <string name="sticky_loan_desc">إبقاء مواعيد استحقاق الدفعات مثبتة لتجنب نسيان موعد السداد.</string>
     <string name="sticky_salary_title">تثبيت إشعارات الراتب والمصاريف الدورية</string>
     <string name="sticky_salary_desc">إبقاء إشعارات استلام الراتب والخصم التلقائي مثبتة في شريط التنبيهات.</string>
+
+    <!-- History Year Month Filter -->
+    <string name="all_months">جميع الأشهر</string>
+    <string name="filter_by_month">تصفية حسب الشهر</string>
+    <string name="month_filter_label">الشهر</string>
 </resources>
 

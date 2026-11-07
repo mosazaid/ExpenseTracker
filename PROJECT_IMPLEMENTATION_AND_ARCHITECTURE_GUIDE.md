@@ -252,6 +252,15 @@ Single calculator pass (`BalanceCalculator.buildMonthFinancialSummary`):
 - In `HistoryGrouping`, selecting `SUBCATEGORY_OTHER` filters transactions where `subDescription` is null, blank, or equals `"Other"`.
 - If a category has no subcategories at all, the subcategory dropdown remains hidden.
 
+### 3.12.1 Annual History Month Filtering & Dynamic Subcategory Isolation
+- In `HistoryScreen`, when `selectedPeriod == HistoryPeriod.YEAR`, a dynamic **Month Filter** dropdown appears immediately above the Category selector.
+- `HistoryGrouping.buildMonthOptionsForYear(startDate, monthMode, salaryPeriods)` generates the 12 calendar months (`HistoryMonthOption`) or active salary periods for the selected year.
+- Selecting a specific month dynamically scopes:
+  1. **Category Dropdown**: `periodUiState` recalculates category totals and budget adherence solely within that month's date bounds.
+  2. **Subcategory Dropdown**: `subCategorySpendMap` aggregates splits and subcategories for the filtered month only (`Subcategory — $XX.XX`).
+  3. **Grouped Sections**: Displays only the transactions belonging to the selected month.
+- Users can clear the filter with a single tap on the trailing `Close` icon or via `TransactionFilterBottomSheet`.
+
 ### 3.13 3-Month Multi-Chart & Category Comparison Pie Charts
 - In `StatisticsViewModel`, `calculateThreeMonthStats()` computes 3-month metrics (`MonthlyBreakdown`, `CategoryExpenseShare`, `ThreeMonthStats`) for both Calendar and Salary month modes.
 - `ThreeMonthMultiChart`: Custom Compose `Canvas` supporting switchable views:

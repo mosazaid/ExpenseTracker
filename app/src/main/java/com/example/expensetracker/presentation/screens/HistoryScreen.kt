@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
@@ -31,6 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.expensetracker.presentation.theme.withTabularNums
 import com.example.expensetracker.R
+import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
@@ -60,6 +62,8 @@ fun HistoryScreen(
     var selectedTypeFilter by remember { mutableStateOf(TransactionTypeFilter.ALL) }
     var selectedCategoryFilter by remember { mutableStateOf<Category?>(null) }
     var selectedSubCategoryFilter by remember { mutableStateOf<String?>(null) }
+    var selectedMonthFilter by remember { mutableStateOf<HistoryMonthOption?>(null) }
+    var monthMenuExpanded by remember { mutableStateOf(false) }
     var categoryMenuExpanded by remember { mutableStateOf(false) }
     var subCategoryMenuExpanded by remember { mutableStateOf(false) }
     var selectedSortOrder by remember { mutableStateOf(TransactionSortOrder.DESC) }
@@ -92,45 +96,13 @@ fun HistoryScreen(
 
     LaunchedEffect(selectedPeriod, monthMode) {
         periodBounds = viewModel.getPeriodBounds(selectedPeriod, monthMode, now)
+        if (selectedPeriod != HistoryPeriod.YEAR) {
+            selectedMonthFilter = null
+        }
     }
 
     val startDate = periodBounds?.start
     val endDate = periodBounds?.end
-
-    val transactions by produceState<List<Transaction>>(
-        initialValue = emptyList(),
-        startDate,
-        endDate
-    ) {
-        if (startDate == null || endDate == null) {
-            value = emptyList()
-            return@produceState
-        }
-        viewModel.getTransactionsBetweenDates(startDate, endDate).collect { value = it }
-    }
-
-    LaunchedEffect(startDate, endDate, allCategories) {
-        if (allCategories.isNotEmpty() && startDate != null && endDate != null) {
-            periodUiState = viewModel.buildPeriodUiState(
-                categories = allCategories,
-                expenseCategoryIds = expenseCategories.map { it.id },
-                startDate = startDate,
-                endDate = endDate
-            )
-        }
-    }
-
-    val reimbursedExpenseIds = remember(transactions) {
-        transactions.mapNotNull { it.linkedExpenseId }.toSet()
-    }
-
-    val linkedExpenseDescriptions = remember(transactions) {
-        val expenseById = transactions.filter { it.type == TransactionType.EXPENSE }
-            .associateBy { it.id }
-        transactions.filter { it.linkedExpenseId != null }.associate { txn ->
-            txn.id to expenseById[txn.linkedExpenseId]?.description.orEmpty()
-        }
-    }
 
     var salaryWalletYearSummary by remember {
         mutableStateOf<List<com.example.expensetracker.domain.SalaryWalletPeriodSummary>>(emptyList())
@@ -145,9 +117,64 @@ fun HistoryScreen(
         }
     }
 
-    val subCategorySpendMap = remember(transactions, selectedCategoryFilter, splitsMap) {
+    val monthOptions = remember(selectedPeriod, startDate, monthMode, salaryWalletYearSummary) {
+        if (selectedPeriod == HistoryPeriod.YEAR && startDate != null) {
+            HistoryGrouping.buildMonthOptionsForYear(startDate, monthMode, salaryWalletYearSummary)
+        } else {
+            emptyList()
+        }
+    }
+
+    val transactions by produceState<List<Transaction>>(
+        initialValue = emptyList(),
+        startDate,
+        endDate
+    ) {
+        if (startDate == null || endDate == null) {
+            value = emptyList()
+            return@produceState
+        }
+        viewModel.getTransactionsBetweenDates(startDate, endDate).collect { value = it }
+    }
+
+    val currentPeriodTransactions = remember(transactions, selectedPeriod, selectedMonthFilter) {
+        if (selectedPeriod == HistoryPeriod.YEAR && selectedMonthFilter != null) {
+            val s = selectedMonthFilter!!.start.time
+            val e = selectedMonthFilter!!.end.time
+            transactions.filter { it.date.time in s..e }
+        } else {
+            transactions
+        }
+    }
+
+    LaunchedEffect(startDate, endDate, allCategories, selectedPeriod, selectedMonthFilter) {
+        if (allCategories.isNotEmpty() && startDate != null && endDate != null) {
+            val effStart = if (selectedPeriod == HistoryPeriod.YEAR && selectedMonthFilter != null) selectedMonthFilter!!.start else startDate
+            val effEnd = if (selectedPeriod == HistoryPeriod.YEAR && selectedMonthFilter != null) selectedMonthFilter!!.end else endDate
+            periodUiState = viewModel.buildPeriodUiState(
+                categories = allCategories,
+                expenseCategoryIds = expenseCategories.map { it.id },
+                startDate = effStart,
+                endDate = effEnd
+            )
+        }
+    }
+
+    val reimbursedExpenseIds = remember(currentPeriodTransactions) {
+        currentPeriodTransactions.mapNotNull { it.linkedExpenseId }.toSet()
+    }
+
+    val linkedExpenseDescriptions = remember(currentPeriodTransactions) {
+        val expenseById = currentPeriodTransactions.filter { it.type == TransactionType.EXPENSE }
+            .associateBy { it.id }
+        currentPeriodTransactions.filter { it.linkedExpenseId != null }.associate { txn ->
+            txn.id to expenseById[txn.linkedExpenseId]?.description.orEmpty()
+        }
+    }
+
+    val subCategorySpendMap = remember(currentPeriodTransactions, selectedCategoryFilter, splitsMap) {
         val catId = selectedCategoryFilter?.id ?: return@remember emptyMap<String, Double>()
-        val catExpenses = transactions.filter { it.categoryId == catId && it.type == TransactionType.EXPENSE }
+        val catExpenses = currentPeriodTransactions.filter { it.categoryId == catId && it.type == TransactionType.EXPENSE }
         val map = mutableMapOf<String, Double>()
         var otherSum = 0.0
 
@@ -203,6 +230,7 @@ fun HistoryScreen(
         selectedTypeFilter,
         selectedCategoryFilter,
         selectedSubCategoryFilter,
+        selectedMonthFilter,
         selectedSortOrder,
         periodBounds,
         reimbursedExpenseIds,
@@ -220,7 +248,8 @@ fun HistoryScreen(
             reimbursedExpenseIds = reimbursedExpenseIds,
             monthMode = monthMode,
             salaryPeriods = salaryWalletYearSummary,
-            splitsMap = splitsMap
+            splitsMap = splitsMap,
+            monthOptionFilter = selectedMonthFilter
         )
     }
 
@@ -238,13 +267,17 @@ fun HistoryScreen(
             selectedType = selectedTypeFilter,
             selectedPeriod = selectedPeriod,
             selectedSortOrder = selectedSortOrder,
+            monthOptions = monthOptions,
+            selectedMonth = selectedMonthFilter,
             onTypeSelected = { selectedTypeFilter = it },
             onPeriodSelected = {
                 selectedPeriod = it
                 selectedCategoryFilter = null
                 selectedSubCategoryFilter = null
+                selectedMonthFilter = null
             },
             onSortOrderSelected = { selectedSortOrder = it },
+            onMonthSelected = { selectedMonthFilter = it },
             onDismiss = { showFilterSheet = false }
         )
     }
@@ -344,6 +377,13 @@ fun HistoryScreen(
         // ── 1. Period from to at the top
         item(key = "period-range") {
             if (startDate != null && endDate != null) {
+                val effStart = if (selectedPeriod == HistoryPeriod.YEAR && selectedMonthFilter != null) selectedMonthFilter!!.start else startDate
+                val effEnd = if (selectedPeriod == HistoryPeriod.YEAR && selectedMonthFilter != null) selectedMonthFilter!!.end else endDate
+                val periodBadgeText = if (selectedPeriod == HistoryPeriod.YEAR && selectedMonthFilter != null) {
+                    "${selectedPeriod.label} • ${selectedMonthFilter!!.label}"
+                } else {
+                    selectedPeriod.label
+                }
                 Surface(
                     shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -355,7 +395,7 @@ fun HistoryScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "From ${DateUtils.formatDate(startDate)} To ${DateUtils.formatDate(endDate)}",
+                            text = "From ${DateUtils.formatDate(effStart)} To ${DateUtils.formatDate(effEnd)}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -364,7 +404,7 @@ fun HistoryScreen(
                             color = MaterialTheme.colorScheme.primaryContainer
                         ) {
                             Text(
-                                text = selectedPeriod.label,
+                                text = periodBadgeText,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -455,6 +495,104 @@ fun HistoryScreen(
                             contentDescription = "Filters",
                             tint = MaterialTheme.colorScheme.primary
                         )
+                    }
+                }
+            }
+        }
+
+        // ── 2.5 Month dropdown filter (Visible when Year period is selected)
+        if (selectedPeriod == HistoryPeriod.YEAR && monthOptions.isNotEmpty()) {
+            item(key = "year-month-filter") {
+                ExposedDropdownMenuBox(
+                    expanded = monthMenuExpanded,
+                    onExpandedChange = { monthMenuExpanded = !monthMenuExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = selectedMonthFilter?.label ?: stringResource(R.string.all_months),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.filter_by_month)) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.CalendarMonth,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        trailingIcon = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (selectedMonthFilter != null) {
+                                    IconButton(
+                                        onClick = { selectedMonthFilter = null },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Close,
+                                            contentDescription = "Clear Month Filter",
+                                            tint = MaterialTheme.colorScheme.outline,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = monthMenuExpanded)
+                            }
+                        },
+                        modifier = Modifier
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = monthMenuExpanded,
+                        onDismissRequest = { monthMenuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = stringResource(R.string.all_months) + (periodBounds?.label?.let { " ($it)" } ?: ""),
+                                    fontWeight = if (selectedMonthFilter == null) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            onClick = {
+                                selectedMonthFilter = null
+                                monthMenuExpanded = false
+                            }
+                        )
+                        monthOptions.forEach { option ->
+                            val isSelected = selectedMonthFilter?.id == option.id
+                            val monthSpend = transactions.filter {
+                                it.type == TransactionType.EXPENSE &&
+                                    it.accountType != AccountType.WALLET &&
+                                    it.accountType != AccountType.DEPOSIT &&
+                                    !it.excludeFromMonthExpenses &&
+                                    it.date.time in option.start.time..option.end.time
+                            }.sumOf { it.amount }
+
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = option.label,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                        if (monthSpend > 0.0) {
+                                            Text(
+                                                text = CurrencyUtils.formatCurrency(monthSpend),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.outline
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    selectedMonthFilter = option
+                                    monthMenuExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -598,6 +736,7 @@ fun HistoryScreen(
                 typeFilter = selectedTypeFilter,
                 categoryFilter = selectedCategoryFilter,
                 subCategoryFilter = selectedSubCategoryFilter,
+                monthFilter = selectedMonthFilter?.label,
                 sortOrder = selectedSortOrder
             )
         }
@@ -752,9 +891,11 @@ private fun ActiveFiltersLine(
     typeFilter: TransactionTypeFilter,
     categoryFilter: Category?,
     subCategoryFilter: String? = null,
+    monthFilter: String? = null,
     sortOrder: TransactionSortOrder = TransactionSortOrder.DESC
 ) {
     val parts = buildList {
+        monthFilter?.let { add("Month: $it") }
         if (typeFilter != TransactionTypeFilter.ALL) add(typeFilter.label)
         categoryFilter?.let { add("${it.icon} ${it.name}") }
         subCategoryFilter?.let { add(it) }
