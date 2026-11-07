@@ -32,6 +32,7 @@ import com.example.expensetracker.presentation.theme.FinanceWarning
 import com.example.expensetracker.presentation.theme.withTabularNums
 import com.example.expensetracker.presentation.viewModel.TransactionSplitItem
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SplitTransactionSection(
     isSplitMode: Boolean,
@@ -39,9 +40,11 @@ fun SplitTransactionSection(
     mainAmountStr: String,
     availableSubCategories: List<SubCategory>,
     onToggleSplitMode: (Boolean) -> Unit,
-    onAddSplit: () -> Unit,
+    onAddSplit: (TransactionSplitItem) -> Unit,
     onUpdateSplit: (Int, TransactionSplitItem) -> Unit,
     onRemoveSplit: (Int) -> Unit,
+    currency: String = "JOD",
+    onSetMainAmount: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val mainAmount = mainAmountStr.toDoubleOrNull() ?: 0.0
@@ -87,7 +90,7 @@ fun SplitTransactionSection(
                         )
                     }
                 }
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.split_transaction_title),
                         style = MaterialTheme.typography.titleSmall,
@@ -99,6 +102,20 @@ fun SplitTransactionSection(
                         color = MaterialTheme.colorScheme.outline
                     )
                 }
+
+                // Total splits live badge
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Text(
+                        text = CurrencyUtils.formatCurrency(totalSplit),
+                        style = MaterialTheme.typography.labelMedium.withTabularNums(),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
             }
 
             // Balance status pill
@@ -106,8 +123,9 @@ fun SplitTransactionSection(
                 shape = RoundedCornerShape(10.dp),
                 color = when {
                     isBalanced -> FinancePositive.copy(alpha = 0.12f)
-                    diff < 0 -> FinanceNegative.copy(alpha = 0.12f)
-                    else -> FinanceWarning.copy(alpha = 0.12f)
+                    mainAmount > 0 && diff < 0 -> FinanceNegative.copy(alpha = 0.12f)
+                    mainAmount > 0 -> FinanceWarning.copy(alpha = 0.12f)
+                    else -> MaterialTheme.colorScheme.surfaceContainerHigh
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -120,7 +138,8 @@ fun SplitTransactionSection(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.weight(1f)
                     ) {
                         Icon(
                             imageVector = if (isBalanced) Icons.Outlined.CheckCircle else Icons.Outlined.Info,
@@ -129,15 +148,20 @@ fun SplitTransactionSection(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = stringResource(
-                                R.string.split_total_label,
-                                CurrencyUtils.formatCurrency(totalSplit),
-                                CurrencyUtils.formatCurrency(mainAmount)
-                            ),
+                            text = if (mainAmount > 0) {
+                                stringResource(
+                                    R.string.split_total_label,
+                                    CurrencyUtils.formatCurrency(totalSplit),
+                                    CurrencyUtils.formatCurrency(mainAmount)
+                                )
+                            } else {
+                                stringResource(R.string.split_allocated_label, CurrencyUtils.formatCurrency(totalSplit))
+                            },
                             style = MaterialTheme.typography.bodySmall.withTabularNums(),
                             fontWeight = FontWeight.SemiBold
                         )
                     }
+
                     if (isBalanced) {
                         Text(
                             text = stringResource(R.string.split_balanced),
@@ -145,13 +169,24 @@ fun SplitTransactionSection(
                             color = FinancePositive,
                             fontWeight = FontWeight.Bold
                         )
-                    } else {
+                    } else if (mainAmount > 0) {
                         Text(
                             text = stringResource(R.string.split_difference, CurrencyUtils.formatCurrency(diff)),
                             style = MaterialTheme.typography.labelSmall.withTabularNums(),
                             color = if (diff < 0) FinanceNegative else FinanceWarning,
                             fontWeight = FontWeight.Bold
                         )
+                    } else if (onSetMainAmount != null && totalSplit > 0) {
+                        TextButton(
+                            onClick = { onSetMainAmount(String.format(java.util.Locale.US, "%.2f", totalSplit)) },
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "Set as Total",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
@@ -161,6 +196,7 @@ fun SplitTransactionSection(
                 SplitItemCard(
                     index = index,
                     item = splitItem,
+                    currency = currency,
                     availableSubCategories = availableSubCategories,
                     canDelete = splits.size > 1,
                     onUpdate = { updated -> onUpdateSplit(index, updated) },
@@ -171,10 +207,16 @@ fun SplitTransactionSection(
             // Add button and Auto-balance button
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
-                    onClick = onAddSplit,
+                    onClick = {
+                        val defaultAmt = if (diff > 0.009) {
+                            CurrencyUtils.cleanDecimalInput(String.format(java.util.Locale.US, "%.2f", diff))
+                        } else ""
+                        onAddSplit(TransactionSplitItem(amount = defaultAmt))
+                    },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp)
                 ) {
@@ -187,16 +229,19 @@ fun SplitTransactionSection(
                     Text(stringResource(R.string.add_split_item_btn))
                 }
 
-                if (!isBalanced && diff > 0) {
+                if (!isBalanced && diff > 0.009) {
                     FilledTonalButton(
                         onClick = {
                             val newAmount = CurrencyUtils.cleanDecimalInput(String.format(java.util.Locale.US, "%.2f", diff))
-                            onAddSplit()
-                            onUpdateSplit(splits.size, TransactionSplitItem(amount = newAmount))
+                            onAddSplit(TransactionSplitItem(amount = newAmount))
                         },
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Fill Remainder")
+                        Text(
+                            text = stringResource(R.string.fill_remainder_btn, CurrencyUtils.formatCurrency(diff)),
+                            style = MaterialTheme.typography.labelMedium.withTabularNums(),
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
@@ -204,11 +249,12 @@ fun SplitTransactionSection(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SplitItemCard(
     index: Int,
     item: TransactionSplitItem,
+    currency: String,
     availableSubCategories: List<SubCategory>,
     canDelete: Boolean,
     onUpdate: (TransactionSplitItem) -> Unit,
@@ -226,18 +272,39 @@ private fun SplitItemCard(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Header with delete button
+            // Header with amount pill and delete button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = stringResource(R.string.split_item_header, index + 1),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.split_item_header, index + 1),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    val parsedAmt = item.amount.toDoubleOrNull()
+                    if (parsedAmt != null && parsedAmt > 0) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                text = CurrencyUtils.formatCurrency(parsedAmt),
+                                style = MaterialTheme.typography.labelSmall.withTabularNums(),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
                 if (canDelete) {
                     IconButton(
                         onClick = onDelete,
@@ -299,7 +366,8 @@ private fun SplitItemCard(
                 OutlinedTextField(
                     value = item.amount,
                     onValueChange = { onUpdate(item.copy(amount = CurrencyUtils.cleanDecimalInput(it))) },
-                    label = { Text("Amount") },
+                    label = { Text(stringResource(R.string.split_item_amount_label, currency)) },
+                    prefix = { Text("$currency ", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                     modifier = Modifier.weight(1f)
@@ -308,7 +376,7 @@ private fun SplitItemCard(
                     value = item.note,
                     onValueChange = { onUpdate(item.copy(note = it)) },
                     label = { Text("Note / Item") },
-                    placeholder = { Text("e.g. Meat") },
+                    placeholder = { Text("e.g. Meat, Milk") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     modifier = Modifier.weight(1.2f)

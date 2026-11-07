@@ -386,6 +386,12 @@
     <string name="split_total_label">Splits Total: %1$s / %2$s</string>
     <string name="split_balanced">Balanced</string>
     <string name="split_difference">Remaining: %1$s</string>
+    <string name="total_receipt_amount">Total Receipt Amount (%1$s)</string>
+    <string name="sync_from_splits_btn">Sync Total with Splits (%1$s)</string>
+    <string name="fill_remainder_btn">Fill Remainder (%1$s)</string>
+    <string name="split_item_amount_label">Amount (%1$s)</string>
+    <string name="split_allocated_label">Allocated: %1$s</string>
+    <string name="split_receipt_label">Receipt: %1$s</string>
     <string name="attach_receipt_title">Receipt Photo</string>
     <string name="attach_receipt_btn">Attach Receipt Photo</string>
     <string name="change_receipt_btn">Change Photo</string>

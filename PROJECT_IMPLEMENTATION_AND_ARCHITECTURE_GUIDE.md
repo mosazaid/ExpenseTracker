@@ -598,6 +598,17 @@ $$\text{TotalTransactionAmount} = \sum_{i=1}^{N} \text{SplitAmount}_i$$
 - When calculating subcategory totals (`subCategorySpendMap`), the engine inspects each split item. If a transaction has splits, its base amount is bypassed and individual split amounts are credited to their respective `subCategoryId`.
 - Split lines with `debtType = LENT` allocate debt balances to `debtorName`, preventing lent amounts from polluting personal expense categories.
 
+#### Split Transaction UI/UX & Real-Time Synchronization Architecture:
+1. **Permanent Amount Visibility**:
+   - The primary amount field in `AddTransactionScreen` remains visible regardless of whether `isSplitMode` is active.
+   - When split mode is enabled, the input field is labeled as `Total Receipt Amount (${currency})`, supporting full inline arithmetic evaluation (e.g. `20 + 15.5 * 2`).
+2. **Bidirectional Top-Down & Bottom-Up Synchronization**:
+   - **Top-Down Flow**: The user enters the total receipt amount (e.g. `50.00 JOD`) and turns on Split Items. The system displays a live status bar tracking `Allocated: $XX.XX / Receipt: $50.00 (Remaining: $YY.YY)`. Adding a new split item or tapping "Fill Remainder" atomically prefills the unallocated remainder without race conditions.
+   - **Bottom-Up Flow**: The user enters individual item breakdown amounts first without knowing the grand total. The system renders an actionable `Sync Total with Splits` chip (`≈ $XX.XX JOD (Sync from splits)`). Tapping it copies the split sum to the receipt total. Furthermore, `isFormValid` and the save pipeline automatically inherit $\sum \text{SplitAmount}_i$ as the transaction total if the user leaves the main field blank, preventing form validation lockups.
+3. **Card Header Badges & Tabular Numerals**:
+   - Each `SplitItemCard` displays a formatted amount badge in its top header (e.g. `JOD 15.50`) formatted via `CurrencyUtils.formatCurrency` and tabular figures, ensuring clear item-level visibility.
+   - Explicit labels and currency prefixes are rendered in the item amount text fields.
+
 ---
 
 ### 6.8 Day-Normalized Category Pacing & Waterfall Variance Engine

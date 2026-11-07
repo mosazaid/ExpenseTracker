@@ -47,6 +47,23 @@ ExpenseTracker helps you track personal money with salary-aware months, Cash/Ban
 - **Clear All Active Notifications**: Added "Clear All" with confirmation dialog to `AlertsScreen` and `AppTopBar`, instantly clearing all active alert inbox items.
 - **Sticky / Ongoing Foreground Notifications**: Configurable option in Notification Settings to pin critical notification types (Prayer/Adhan, Daily 9 PM check-in, Budget limit warnings, Loan reminders, Salary notices) to the status bar so they cannot be accidentally swiped away.
 
+### 8. Split Transaction Amount Visibility & Real-Time Sync
+- **Always-Visible Amount Input**: Fixed issue where enabling split mode hid the total amount field; now permanently displays `Total Receipt Amount (${currency})` with inline arithmetic support.
+- **Real-Time Bidirectional Sync**: One-tap `Sync Total with Splits` chip synchronizes total amount from item split sums, and automatic derivation prevents form validation locks when starting bottom-up.
+- **Split Item Header Badges**: Every split item card displays a prominent tabular amount badge in its header and an explicit amount field with currency formatting.
+- **Atomic Balance Prefill**: Remainder allocation ("+ Add Split Item" and "Fill Remainder") pre-fills remaining unallocated funds atomically.
+
+### 9. Annual History Month Filter & Descending Chronological Ordering
+- **Scoped Annual History Month Filter**: Dropdown and bottom sheet filter on Annual History dynamically recalculating category totals, subcategories, and transactions for a selected month.
+- **Descending Chronological Sorting**: Month options are sorted descending (latest month first) in both calendar and salary modes.
+
+### 10. Statistics Zero-Ellipsis Waterfall & Transparent Insights Status Guide
+- **Zero-Ellipsis Multi-Tier Waterfall**: Full-width cards with natural multi-line wrapping eliminating all truncation (`...`) across category names, subcategories, and merchant spike drivers.
+- **Interactive Pacing Status Guide**: Comprehensive breakdown of all 5 Smart Financial Insight statuses (`SUPER_SAVER`, `OPTIMAL`, `MODERATE_BURN`, `HIGH_BURN`, `DEFICIT_CRITICAL`) with dynamic active highlighting.
+
+### 11. Expanded 8-Module App Guide Walkthrough
+- Comprehensive interactive onboarding guide covering Accounts & Safe Vaults, Smart Insights, Comparisons & Analytics, Split Receipts, Bank SMS, Travel Mode, Islamic Finance, and Glance Widgets with pro-tip banners and step indicators.
+
 ---
 
 ## What's New (Phase 13 Releases)

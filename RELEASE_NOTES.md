@@ -67,6 +67,12 @@
     - **Page 8: Glance Widgets & Privacy**: 4×2 Payday Pacing widget, 2×1 Quick-Add widget, and 100% offline biometric privacy.
     - Added dedicated **Feature Highlight Cards**, **Actionable Pro-Tip Banners**, Step Counter pills (`Step X of 8`), and bidirectional Back/Next navigation.
   - Full Arabic and English localization for all new guide strings.
+- **Split Transaction Amount Visibility & Real-Time Sync**:
+  - Resolved user-reported issue where activating "Split Items" mode hid the main transaction amount field and failed to display the split item amounts clearly.
+  - **Always-Visible Amount Input**: The main amount input is permanently visible and labeled `Total Receipt Amount (${currency})` when split mode is active, retaining full inline arithmetic calculations.
+  - **Live Sync Total with Splits**: Added an interactive chip displaying the real-time split sum (`≈ $XX.XX JOD (Sync from splits)`). If the user adds split items without entering a total receipt amount, saving automatically derives the total from the split sum without blocking form validation.
+  - **Split Item Header Amount Badges**: Each split card now features a prominent formatted amount badge in its header (`CurrencyUtils.formatCurrency` with tabular figures) and an explicit `Amount (${currency})` input field.
+  - **Atomic Remainder Allocation**: Upgraded "+ Add Split Item" and "Fill Remainder" to atomically prefill unallocated amounts, resolving race conditions.
 
 ---
 

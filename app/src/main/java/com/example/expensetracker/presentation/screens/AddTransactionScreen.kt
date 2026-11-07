@@ -47,6 +47,7 @@ import com.example.expensetracker.presentation.components.AccountBalanceCards
 import com.example.expensetracker.presentation.components.AppTopBar
 import com.example.expensetracker.presentation.viewModel.AddEditTransactionViewModel
 import com.example.expensetracker.presentation.viewModel.LIQUID_ACCOUNTS
+import com.example.expensetracker.presentation.theme.withTabularNums
 import kotlinx.coroutines.launch
 import java.util.*
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -916,59 +917,99 @@ fun AddTransactionScreen(
             }
         }
 
-        // ── 7. Amount Field (hidden in split mode — the SplitTransactionSection owns the amount)
-        if (!uiState.isSplitMode) {
-            if (uiState.currency != "JOD") {
-                OutlinedTextField(
-                    value = uiState.originalAmount,
-                    onValueChange = { viewModel.updateOriginalAmount(CurrencyUtils.cleanDecimalInput(it)) },
-                    label = { Text("Amount (${uiState.currency})") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+        // ── 7. Amount Field (Always visible so total receipt amount is clearly seen and editable)
+        val amountFieldLabel = if (uiState.isSplitMode) {
+            stringResource(R.string.total_receipt_amount, uiState.currency)
+        } else {
+            if (uiState.currency != "JOD") "Amount (${uiState.currency})" else "Amount (JOD)"
+        }
+
+        if (uiState.currency != "JOD") {
+            OutlinedTextField(
+                value = uiState.originalAmount,
+                onValueChange = { viewModel.updateOriginalAmount(CurrencyUtils.cleanDecimalInput(it)) },
+                label = { Text(amountFieldLabel) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                modifier = Modifier.fillMaxWidth()
+            )
+            val convertedAmount = uiState.amount
+            if (convertedAmount.isNotBlank() && convertedAmount.toDoubleOrNull() != null) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                     modifier = Modifier.fillMaxWidth()
-                )
-                val convertedAmount = uiState.amount
-                if (convertedAmount.isNotBlank() && convertedAmount.toDoubleOrNull() != null) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                        modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "≈ $convertedAmount JOD (converted to home ledger)",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+            }
+        } else {
+            val hasMath = ArithmeticEvaluator.hasOperator(uiState.amount)
+            val evaluatedAmount = remember(uiState.amount) {
+                if (hasMath) ArithmeticEvaluator.evaluate(uiState.amount) else null
+            }
+
+            OutlinedTextField(
+                value = uiState.amount,
+                onValueChange = { viewModel.updateAmount(ArithmeticEvaluator.cleanArithmeticInput(it)) },
+                label = { Text(amountFieldLabel) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                trailingIcon = {
+                    if (evaluatedAmount != null) {
+                        TextButton(
+                            onClick = {
+                                viewModel.updateAmount(ArithmeticEvaluator.formatResult(evaluatedAmount))
+                            }
+                        ) {
+                            Text("= " + ArithmeticEvaluator.formatResult(evaluatedAmount), fontWeight = FontWeight.Bold)
+                        }
+                    }
+                },
+                isError = uiState.amount.isNotBlank() && uiState.amount.toDoubleOrNull() == null && evaluatedAmount == null,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        // In split mode: show quick sync chip if splits total differs from amount
+        if (uiState.isSplitMode && uiState.splits.isNotEmpty()) {
+            val splitsTotal = uiState.splits.sumOf { it.amount.toDoubleOrNull() ?: 0.0 }
+            val currentAmt = uiState.amount.toDoubleOrNull() ?: 0.0
+            if (splitsTotal > 0 && Math.abs(currentAmt - splitsTotal) > 0.009) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            viewModel.updateAmount(String.format(java.util.Locale.US, "%.2f", splitsTotal))
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "≈ $convertedAmount JOD (converted to home ledger)",
-                            style = MaterialTheme.typography.bodySmall,
+                            text = stringResource(R.string.sync_from_splits_btn, CurrencyUtils.formatCurrency(splitsTotal)),
+                            style = MaterialTheme.typography.labelSmall.withTabularNums(),
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Icon(
+                            imageVector = Icons.Outlined.Autorenew,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 }
-            } else {
-                val hasMath = ArithmeticEvaluator.hasOperator(uiState.amount)
-                val evaluatedAmount = remember(uiState.amount) {
-                    if (hasMath) ArithmeticEvaluator.evaluate(uiState.amount) else null
-                }
-
-                OutlinedTextField(
-                    value = uiState.amount,
-                    onValueChange = { viewModel.updateAmount(ArithmeticEvaluator.cleanArithmeticInput(it)) },
-                    label = { Text("Amount (JOD)") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-                    trailingIcon = {
-                        if (evaluatedAmount != null) {
-                            TextButton(
-                                onClick = {
-                                    viewModel.updateAmount(ArithmeticEvaluator.formatResult(evaluatedAmount))
-                                }
-                            ) {
-                                Text("= " + ArithmeticEvaluator.formatResult(evaluatedAmount), fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    },
-                    isError = uiState.amount.isNotBlank() && uiState.amount.toDoubleOrNull() == null && evaluatedAmount == null,
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
         }
 
@@ -981,10 +1022,12 @@ fun AddTransactionScreen(
                 splits = uiState.splits,
                 mainAmountStr = uiState.amount,
                 availableSubCategories = savedSubCategories,
+                currency = uiState.currency,
                 onToggleSplitMode = { viewModel.setSplitMode(it) },
-                onAddSplit = { viewModel.addSplitItem() },
+                onAddSplit = { splitItem -> viewModel.addSplitItem(splitItem) },
                 onUpdateSplit = { idx, item -> viewModel.updateSplitItem(idx, item) },
-                onRemoveSplit = { idx -> viewModel.removeSplitItem(idx) }
+                onRemoveSplit = { idx -> viewModel.removeSplitItem(idx) },
+                onSetMainAmount = { viewModel.updateAmount(it) }
             )
         }
 
@@ -1327,14 +1370,24 @@ fun AddTransactionScreen(
         val evaluatedMath = remember(uiState.amount) {
             if (ArithmeticEvaluator.hasOperator(uiState.amount)) ArithmeticEvaluator.evaluate(uiState.amount) else null
         }
-        val isFormValid = (uiState.amount.toDoubleOrNull() != null || evaluatedMath != null) &&
-            uiState.amount.isNotBlank() &&
-            uiState.selectedCategory != null
+        val splitsTotal = remember(uiState.splits) {
+            uiState.splits.sumOf { it.amount.toDoubleOrNull() ?: 0.0 }
+        }
+        val isFormValid = (
+            uiState.amount.toDoubleOrNull() != null ||
+            evaluatedMath != null ||
+            (uiState.isSplitMode && splitsTotal > 0.0)
+        ) && uiState.selectedCategory != null
 
         Button(
             onClick = {
                 coroutineScope.launch {
-                    val amountDouble = uiState.amount.toDoubleOrNull() ?: evaluatedMath
+                    val amountDouble = uiState.amount.toDoubleOrNull()
+                        ?: evaluatedMath
+                        ?: if (uiState.isSplitMode && splitsTotal > 0.0) {
+                            viewModel.updateAmount(String.format(java.util.Locale.US, "%.2f", splitsTotal))
+                            splitsTotal
+                        } else null
                     val category = uiState.selectedCategory
                     if (amountDouble == null || category == null) return@launch
 

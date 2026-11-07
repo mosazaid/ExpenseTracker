@@ -386,6 +386,12 @@
     <string name="split_total_label">إجمالي التقسيم: %1$s / %2$s</string>
     <string name="split_balanced">متطابق</string>
     <string name="split_difference">المتبقي: %1$s</string>
+    <string name="total_receipt_amount">إجمالي مبلغ الفاتورة (%1$s)</string>
+    <string name="sync_from_splits_btn">مطابقة الإجمالي مع المجموع (%1$s)</string>
+    <string name="fill_remainder_btn">تعبئة المتبقي (%1$s)</string>
+    <string name="split_item_amount_label">المبلغ (%1$s)</string>
+    <string name="split_allocated_label">المُوزّع: %1$s</string>
+    <string name="split_receipt_label">الفاتورة: %1$s</string>
     <string name="attach_receipt_title">صورة الفاتورة / الوصل</string>
     <string name="attach_receipt_btn">إرفاق صورة الفاتورة</string>
     <string name="change_receipt_btn">تغيير الصورة</string>
