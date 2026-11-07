@@ -461,6 +461,31 @@
     <string name="pacing_info_projection_desc">The expected net balance when the cycle concludes, calculated by comparing your baseline budget against current spend and realistic remaining run rate.</string>
     <string name="pacing_info_close">Understood</string>
 
+    <!-- Pacing Status Details Guide -->
+    <string name="pacing_guide_title">Spending Pacing Statuses &amp; Triggers</string>
+    <string name="pacing_guide_subtitle">Exact mathematical thresholds and recommended financial actions for each status</string>
+    <string name="pacing_status_super_saver">Super Saver</string>
+    <string name="pacing_status_super_saver_condition">Velocity &lt; 0.50x • Spending at less than half of calendar pace</string>
+    <string name="pacing_status_super_saver_desc">Occurs when outlays are minimal relative to days passed. On track for an exceptional month-end surplus.</string>
+    <string name="pacing_status_optimal">Healthy Rhythm (Optimal)</string>
+    <string name="pacing_status_optimal_condition">Velocity 0.50x–1.10x • Spending in sync with time passed (±10%)</string>
+    <string name="pacing_status_optimal_desc">Occurs when daily expenses match the calendar schedule smoothly. No adjustments needed to finish within budget.</string>
+    <string name="pacing_status_moderate">Pacing Slightly Elevated</string>
+    <string name="pacing_status_moderate_condition">Velocity 1.10x–1.35x (or &gt;1.25x in days 1–5) • Ahead of calendar time</string>
+    <string name="pacing_status_moderate_desc" formatted="false">Occurs when spending is 10%–35% faster than calendar days. Aim for the recommended safe daily spend to rebalance.</string>
+    <string name="pacing_status_high">High Spending Velocity</string>
+    <string name="pacing_status_high_condition">Velocity &gt; 1.35x • Outlays over 35% faster than safe pace</string>
+    <string name="pacing_status_high_desc">Occurs when spending accelerates significantly ahead of schedule. Postpone discretionary buys to prevent month-end shortage.</string>
+    <string name="pacing_status_deficit">Deficit Critical Alert</string>
+    <string name="pacing_status_deficit_condition">Budget Consumed ≥ 100% • Outlays exceed available funds</string>
+    <string name="pacing_status_deficit_desc">Occurs when total expenses equal or exceed the baseline budget. All further spending must be restricted strictly to critical survival essentials.</string>
+    <string name="pacing_status_active_now">Active Status Now</string>
+
+    <string name="onboarding_title_4">Deep Comparisons &amp; Analytics</string>
+    <string name="onboarding_desc_4">Compare spending month-over-month, drill down into subcategory drivers, and filter multi-year history by specific month.</string>
+    <string name="onboarding_title_5">Intelligent Pacing &amp; Safe Spend</string>
+    <string name="onboarding_desc_5">Know your safe daily spend allowance at all times, with early-cycle damping and proactive pacing status alerts.</string>
+
     <!-- Full App Backup & Migration -->
     <string name="full_backup_title">Complete App Backup (Transfer to Another Device)</string>
     <string name="full_backup_desc">Backup or restore everything: all transactions, categories, loans, debts, recurring items, alerts, and settings.</string>

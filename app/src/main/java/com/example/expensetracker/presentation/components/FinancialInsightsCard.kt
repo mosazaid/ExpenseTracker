@@ -464,6 +464,71 @@ fun FinancialInsightsInfoDialog(
                         else
                             "Deficit: -${CurrencyUtils.formatCurrency(kotlin.math.abs(analysis.projectedDifference))}"
                     )
+
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+
+                    // Header for All Pacing Statuses Guide
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            text = stringResource(R.string.pacing_guide_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stringResource(R.string.pacing_guide_subtitle),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+
+                    // 1. Super Saver
+                    PacingStatusItemRow(
+                        title = stringResource(R.string.pacing_status_super_saver),
+                        condition = stringResource(R.string.pacing_status_super_saver_condition),
+                        description = stringResource(R.string.pacing_status_super_saver_desc),
+                        badgeColor = FinancePositive,
+                        isActive = analysis.status == PacingStatus.SUPER_SAVER
+                    )
+
+                    // 2. Optimal
+                    PacingStatusItemRow(
+                        title = stringResource(R.string.pacing_status_optimal),
+                        condition = stringResource(R.string.pacing_status_optimal_condition),
+                        description = stringResource(R.string.pacing_status_optimal_desc),
+                        badgeColor = MaterialTheme.colorScheme.primary,
+                        isActive = analysis.status == PacingStatus.OPTIMAL
+                    )
+
+                    // 3. Moderate Burn
+                    PacingStatusItemRow(
+                        title = stringResource(R.string.pacing_status_moderate),
+                        condition = stringResource(R.string.pacing_status_moderate_condition),
+                        description = stringResource(R.string.pacing_status_moderate_desc),
+                        badgeColor = Color(0xFFF59E0B),
+                        isActive = analysis.status == PacingStatus.MODERATE_BURN
+                    )
+
+                    // 4. High Burn
+                    PacingStatusItemRow(
+                        title = stringResource(R.string.pacing_status_high),
+                        condition = stringResource(R.string.pacing_status_high_condition),
+                        description = stringResource(R.string.pacing_status_high_desc),
+                        badgeColor = FinanceNegative,
+                        isActive = analysis.status == PacingStatus.HIGH_BURN
+                    )
+
+                    // 5. Deficit Critical Alert
+                    PacingStatusItemRow(
+                        title = stringResource(R.string.pacing_status_deficit),
+                        condition = stringResource(R.string.pacing_status_deficit_condition),
+                        description = stringResource(R.string.pacing_status_deficit_desc),
+                        badgeColor = Color(0xFFDC2626),
+                        isActive = analysis.status == PacingStatus.DEFICIT_CRITICAL
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -540,6 +605,89 @@ private fun InfoExplanationCard(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PacingStatusItemRow(
+    title: String,
+    condition: String,
+    description: String,
+    badgeColor: Color,
+    isActive: Boolean
+) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = if (isActive) badgeColor.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(
+            if (isActive) 1.5.dp else 1.dp,
+            if (isActive) badgeColor.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(badgeColor)
+                    )
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                if (isActive) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = badgeColor
+                    ) {
+                        Text(
+                            text = stringResource(R.string.pacing_status_active_now),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = badgeColor.copy(alpha = 0.12f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = condition,
+                    style = MaterialTheme.typography.labelSmall.withTabularNums(),
+                    fontWeight = FontWeight.SemiBold,
+                    color = badgeColor,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                )
+            }
+
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

@@ -8,8 +8,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -41,8 +43,6 @@ fun OnboardingScreen(
 ) {
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { 3 })
-
     val pages = listOf(
         OnboardingPageData(
             titleRes = R.string.onboarding_title_1,
@@ -57,12 +57,26 @@ fun OnboardingScreen(
             iconColor = MaterialTheme.colorScheme.secondary
         ),
         OnboardingPageData(
+            titleRes = R.string.onboarding_title_4,
+            descRes = R.string.onboarding_desc_4,
+            icon = Icons.Outlined.BarChart,
+            iconColor = MaterialTheme.colorScheme.tertiary
+        ),
+        OnboardingPageData(
+            titleRes = R.string.onboarding_title_5,
+            descRes = R.string.onboarding_desc_5,
+            icon = Icons.Outlined.Speed,
+            iconColor = Color(0xFFF59E0B)
+        ),
+        OnboardingPageData(
             titleRes = R.string.onboarding_title_3,
             descRes = R.string.onboarding_desc_3,
             icon = Icons.Outlined.Security,
-            iconColor = MaterialTheme.colorScheme.tertiary
+            iconColor = MaterialTheme.colorScheme.primary
         )
     )
+
+    val pagerState = rememberPagerState(pageCount = { pages.size })
 
     Surface(
         modifier = modifier.fillMaxSize(),

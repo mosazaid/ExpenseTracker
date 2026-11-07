@@ -41,6 +41,27 @@
 - **Yearly Transaction History Month Filtering & Category/Subcategory Isolation**:
   - Added dynamic Month filtering dropdown on `HistoryScreen` when reviewing Annual history (`selectedPeriod == HistoryPeriod.YEAR`), alongside full integration into `TransactionFilterBottomSheet`.
   - When filtering by a specific month (e.g. October 2026), the Category dropdown, Subcategory dropdown, and active transaction sections immediately recalculate to display the exact expenses, subcategory breakdowns, and transactions for that specific month only. One-tap 'X' button restores full-year inspection.
+- **Statistics Comparisons Redesign (Zero Ellipsis Architecture)**:
+  - Eliminated all truncation and ugly ellipsis (`...`) across category names, subcategory titles, merchant driver insights, and variance alerts in `SubcategoryComparisonCard`, `SubcategoryDrillDownBottomSheet`, and `StatisticsScreen`.
+  - Re-architected subcategory waterfall items into modern, multi-tiered cards:
+    - *Tier 1*: Subcategory title (wrapping naturally up to 2 lines) + transaction count badge on left; current spend + delta percentage pill + drill-down chevron on right.
+    - *Tier 2*: Clean comparison sub-row displaying `Previous: JOD XX.XX` alongside explicit dollar difference (`+$YY.YY difference`).
+    - *Tier 3*: Dual proportional comparison bars labeled `Current` vs `Previous`.
+    - *Tier 4*: Full-width variance diagnosis alert banner wrapping cleanly without text clipping.
+  - Extracted category spike driver insights (e.g. `Top: Carrefour (+JOD 45.00)`) to dedicated full-width warning pills beneath headers.
+  - Updated `MonthlyComparisonCard` with flexible weighted columns and tabular numerals for zero clipping.
+- **Feature Transparency & Smart Financial Insights Status Guide**:
+  - Integrated a dedicated, interactive **Spending Pacing Status Guide** into `FinancialInsightsInfoDialog`:
+    - Full mathematical breakdown of all 5 Pacing Statuses (`SUPER_SAVER`, `OPTIMAL`, `MODERATE_BURN`, `HIGH_BURN`, `DEFICIT_CRITICAL`), their velocity ratios, conditions, and actionable advice.
+    - Dynamically highlights user's current active status with real-time velocity metrics.
+    - Explains baseline liquid budget grounding, Vault/Wallet exclusion, Safe Daily Spend formula, and early-cycle damping (Days 1–5).
+  - Expanded in-app **App Guide & Walkthrough** (`OnboardingScreen`) to 5 interactive pages:
+    - Page 1: Track Accounts & Wallets
+    - Page 2: Smart Financial Insights
+    - Page 3: Deep Comparisons & Analytics (Month-over-month comparisons, subcategory drill-down, annual history month filter)
+    - Page 4: Intelligent Pacing Statuses & Safe Daily Spend
+    - Page 5: 100% Offline & Biometric Security
+  - Full Arabic and English localization for all new guide strings.
 
 ---
 

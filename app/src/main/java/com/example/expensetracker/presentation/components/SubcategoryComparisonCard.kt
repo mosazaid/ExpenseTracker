@@ -405,7 +405,10 @@ private fun CategoryWaterfallRow(
                             Text(text = item.categoryIcon, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -415,8 +418,7 @@ private fun CategoryWaterfallRow(
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                maxLines = 2
                             )
                             if (item.subcategories.isNotEmpty()) {
                                 Surface(
@@ -431,16 +433,6 @@ private fun CategoryWaterfallRow(
                                     )
                                 }
                             }
-                        }
-                        // Top spike driver insight
-                        if (!item.topSpikeInsight.isNullOrBlank()) {
-                            Text(
-                                text = item.topSpikeInsight,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = FinanceWarning,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
                         }
                     }
                 }
@@ -489,6 +481,36 @@ private fun CategoryWaterfallRow(
                         tint = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.size(20.dp)
                     )
+                }
+            }
+
+            // Top spike driver insight - full width so full merchant name and amount are shown cleanly without ellipsis
+            if (!item.topSpikeInsight.isNullOrBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = FinanceWarning.copy(alpha = 0.08f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 2.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
+                            contentDescription = null,
+                            tint = FinanceWarning,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = item.topSpikeInsight,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = FinanceWarning,
+                            maxLines = 2
+                        )
+                    }
                 }
             }
 
@@ -541,16 +563,18 @@ private fun SubcategoryWaterfallItemRow(
     val compareRatio = (subItem.compareAmount / maxSpendInCat).toFloat().coerceIn(0.04f, 1f)
 
     Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
         Column(
-            modifier = Modifier.padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Tier 1: Subcategory Name & Txn badge (left) vs Current Amount & Delta Pill & Chevron (right)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -571,8 +595,7 @@ private fun SubcategoryWaterfallItemRow(
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = 2
                     )
                     if (subItem.baseTxnCount > 0) {
                         Surface(
@@ -599,11 +622,6 @@ private fun SubcategoryWaterfallItemRow(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Text(
-                        text = "vs ${CurrencyUtils.formatCurrency(subItem.compareAmount)}",
-                        style = MaterialTheme.typography.labelSmall.withTabularNums(),
-                        color = MaterialTheme.colorScheme.outline
-                    )
 
                     Surface(
                         shape = RoundedCornerShape(6.dp),
@@ -627,19 +645,43 @@ private fun SubcategoryWaterfallItemRow(
                 }
             }
 
-            // Proportional Comparison Bar: Base bar vs Compare bar
-            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                // Base month bar
+            // Tier 2: Comparison detail sub-row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Previous: ${CurrencyUtils.formatCurrency(subItem.compareAmount)}",
+                    style = MaterialTheme.typography.labelSmall.withTabularNums(),
+                    color = MaterialTheme.colorScheme.outline
+                )
+
+                val diff = subItem.baseAmount - subItem.compareAmount
+                if (subItem.compareAmount > 0.0) {
+                    val sign = if (diff > 0) "+" else ""
+                    Text(
+                        text = "$sign${CurrencyUtils.formatCurrency(diff)} difference",
+                        style = MaterialTheme.typography.labelSmall.withTabularNums(),
+                        fontWeight = FontWeight.Medium,
+                        color = deltaColor
+                    )
+                }
+            }
+
+            // Tier 3: Proportional Comparison Bars
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                // Base / Current month bar
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Base",
+                        text = "Current",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.width(36.dp)
+                        modifier = Modifier.width(44.dp)
                     )
                     Box(
                         modifier = Modifier
@@ -658,17 +700,17 @@ private fun SubcategoryWaterfallItemRow(
                     }
                 }
 
-                // Compare month bar
+                // Compare / Previous month bar
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Comp",
+                        text = "Previous",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.width(36.dp)
+                        modifier = Modifier.width(44.dp)
                     )
                     Box(
                         modifier = Modifier
@@ -688,30 +730,29 @@ private fun SubcategoryWaterfallItemRow(
                 }
             }
 
-            // Spike insight text if available
+            // Tier 4: Variance insight text (Clean full-width banner, wrapping naturally without ellipsis)
             if (!subItem.varianceInsight.isNullOrBlank()) {
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(8.dp),
                     color = FinanceNegative.copy(alpha = 0.08f),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Info,
                             contentDescription = null,
                             tint = FinanceNegative,
-                            modifier = Modifier.size(12.dp)
+                            modifier = Modifier.size(14.dp)
                         )
                         Text(
                             text = subItem.varianceInsight,
                             style = MaterialTheme.typography.labelSmall,
                             color = FinanceNegative,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            maxLines = 3
                         )
                     }
                 }

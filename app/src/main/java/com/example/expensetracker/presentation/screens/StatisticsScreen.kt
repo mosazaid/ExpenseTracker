@@ -433,7 +433,10 @@ private fun MonthlyComparisonCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
                     Text(
                         text = stringResource(R.string.expense),
                         style = MaterialTheme.typography.labelMedium,
@@ -451,6 +454,8 @@ private fun MonthlyComparisonCard(
                         color = MaterialTheme.colorScheme.outline
                     )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
@@ -481,7 +486,10 @@ private fun MonthlyComparisonCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
                     Text(
                         text = stringResource(R.string.income),
                         style = MaterialTheme.typography.labelMedium,
@@ -499,6 +507,8 @@ private fun MonthlyComparisonCard(
                         color = MaterialTheme.colorScheme.outline
                     )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),

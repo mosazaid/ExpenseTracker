@@ -461,6 +461,31 @@
     <string name="pacing_info_projection_desc">الرصيد الصافي المتوقع عند انتهاء الدورة المالية، ويُحسب بمقارنة الميزانية بالمصروفات الحالية والمعدل الواقعي للأيام المتبقية.</string>
     <string name="pacing_info_close">فهمت ذلك</string>
 
+    <!-- Pacing Status Details Guide -->
+    <string name="pacing_guide_title">دليل حالات وتيرة الصرف والمعادلات</string>
+    <string name="pacing_guide_subtitle">الشروط الرياضية الدقيقة والتوجيهات المالية لكل حالة</string>
+    <string name="pacing_status_super_saver">توفير فائق (Super Saver)</string>
+    <string name="pacing_status_super_saver_condition">السرعة &lt; 0.50x • الصرف بأقل من نصف المعدل الزمني</string>
+    <string name="pacing_status_super_saver_desc">تظهر عندما تكون المصاريف منخفضة جداً مقارنة بالأيام المنقضية. متوقع فائض مالي ممتاز بنهاية الدورة.</string>
+    <string name="pacing_status_optimal">إيقاع صحي ومثالي (Optimal)</string>
+    <string name="pacing_status_optimal_condition">السرعة بين 0.50x و 1.10x • الصرف متوافق مع الأيام المنقضية (±10%)</string>
+    <string name="pacing_status_optimal_desc">تظهر عندما تسير المصاريف بتوازن تام مع الجدول الزمني. لا حاجة لتعديلات لإنهاء الدورة ضمن الميزانية.</string>
+    <string name="pacing_status_moderate">وتيرة مرتفعة قليلاً (Moderate Burn)</string>
+    <string name="pacing_status_moderate_condition">السرعة بين 1.10x و 1.35x (أو &gt;1.25x ببداية الدورة) • تسبق الوقت الزمني</string>
+    <string name="pacing_status_moderate_desc" formatted="false">تظهر عندما يسبق الإنفاق الوقت بنسبة 10% إلى 35%. التزم بالحد اليومي الآمن لاستعادة التوازن بسهولة.</string>
+    <string name="pacing_status_high">سرعة إنفاق عالية (High Burn)</string>
+    <string name="pacing_status_high_condition">السرعة &gt; 1.35x • وتيرة الإنفاق أسرع بـ 35% من المعدل الآمن</string>
+    <string name="pacing_status_high_desc">تظهر عند تسارع الصرف بشكل ملحوظ عن الزمن. أجّل المشتريات غير الضرورية والتزم بالحد اليومي لتجنب العجز.</string>
+    <string name="pacing_status_deficit">تنبيه عجز حرج (Deficit Alert)</string>
+    <string name="pacing_status_deficit_condition">المصروف المستهلك ≥ 100% • المصاريف تجاوزت الميزانية المتاحة</string>
+    <string name="pacing_status_deficit_desc">تظهر عند وصول المصاريف إلى 100% أو أكثر من الميزانية المتاحة. يجب حصر المصاريف القادمة في الضروريات القصوى فقط.</string>
+    <string name="pacing_status_active_now">الحالة الحالية الآن</string>
+
+    <string name="onboarding_title_4">تحليلات ومقارنات تفصيلية</string>
+    <string name="onboarding_desc_4">قارن المصاريف شهراً بشهر، واستكشف محركات التصنيفات الفرعية، وقم بفلترة سجل المعاملات السنوي حسب أي شهر محدد.</string>
+    <string name="onboarding_title_5">وتيرة ذكية وحد يومي آمن</string>
+    <string name="onboarding_desc_5">تعرف على مخصصك اليومي الآمن للصرف باستمرار، مع موازنة المدفوعات المبكرة وتنبيهات وتيرة الصرف الاستباقية.</string>
+
     <!-- Full App Backup & Migration -->
     <string name="full_backup_title">نسخة احتياطية شاملة (لنقل البيانات لجهاز آخر)</string>
     <string name="full_backup_desc">تصدير أو استعادة كل شيء: كافة المعاملات، التصنيفات، القروض، الديون، العمليات المتكررة، التنبيهات والإعدادات كاملة.</string>

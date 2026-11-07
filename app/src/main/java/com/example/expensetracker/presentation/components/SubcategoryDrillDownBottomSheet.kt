@@ -78,8 +78,7 @@ fun SubcategoryDrillDownBottomSheet(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            maxLines = 2
                         )
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -250,8 +249,7 @@ private fun DrillDownTransactionRow(item: DrillDownTransactionItem) {
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = 2
                     )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -280,8 +278,7 @@ private fun DrillDownTransactionRow(item: DrillDownTransactionItem) {
                                 text = "• ${item.note}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.outline,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                maxLines = 2
                             )
                         }
                     }

@@ -518,24 +518,32 @@ The financial intelligence engine computes real-time pacing metrics relative to 
    $$\text{TimeElapsedRatio} = \frac{\text{DayOfPeriod}}{\text{TotalPeriodDays}}$$
    $$\text{BudgetConsumedRatio} = \frac{\text{TotalExpense}}{\text{BaselineBudget}}$$
 
-4. **Spending Velocity Ratio ($V$)**:
+4. **Spending Velocity Ratio ($V$) & 5 Pacing Statuses**:
    $$V = \frac{\text{BudgetConsumedRatio}}{\text{TimeElapsedRatio}}$$
-   - $V < 0.70$: Super Saver (under-spending).
-   - $0.70 \le V \le 1.05$: Optimal / On Track.
-   - $1.05 < V \le 1.30$: Moderate Burn.
-   - $V > 1.30$: High Velocity Warning.
+
+   The engine classifies financial rhythm into five discrete, mathematically grounded statuses:
+
+   | Status | Mathematical Trigger Condition | Rationale & User Financial Guidance | Color Indicator |
+   | :--- | :--- | :--- | :--- |
+   | **Super Saver** (`SUPER_SAVER`) | $V < 0.50\text{x}$ | Outlays are consuming budget at less than half the calendar rate. Outstanding discipline; substantial projected surplus at month-end. | Green (`FinancePositive`) |
+   | **Healthy Rhythm (Optimal)** (`OPTIMAL`) | $0.50\text{x} \le V \le 1.10\text{x}$ | Spending pace matches elapsed time ($\pm 10\%$). Balanced and sustainable; no budget intervention needed. | Blue (`Primary`) |
+   | **Pacing Slightly Elevated** (`MODERATE_BURN`) | $1.10\text{x} < V \le 1.35\text{x}$ or Early Cycle ($d \le 5$) $V > 1.25\text{x}$ | Outlays are 10%–35% faster than calendar days. Aim for the recommended safe daily allowance to rebalance comfortably. | Amber (`Color(0xFFF59E0B)`) |
+   | **High Spending Velocity** (`HIGH_BURN`) | $V > 1.35\text{x}$ | Outlays are running $> 35\%$ faster than elapsed time. Discretionary spending must be restricted to safe daily spend to prevent a deficit. | Red (`FinanceNegative`) |
+   | **Deficit Critical Alert** (`DEFICIT_CRITICAL`) | $\text{TotalExpense} \ge \text{BaselineBudget}$ ($\text{Consumed} \ge 100\%$) | Outlays have consumed 100%+ of available spendable funds. Spending restricted strictly to critical survival essentials for remaining days. | Deep Alert Red (`Color(0xFFDC2626)`) |
 
 5. **Safe Daily Spend Remaining**:
    $$\text{SafeDailySpend} = \max\left(0.0, \; \frac{\text{BaselineBudget} - \text{TotalExpense}}{\text{DaysRemaining}}\right)$$
 
-6. **Projected Period Outcome**:
-   $$\text{DailySpendRate} = \frac{\text{TotalExpense}}{\text{DayOfPeriod}}$$
-   $$\text{ProjectedTotalSpend} = \text{DailySpendRate} \cdot \text{TotalPeriodDays}$$
-   $$\text{ProjectedDifference} = \text{BaselineBudget} - \text{ProjectedTotalSpend}$$
-   Positive values indicate projected surplus; negative indicates projected deficit.
-
-7. **Early-Cycle Damping Mechanism**:
-   During the first 3 days of a cycle ($\text{DayOfPeriod} \le 3$), normal upfront expenses (groceries, bills) naturally cause a temporary velocity spike. The engine activates **Early Cycle Damping**, softening deficit alerts until sufficient daily spending data accumulates.
+6. **Projected Period Outcome & Early-Cycle Damping**:
+   $$\text{DailySpendRate} = \frac{\text{TotalExpense}}{\max(1, \; \text{DayOfPeriod})}$$
+   - **Early-Cycle Damping ($\text{DayOfPeriod} \le 5$)**: Lump sums (rent, school fees, bulk grocery shopping) occurring on Days 1–5 are recognized as standard upfront outlays. Linearly multiplying day 1 spend ($700) by 30 produces absurd projections ($21,000). The engine blends early spending with remaining safe allowance:
+     $$\text{BlendedDailyFuture} = (0.20 \cdot \text{DailySpendRate}) + (0.80 \cdot \text{SafeDailySpendRemaining})$$
+     $$\text{ProjectedTotalSpend} = \min(\text{BaselineBudget} \cdot 1.50, \; \text{TotalExpense} + (\text{BlendedDailyFuture} \cdot \text{DaysRemaining}))$$
+   - **Mid-to-Late Cycle ($\text{DayOfPeriod} > 5$)**: Standard run-rate extrapolation:
+     $$\text{ProjectedTotalSpend} = \text{TotalExpense} + (\text{DailySpendRate} \cdot \text{DaysRemaining})$$
+   - **Projected Net Outcome**:
+     $$\text{ProjectedDifference} = \text{BaselineBudget} - \text{ProjectedTotalSpend}$$
+     Positive values indicate projected surplus; negative indicates projected deficit.
 
 ---
 
@@ -607,6 +615,15 @@ $$\text{TotalTransactionAmount} = \sum_{i=1}^{N} \text{SplitAmount}_i$$
    For parent category $C$ with child subcategories $S_1, S_2, \dots, S_k$:
    $$\text{Weight}(S_j) = \frac{\text{Spend}(S_j)}{\sum_{i=1}^{k} \text{Spend}(S_i)}$$
    Renders proportional horizontal spend bars and flags variance spikes ($|\Delta\%| > 30\%$) with driver merchant diagnoses.
+
+4. **UI/UX Waterfall Redesign & Elimination of Truncation (Zero Ellipsis Architecture)**:
+   - **No Truncated Labels**: Category and Subcategory names allow natural multi-line wrapping with `maxLines = 2` without single-line ellipsis clipping.
+   - **Full-Width Driver Spike Banners**: Top merchant spike insights (e.g., `Top: Carrefour Supermarket (+JOD 45.00)`) are extracted into dedicated full-width alert pills beneath category headers instead of competing for horizontal space against titles and amounts.
+   - **Multi-Tiered Subcategory Cards**:
+     - *Tier 1*: Subcategory name + transaction count badge on left (`Modifier.weight(1f)`); current spend + delta percentage pill + drill-down chevron on right.
+     - *Tier 2*: Clean comparison sub-row displaying `Previous: JOD XX.XX` alongside explicit dollar difference (`+$YY.YY difference`).
+     - *Tier 3*: Dual proportional comparison bars labeled `Current` vs `Previous`.
+     - *Tier 4*: Full-width variance diagnosis alert banner wrapping cleanly with zero truncation.
 
 ---
 
