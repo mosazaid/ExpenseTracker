@@ -1204,7 +1204,7 @@ ExpenseTracker employs a privacy-first, zero-registration monetization architect
 | `FinancialRunway` | `FinancialRunwayScreen` | Liquid wealth vs essential monthly burn rate stress-tester with interactive emergency shock slider. |
 | `MurabahaSimulator` | `MurabahaSimulatorScreen` | Islamic financing profit rate simulator, monthly installment schedule, one-tap import into Configured Loans. |
 | `Subscription` | `SubscriptionScreen` | 3-tier comparison matrix, 90-day device trial tracker, secret 5-tap Crown Owner VIP bypass. |
-| `Onboarding` | `OnboardingScreen` | First-run setup wizard for language, currency, month mode, and initial account balances. |
+| `Onboarding` | `OnboardingScreen` | 8-module comprehensive app walkthrough & feature guide with interactive cards, feature highlights, pro-tips, and step indicators. |
 | `BiometricLock` | `BiometricLockScreen` | Branded biometric and device PIN gate preventing unauthorized access on launch/resume. |
 | `LoanPaymentHistory` | `LoanPaymentHistoryScreen` | Historical installment records per configured loan with payment timestamps. |
 

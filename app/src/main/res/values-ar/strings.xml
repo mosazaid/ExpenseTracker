@@ -486,6 +486,75 @@
     <string name="onboarding_title_5">وتيرة ذكية وحد يومي آمن</string>
     <string name="onboarding_desc_5">تعرف على مخصصك اليومي الآمن للصرف باستمرار، مع موازنة المدفوعات المبكرة وتنبيهات وتيرة الصرف الاستباقية.</string>
 
+    <!-- Expanded Onboarding & App Guide (Arabic) -->
+    <string name="onboarding_step_format">خطوة %1$d من %2$d</string>
+    <string name="onboarding_back">السابق</string>
+    <string name="onboarding_pro_tip_label">نصيحة ذكية</string>
+
+    <!-- Page 1: Accounts & Vault -->
+    <string name="onboarding_tag_1">الحسابات والخزائن</string>
+    <string name="onboarding_h1_1">محفظة الكاش اليومي: تتبع النقود الفعلية في يدك بشكل منفصل عن البنوك</string>
+    <string name="onboarding_h1_2">الخزينة المحمية: احفظ المدخرات طويلة الأجل؛ والسحب منها لا يقلل ميزانيتك الشهرية</string>
+    <string name="onboarding_h1_3">تحويلات فورية: انقل الأموال بين الحسابات بسهولة وبدون أي تعقيد</string>
+    <string name="onboarding_tip_1">احفظ الفوائض المالية في الخزينة لحمايتها من المصاريف الاندفاعية اليومية.</string>
+
+    <!-- Page 2: Financial Insights -->
+    <string name="onboarding_tag_2">الذكاء المالي</string>
+    <string name="onboarding_h2_1">المصروف اليومي الآمن: مخصص يومي حي ومحدد وفقاً للأيام المتبقية في دورتك</string>
+    <string name="onboarding_h2_2">محرك وتيرة الصرف الخماسي: تنبيهات استباقية من التوفير الفائق حتى العجز الحرج</string>
+    <string name="onboarding_h2_3">موازنة بداية الدورة: المدفوعات الكبيرة المبكرة (الإيجار، الفواتير) لا تسبب إنذارات زائفة</string>
+    <string name="onboarding_tip_2">اضغط على زر المعلومات في بطاقة الذكاء المالي للاطلاع على معادلات حالات وتيرة الصرف الخمس.</string>
+
+    <!-- Page 3: Comparisons & Analytics -->
+    <string name="onboarding_tag_3">التحليلات العميقة</string>
+    <string name="onboarding_h3_1">الشجرة التوسعية: افتح أي تصنيف رئيسي لرؤية كافة التصنيفات الفرعية وأشرطة النسب</string>
+    <string name="onboarding_h3_2">فلترة السجل السنوي بالشهور: حدد معاملات أي شهر محدد ضمن السجل السنوي فوراً</string>
+    <string name="onboarding_h3_3" formatted="false">تشخيص القفزات المالية: تمييز تلقائي للتصنيفات التي تقفز >30% مع إظهار المتاجر المسؤولة</string>
+    <string name="onboarding_tip_3">اضغط على أي تصنيف فرعي في المقارنة لاستعراض تفاصيل المعاملات وصور الإيصالات المكبرة.</string>
+
+    <!-- Page 4: Split Receipts & Debts -->
+    <string name="onboarding_title_6">تقسيم الفواتير والقروض</string>
+    <string name="onboarding_desc_6">قسّم الفاتورة الواحدة بين تصنيفات متعددة وتتبع من يدين لك بالمال بسهولة تامة.</string>
+    <string name="onboarding_tag_4">التقسيم والديون</string>
+    <string name="onboarding_h4_1">تقسيم الإيصالات متعددة البنود: فاتورة واحدة تتوزع بين البقالة، والمنزل، والشخصي</string>
+    <string name="onboarding_h4_2">تخصيص الديون: المبالغ المُقرضة تُسجل لجهات الاتصال دون تلويث تقارير مصاريفك</string>
+    <string name="onboarding_h4_3">تمويل المرابحة الإسلامية: حساب نسب الأرباح البنكية وجداول الأقساط ومواعيد السداد</string>
+    <string name="onboarding_tip_4">فعّل خيار \'تقسيم المعاملة\' في شاشة الإضافة لتقسيم أي دفعة بين تصنيفات أو جهات متعددة.</string>
+
+    <!-- Page 5: Bank SMS & Auto Deductions -->
+    <string name="onboarding_title_7">رسائل البنوك والمصاريف الدورية</string>
+    <string name="onboarding_desc_7">التقط حركات البطاقات مباشرة من رسائل البنك النصية ودع المصاريف الدورية تُسجل تلقائياً.</string>
+    <string name="onboarding_tag_5">الأتمتة الذكية</string>
+    <string name="onboarding_h5_1">محلل رسائل بنوك الأردن والخليج: استيراد بنقرة واحدة من البنك العربي، الاتحاد، الإسكان، الراجحي وغيرها</string>
+    <string name="onboarding_h5_2">الخصم التلقائي بالخلفية: تسجيل الإيجار والاشتراكات آلياً فور حلول موعد استحقاقها</string>
+    <string name="onboarding_h5_3">إشعارات مثبتة بالواجهة: تثبيت التنبيهات المهمة حتى لا يتم مسحها بالخطأ</string>
+    <string name="onboarding_tip_5">الصق أي رسالة نصية من البنك مباشرة في شاشة الإضافة لتعبئة الحقول بلمسة واحدة.</string>
+
+    <!-- Page 6: Travel Mode & Multi-Currency -->
+    <string name="onboarding_title_8">وضع السفر والعملات المتعددة</string>
+    <string name="onboarding_desc_8">سافر بثقة تامة مع أسعار صرف فورية بدون إنترنت وميزانيات مستقلة لكل رحلة.</string>
+    <string name="onboarding_tag_6">السفر والعملات</string>
+    <string name="onboarding_h6_1">6 عملات مدعومة: تحويل سلس بدون إنترنت بين الدينار، الدولار، الريال، الدرهم، اليورو، والجنيه</string>
+    <string name="onboarding_h6_2">ميزانية مستقلة للرحلات: عزل مصاريف الإجازات حتى لا تؤثر على ميزانيتك الشهرية المعتادة</string>
+    <string name="onboarding_h6_3">سجل صرف العملات: توثيق عمليات الصرف بين حساباتك البنكية أو النقد الأجنبي</string>
+    <string name="onboarding_tip_6">أنشئ رحلة سفر قبل الانطلاق ليتم ربط كافة مصاريف الإجازة بميزانيتها المخصصة تلقائياً.</string>
+
+    <!-- Page 7: Islamic Finance & Sadaqah Jar -->
+    <string name="onboarding_title_9">الزكاة وحصّالة الصدقة</string>
+    <string name="onboarding_desc_9">عزز ثقافة العطاء مع تقريب الفكة التلقائي للصدقة وحساب دقيق للزكاة الشرعية.</string>
+    <string name="onboarding_tag_7">المالية الإسلامية</string>
+    <string name="onboarding_h7_1">حصّالة الصدقة الافتراضية: تقريب المشتريات لأقرب دينار وتجميع الفكة مع تذكير صباح الجمعة</string>
+    <string name="onboarding_h7_2">حاسبة حول الزكاة القمري: احتساب الأموال الزكوية عبر السيولة البنكية وجرامات الذهب</string>
+    <string name="onboarding_h7_3">نصاب ديناميكي: تقييم حي ومباشر وفق أسعار الذهب والفضة الشرعية</string>
+    <string name="onboarding_tip_7">يمكنك تفريغ حصّالة الصدقة في أي وقت وتسجيلها كمعاملة خيرية للجهة التي تفضلها.</string>
+
+    <!-- Page 8: Widgets & Privacy -->
+    <string name="onboarding_tag_8">الويدجت والخصوصية</string>
+    <string name="onboarding_h8_1">ويدجت وتيرة الراتب (4×2): رصيدك الحي، الأيام المتبقية للراتب، ومصروفك اليومي الآمن</string>
+    <string name="onboarding_h8_2">ويدجت الإضافة السريعة (2×1): مجموع مصاريف اليوم وزر فوري لتسجيل المعاملات</string>
+    <string name="onboarding_h8_3" formatted="false">100% بدون إنترنت وبصمة آمنة: لا سيرفرات ولا حسابات سحابية؛ مشفر بالكامل ببصمتك</string>
+    <string name="onboarding_tip_8">أضف كِلا الويدجت لشاشتك الرئيسية لمتابعة وضعك المالي فوراً وبدون الحاجة لفتح التطبيق.</string>
+
     <!-- Full App Backup & Migration -->
     <string name="full_backup_title">نسخة احتياطية شاملة (لنقل البيانات لجهاز آخر)</string>
     <string name="full_backup_desc">تصدير أو استعادة كل شيء: كافة المعاملات، التصنيفات، القروض، الديون، العمليات المتكررة، التنبيهات والإعدادات كاملة.</string>

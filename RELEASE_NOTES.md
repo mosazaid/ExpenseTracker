@@ -55,12 +55,16 @@
     - Full mathematical breakdown of all 5 Pacing Statuses (`SUPER_SAVER`, `OPTIMAL`, `MODERATE_BURN`, `HIGH_BURN`, `DEFICIT_CRITICAL`), their velocity ratios, conditions, and actionable advice.
     - Dynamically highlights user's current active status with real-time velocity metrics.
     - Explains baseline liquid budget grounding, Vault/Wallet exclusion, Safe Daily Spend formula, and early-cycle damping (Days 1–5).
-  - Expanded in-app **App Guide & Walkthrough** (`OnboardingScreen`) to 5 interactive pages:
-    - Page 1: Track Accounts & Wallets
-    - Page 2: Smart Financial Insights
-    - Page 3: Deep Comparisons & Analytics (Month-over-month comparisons, subcategory drill-down, annual history month filter)
-    - Page 4: Intelligent Pacing Statuses & Safe Daily Spend
-    - Page 5: 100% Offline & Biometric Security
+  - Expanded in-app **App Guide & Walkthrough** (`OnboardingScreen`) into an 8-module comprehensive educational tour:
+    - **Page 1: Accounts & Safe Vaults**: Pocket cash separation, deposit vault protection, and seamless multi-account transfers.
+    - **Page 2: Smart Financial Insights**: Proactive burn rate velocity, 5-status pacing engine, dynamic safe daily spend, and early-cycle damping.
+    - **Page 3: Deep Comparisons & Analytics**: Day-normalized comparisons, zero-ellipsis waterfall trees, annual history month filter, and spike merchant diagnosis.
+    - **Page 4: Split Receipts & Debts**: Multi-item single receipt splitting, contact debtor attribution, and Islamic Murabaha loan simulation.
+    - **Page 5: Bank SMS & Automated Bills**: Regional bank SMS parsing, WorkManager background auto-deductions, and sticky foreground alerts.
+    - **Page 6: Travel Mode & Multi-Currency**: 6 native currencies, offline exchange ledger, and dedicated holiday trip budgets.
+    - **Page 7: Islamic Finance & Sadaqah Jar**: Virtual Sadaqah spare-change round-up, Friday reminder, and lunar Zakah & Nisab calculator.
+    - **Page 8: Glance Widgets & Privacy**: 4×2 Payday Pacing widget, 2×1 Quick-Add widget, and 100% offline biometric privacy.
+    - Added dedicated **Feature Highlight Cards**, **Actionable Pro-Tip Banners**, Step Counter pills (`Step X of 8`), and bidirectional Back/Next navigation.
   - Full Arabic and English localization for all new guide strings.
 
 ---

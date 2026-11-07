@@ -486,6 +486,75 @@
     <string name="onboarding_title_5">Intelligent Pacing &amp; Safe Spend</string>
     <string name="onboarding_desc_5">Know your safe daily spend allowance at all times, with early-cycle damping and proactive pacing status alerts.</string>
 
+    <!-- Expanded Onboarding & App Guide -->
+    <string name="onboarding_step_format">Step %1$d of %2$d</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_pro_tip_label">Pro-Tip</string>
+
+    <!-- Page 1: Accounts & Vault -->
+    <string name="onboarding_tag_1">Accounts &amp; Vaults</string>
+    <string name="onboarding_h1_1">Pocket Cash Wallet: Keep cash-in-hand separated from bank balances</string>
+    <string name="onboarding_h1_2">Deposit Vault: Lock long-term savings; withdrawals never shrink your monthly budget</string>
+    <string name="onboarding_h1_3">Instant Transfers: Move money between accounts with zero friction</string>
+    <string name="onboarding_tip_1">Lock surplus funds into the Vault to protect them from everyday impulsive spending.</string>
+
+    <!-- Page 2: Financial Insights -->
+    <string name="onboarding_tag_2">AI Intelligence</string>
+    <string name="onboarding_h2_1">Safe Daily Spend: Live daily allowance tailored to days left in your cycle</string>
+    <string name="onboarding_h2_2">5-Status Rhythm Engine: Proactive warnings from Super Saver to Deficit Critical</string>
+    <string name="onboarding_h2_3">Early-Cycle Damping: Upfront lump sums (rent, fees) won\'t trigger false alarms</string>
+    <string name="onboarding_tip_2">Tap the info button on the Financial Insights card to view all 5 pacing status trigger formulas.</string>
+
+    <!-- Page 3: Comparisons & Analytics -->
+    <string name="onboarding_tag_3">Deep Analytics</string>
+    <string name="onboarding_h3_1">Waterfall Hierarchy: Expand any category to view all subcategories and visual bars</string>
+    <string name="onboarding_h3_2">Annual History Month Filter: Scope year-long history to any specific month instantly</string>
+    <string name="onboarding_h3_3" formatted="false">Spike Merchant Diagnosis: Auto-flags categories surging >30% with top driver purchases</string>
+    <string name="onboarding_tip_3">Tap any subcategory in the comparison view to drill down into itemized receipts and zoomable photos.</string>
+
+    <!-- Page 4: Split Receipts & Debts -->
+    <string name="onboarding_title_6">Split Receipts &amp; Loans</string>
+    <string name="onboarding_desc_6">Split single purchases across multiple categories and track who owes you money effortlessly.</string>
+    <string name="onboarding_tag_4">Splits &amp; Lending</string>
+    <string name="onboarding_h4_1">Multi-Item Split Receipts: One charge divided across groceries, home, and personal</string>
+    <string name="onboarding_h4_2">Debtor Attribution: Lent amounts are credited to contacts without polluting expenses</string>
+    <string name="onboarding_h4_3">Islamic Murabaha Financing: Calculate bank profit rates, principal schedules, and loan dues</string>
+    <string name="onboarding_tip_4">Turn on \'Split Transaction\' on the Add screen to divide any single payment across multiple categories.</string>
+
+    <!-- Page 5: Bank SMS & Auto Deductions -->
+    <string name="onboarding_title_7">Bank SMS &amp; Recurring Bills</string>
+    <string name="onboarding_desc_7">Capture bank transactions straight from SMS and let recurring expenses auto-deduct on their due dates.</string>
+    <string name="onboarding_tag_5">Automation</string>
+    <string name="onboarding_h5_1">Jordan &amp; GCC SMS Parser: One-tap import from Arab Bank, Etihad, JKB, Al Rajhi, and more</string>
+    <string name="onboarding_h5_2">Background Auto-Deduct: WorkManager logs rent and subscriptions automatically when due</string>
+    <string name="onboarding_h5_3">Sticky Foreground Alerts: Pin critical alerts so they can never be accidentally swiped away</string>
+    <string name="onboarding_tip_5">Paste any SMS message directly into the Add Transaction screen for instant auto-fill.</string>
+
+    <!-- Page 6: Travel Mode & Multi-Currency -->
+    <string name="onboarding_title_8">Travel Mode &amp; Multi-Currency</string>
+    <string name="onboarding_desc_8">Travel confidently with offline currency conversions and dedicated vacation trip budgets.</string>
+    <string name="onboarding_tag_6">Travel &amp; FX</string>
+    <string name="onboarding_h6_1">6 Native Currencies: Seamless offline conversions between JOD, USD, SAR, AED, EUR, and GBP</string>
+    <string name="onboarding_h6_2">Dedicated Trip Budgets: Isolate vacation spending so holidays never skew regular finances</string>
+    <string name="onboarding_h6_3">Currency Exchange Ledger: Track real conversions between bank accounts and foreign cash</string>
+    <string name="onboarding_tip_6">Create a trip before traveling to automatically attribute all vacation spending to its dedicated budget.</string>
+
+    <!-- Page 7: Islamic Finance & Sadaqah Jar -->
+    <string name="onboarding_title_9">Zakah &amp; Virtual Sadaqah Jar</string>
+    <string name="onboarding_desc_9">Cultivate mindful giving with automated spare change round-ups and accurate Zakah calculations.</string>
+    <string name="onboarding_tag_7">Ethical Finance</string>
+    <string name="onboarding_h7_1">Virtual Sadaqah Jar: Rounds up transactions to nearest unit with Friday reminders</string>
+    <string name="onboarding_h7_2">Zakah Lunar Hawl Calculator: Calculates eligible wealth across liquid funds and gold grams</string>
+    <string name="onboarding_h7_3">Dynamic Nisab Thresholds: Real-time evaluation against silver and gold market standards</string>
+    <string name="onboarding_tip_7">Accumulated Sadaqah can be emptied anytime as a logged charity expense to your preferred cause.</string>
+
+    <!-- Page 8: Widgets & Privacy -->
+    <string name="onboarding_tag_8">Widgets &amp; Privacy</string>
+    <string name="onboarding_h8_1">Payday Pacing Widget (4×2): Live balance, payday countdown, and safe daily spend on home screen</string>
+    <string name="onboarding_h8_2">Quick-Add Widget (2×1): Today\'s total expense and instant one-tap entry into logging</string>
+    <string name="onboarding_h8_3" formatted="false">100% Offline &amp; Biometrics: No cloud servers, no account needed; protected by fingerprint lock</string>
+    <string name="onboarding_tip_8">Add both Glance widgets to your home screen for effortless financial awareness without opening the app.</string>
+
     <!-- Full App Backup & Migration -->
     <string name="full_backup_title">Complete App Backup (Transfer to Another Device)</string>
     <string name="full_backup_desc">Backup or restore everything: all transactions, categories, loans, debts, recurring items, alerts, and settings.</string>
