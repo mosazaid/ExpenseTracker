@@ -633,8 +633,12 @@ $$\text{TotalTransactionAmount} = \sum_{i=1}^{N} \text{SplitAmount}_i$$
    - **Multi-Tiered Subcategory Cards**:
      - *Tier 1*: Subcategory name + transaction count badge on left (`Modifier.weight(1f)`); current spend + delta percentage pill + drill-down chevron on right.
      - *Tier 2*: Clean comparison sub-row displaying `Previous: JOD XX.XX` alongside explicit dollar difference (`+$YY.YY difference`).
-     - *Tier 3*: Dual proportional comparison bars labeled `Current` vs `Previous`.
+     - *Tier 3*: Dual proportional comparison bars labeled `Current` vs `Previous` (both clickable to drill into their respective period transactions).
      - *Tier 4*: Full-width variance diagnosis alert banner wrapping cleanly with zero truncation.
+   - **Dual-Period Comparison Drill-Down (`SubcategoryDrillDownBottomSheet`)**:
+     - `SubcategoryDrillDownData` encapsulates transactions, total spend, and transaction counts for both Base (Current) and Compare (Previous) periods.
+     - Interactive period selector chips allow seamless switching between months without exiting the sheet.
+     - Tapping the "Previous" bar or difference row in `SubcategoryComparisonCard` directly opens the sheet pre-focused on the compare period.
 
 ---
 

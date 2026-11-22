@@ -139,4 +139,46 @@ class HistoryGroupingComprehensiveTest {
         assertEquals(1, subFilteredSections.size)
         assertEquals(105.0, subFilteredSections.first().expenseTotal, 0.001)
     }
+
+    @Test
+    fun testExcludedCategoriesAndSubcategories() {
+        val now = Date()
+        val t1 = Transaction(id = 1L, amount = 50.0, type = TransactionType.EXPENSE, categoryId = 10L, subDescription = "Fuel", accountType = AccountType.CASH, date = now, description = "Gas")
+        val t2 = Transaction(id = 2L, amount = 100.0, type = TransactionType.EXPENSE, categoryId = 20L, subDescription = "Rent", accountType = AccountType.CASH, date = now, description = "Apartment")
+        val t3 = Transaction(id = 3L, amount = 30.0, type = TransactionType.EXPENSE, categoryId = 10L, subDescription = "Maintenance", accountType = AccountType.CASH, date = now, description = "Oil Change")
+
+        // 1. Exclude Category 20 (Rent)
+        val excludeCatSections = HistoryGrouping.group(
+            transactions = listOf(t1, t2, t3),
+            period = HistoryPeriod.MONTH,
+            typeFilter = TransactionTypeFilter.ALL,
+            excludedCategoryIds = setOf(20L)
+        ).flatMap { it.transactions }
+
+        assertEquals(2, excludeCatSections.size)
+        assertTrue(excludeCatSections.none { it.categoryId == 20L })
+
+        // 2. Exclude Subcategory "Fuel"
+        val excludeSubSections = HistoryGrouping.group(
+            transactions = listOf(t1, t2, t3),
+            period = HistoryPeriod.MONTH,
+            typeFilter = TransactionTypeFilter.ALL,
+            excludedSubCategories = setOf("Fuel")
+        ).flatMap { it.transactions }
+
+        assertEquals(2, excludeSubSections.size)
+        assertTrue(excludeSubSections.none { it.subDescription == "Fuel" })
+
+        // 3. Exclude both Category 20 and Subcategory "Maintenance"
+        val excludeBothSections = HistoryGrouping.group(
+            transactions = listOf(t1, t2, t3),
+            period = HistoryPeriod.MONTH,
+            typeFilter = TransactionTypeFilter.ALL,
+            excludedCategoryIds = setOf(20L),
+            excludedSubCategories = setOf("Maintenance")
+        ).flatMap { it.transactions }
+
+        assertEquals(1, excludeBothSections.size)
+        assertEquals(1L, excludeBothSections.first().id)
+    }
 }

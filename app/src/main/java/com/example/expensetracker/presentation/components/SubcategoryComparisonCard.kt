@@ -52,7 +52,7 @@ fun SubcategoryComparisonCard(
     onSelectMode: (ComparisonMode) -> Unit,
     onSelectBaseIndex: (Int) -> Unit,
     onSelectCompareIndex: (Int) -> Unit,
-    onSubcategoryClick: (categoryId: Long, subcategoryName: String) -> Unit,
+    onSubcategoryClick: (categoryId: Long, subcategoryName: String, initialPeriodIndex: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var baseExpanded by remember { mutableStateOf(false) }
@@ -353,8 +353,8 @@ fun SubcategoryComparisonCard(
                                     expandedCategoryIds + catItem.categoryId
                                 }
                             },
-                            onSubcategoryClick = { subName ->
-                                onSubcategoryClick(catItem.categoryId, subName)
+                            onSubcategoryClick = { subName, periodIndex ->
+                                onSubcategoryClick(catItem.categoryId, subName, periodIndex)
                             }
                         )
                     }
@@ -369,7 +369,7 @@ private fun CategoryWaterfallRow(
     item: CategoryComparisonItem,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
-    onSubcategoryClick: (String) -> Unit
+    onSubcategoryClick: (String, Int) -> Unit
 ) {
     Surface(
         shape = RoundedCornerShape(14.dp),
@@ -532,7 +532,7 @@ private fun CategoryWaterfallRow(
                         SubcategoryWaterfallItemRow(
                             subItem = subItem,
                             maxSpendInCat = max(1.0, max(item.baseTotal, item.compareTotal)),
-                            onClick = { onSubcategoryClick(subItem.name) }
+                            onClick = { periodIndex -> onSubcategoryClick(subItem.name, periodIndex) }
                         )
                     }
                 }
@@ -545,7 +545,7 @@ private fun CategoryWaterfallRow(
 private fun SubcategoryWaterfallItemRow(
     subItem: SubcategoryComparisonItem,
     maxSpendInCat: Double,
-    onClick: () -> Unit
+    onClick: (Int) -> Unit
 ) {
     val delta = subItem.deltaPercent
     val isLower = delta != null && delta < 0
@@ -568,7 +568,7 @@ private fun SubcategoryWaterfallItemRow(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = { onClick(0) })
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -645,9 +645,13 @@ private fun SubcategoryWaterfallItemRow(
                 }
             }
 
-            // Tier 2: Comparison detail sub-row
+            // Tier 2: Comparison detail sub-row (Clickable to inspect Previous month)
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(6.dp))
+                    .clickable { onClick(1) }
+                    .padding(vertical = 2.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -675,26 +679,31 @@ private fun SubcategoryWaterfallItemRow(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable { onClick(0) }
+                        .padding(vertical = 2.dp)
                 ) {
                     Text(
                         text = "Current",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.width(44.dp)
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.width(48.dp)
                     )
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp))
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp))
                             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth(baseRatio)
                                 .fillMaxHeight()
-                                .clip(RoundedCornerShape(3.dp))
+                                .clip(RoundedCornerShape(4.dp))
                                 .background(MaterialTheme.colorScheme.primary)
                         )
                     }
@@ -704,27 +713,32 @@ private fun SubcategoryWaterfallItemRow(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable { onClick(1) }
+                        .padding(vertical = 2.dp)
                 ) {
                     Text(
                         text = "Previous",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.width(44.dp)
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.width(48.dp)
                     )
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp))
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp))
                             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth(compareRatio)
                                 .fillMaxHeight()
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.45f))
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.65f))
                         )
                     }
                 }

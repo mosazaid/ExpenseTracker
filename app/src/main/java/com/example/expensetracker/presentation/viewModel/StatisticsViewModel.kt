@@ -127,6 +127,8 @@ class StatisticsViewModel @Inject constructor(
     private var cachedCategories: Map<Long, com.example.expensetracker.data.database.entities.Category> = emptyMap()
     private var cachedDrillDownBaseTxns: List<Transaction> = emptyList()
     private var cachedDrillDownBaseBounds: PeriodBounds? = null
+    private var cachedDrillDownCompareTxns: List<Transaction> = emptyList()
+    private var cachedDrillDownCompareBounds: PeriodBounds? = null
 
     fun loadStatisticsForPeriod(period: HistoryPeriod, referenceDate: Date = Date()) {
         viewModelScope.launch {
@@ -537,6 +539,8 @@ class StatisticsViewModel @Inject constructor(
 
         cachedDrillDownBaseTxns = baseTxns
         cachedDrillDownBaseBounds = baseOption.bounds
+        cachedDrillDownCompareTxns = compareTxns
+        cachedDrillDownCompareBounds = compareOption.bounds
 
         val splits = transactionRepository.getAllSplitsSnapshot().groupBy { it.transactionId }
         val categories = categoryRepository.getAllCategoriesSnapshot().associateBy { it.id }
@@ -689,53 +693,73 @@ class StatisticsViewModel @Inject constructor(
         return options
     }
 
-    fun openSubcategoryDrillDown(categoryId: Long, subcategoryName: String) {
+    fun openSubcategoryDrillDown(
+        categoryId: Long,
+        subcategoryName: String,
+        initialPeriodIndex: Int = 0
+    ) {
         val cat = cachedCategories[categoryId] ?: return
-        val baseTxns = cachedDrillDownBaseTxns
         val splits = cachedSplitsByTxnId
 
-        val matchingItems = mutableListOf<DrillDownTransactionItem>()
-        var totalAmount = 0.0
+        fun extractPeriodDrillDown(
+            txns: List<Transaction>,
+            bounds: PeriodBounds?
+        ): SubcategoryPeriodDrillDown {
+            val matchingItems = mutableListOf<DrillDownTransactionItem>()
+            var totalAmount = 0.0
 
-        for (txn in baseTxns.filter { it.categoryId == categoryId }) {
-            val txnSplits = splits[txn.id].orEmpty()
-            if (txnSplits.isNotEmpty()) {
-                val matchingSplits = txnSplits.filter {
-                    val name = it.subCategoryName?.trim()?.takeIf { s -> s.isNotBlank() } ?: "Other"
-                    name.equals(subcategoryName, ignoreCase = true)
-                }
-                for (split in matchingSplits) {
-                    matchingItems.add(
-                        DrillDownTransactionItem(
-                            id = txn.id,
-                            title = split.note?.takeIf { it.isNotBlank() } ?: txn.description.takeIf { it.isNotBlank() } ?: cat.name,
-                            note = "Part of Split: ${CurrencyUtils.formatCurrency(txn.amount)}",
-                            amount = split.amount,
-                            date = txn.date,
-                            accountType = txn.accountType,
-                            isSplit = true,
-                            parentAmount = txn.amount
+            for (txn in txns.filter { it.categoryId == categoryId }) {
+                val txnSplits = splits[txn.id].orEmpty()
+                if (txnSplits.isNotEmpty()) {
+                    val matchingSplits = txnSplits.filter {
+                        val name = it.subCategoryName?.trim()?.takeIf { s -> s.isNotBlank() } ?: "Other"
+                        name.equals(subcategoryName, ignoreCase = true)
+                    }
+                    for (split in matchingSplits) {
+                        matchingItems.add(
+                            DrillDownTransactionItem(
+                                id = txn.id,
+                                title = split.note?.takeIf { it.isNotBlank() } ?: txn.description.takeIf { it.isNotBlank() } ?: cat.name,
+                                note = "Part of Split: ${CurrencyUtils.formatCurrency(txn.amount)}",
+                                amount = split.amount,
+                                date = txn.date,
+                                accountType = txn.accountType,
+                                isSplit = true,
+                                parentAmount = txn.amount
+                            )
                         )
-                    )
-                    totalAmount += split.amount
-                }
-            } else {
-                val subName = txn.subDescription?.trim()?.takeIf { it.isNotBlank() } ?: "Other"
-                if (subName.equals(subcategoryName, ignoreCase = true)) {
-                    matchingItems.add(
-                        DrillDownTransactionItem(
-                            id = txn.id,
-                            title = txn.description.takeIf { it.isNotBlank() } ?: subcategoryName,
-                            note = txn.subDescription,
-                            amount = txn.amount,
-                            date = txn.date,
-                            accountType = txn.accountType,
-                            isSplit = false
+                        totalAmount += split.amount
+                    }
+                } else {
+                    val subName = txn.subDescription?.trim()?.takeIf { it.isNotBlank() } ?: "Other"
+                    if (subName.equals(subcategoryName, ignoreCase = true)) {
+                        matchingItems.add(
+                            DrillDownTransactionItem(
+                                id = txn.id,
+                                title = txn.description.takeIf { it.isNotBlank() } ?: subcategoryName,
+                                note = txn.subDescription,
+                                amount = txn.amount,
+                                date = txn.date,
+                                accountType = txn.accountType,
+                                isSplit = false
+                            )
                         )
-                    )
-                    totalAmount += txn.amount
+                        totalAmount += txn.amount
+                    }
                 }
             }
+
+            return SubcategoryPeriodDrillDown(
+                periodLabel = bounds?.label.orEmpty().ifBlank { "Period" },
+                totalAmount = totalAmount,
+                transactionCount = matchingItems.size,
+                transactions = matchingItems.sortedByDescending { it.date }
+            )
+        }
+
+        val basePeriodData = extractPeriodDrillDown(cachedDrillDownBaseTxns, cachedDrillDownBaseBounds)
+        val comparePeriodData = cachedDrillDownCompareBounds?.let {
+            extractPeriodDrillDown(cachedDrillDownCompareTxns, it)
         }
 
         _statisticsState.value = _statisticsState.value.copy(
@@ -744,10 +768,9 @@ class StatisticsViewModel @Inject constructor(
                 categoryName = cat.name,
                 categoryIcon = cat.icon,
                 subcategoryName = subcategoryName,
-                periodLabel = cachedDrillDownBaseBounds?.label.orEmpty(),
-                totalAmount = totalAmount,
-                transactionCount = matchingItems.size,
-                transactions = matchingItems.sortedByDescending { it.date }
+                basePeriod = basePeriodData,
+                comparePeriod = comparePeriodData,
+                initialPeriodIndex = initialPeriodIndex
             )
         )
     }

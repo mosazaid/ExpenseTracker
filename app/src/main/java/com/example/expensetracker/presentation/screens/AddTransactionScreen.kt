@@ -7,6 +7,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,12 +22,17 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.CallSplit
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -208,6 +214,11 @@ fun AddTransactionScreen(
         calendar.get(Calendar.MONTH),
         calendar.get(Calendar.DAY_OF_MONTH)
     )
+
+    val focusManager = LocalFocusManager.current
+    val subCategoryFocusRequester = remember { FocusRequester() }
+    val amountFocusRequester = remember { FocusRequester() }
+    val descriptionFocusRequester = remember { FocusRequester() }
 
     var budgetWarning by remember { mutableStateOf<com.example.expensetracker.presentation.viewModel.BudgetWarningInfo?>(null) }
     LaunchedEffect(uiState.selectedCategory, uiState.amount, uiState.selectedDate, uiState.transactionType) {
@@ -765,6 +776,7 @@ fun AddTransactionScreen(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                 modifier = Modifier
                     .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                    .focusProperties { canFocus = false }
                     .fillMaxWidth()
             )
             ExposedDropdownMenu(
@@ -804,13 +816,35 @@ fun AddTransactionScreen(
                     placeholder = { Text("e.g. Fuel, Groceries, Dining...") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { amountFocusRequester.requestFocus() }
+                    ),
                     trailingIcon = {
-                        if (savedSubCategories.isNotEmpty()) {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = subCategoryMenuExpanded)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            if (uiState.subDescription.isNotBlank()) {
+                                IconButton(
+                                    onClick = { viewModel.updateSubDescription("") },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = "Clear subcategory",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                            if (savedSubCategories.isNotEmpty()) {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = subCategoryMenuExpanded)
+                            }
                         }
                     },
                     modifier = Modifier
                         .menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true)
+                        .focusRequester(subCategoryFocusRequester)
                         .fillMaxWidth()
                 )
 
@@ -932,7 +966,12 @@ fun AddTransactionScreen(
                 label = { Text(amountFieldLabel) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth()
+                keyboardActions = KeyboardActions(
+                    onNext = { descriptionFocusRequester.requestFocus() }
+                ),
+                modifier = Modifier
+                    .focusRequester(amountFocusRequester)
+                    .fillMaxWidth()
             )
             val convertedAmount = uiState.amount
             if (convertedAmount.isNotBlank() && convertedAmount.toDoubleOrNull() != null) {
@@ -973,6 +1012,9 @@ fun AddTransactionScreen(
                     keyboardType = if (isCalculatorMode) KeyboardType.Text else KeyboardType.Decimal,
                     imeAction = ImeAction.Next
                 ),
+                keyboardActions = KeyboardActions(
+                    onNext = { descriptionFocusRequester.requestFocus() }
+                ),
                 trailingIcon = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -1001,7 +1043,9 @@ fun AddTransactionScreen(
                     }
                 },
                 isError = uiState.amount.isNotBlank() && uiState.amount.toDoubleOrNull() == null && evaluatedAmount == null,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .focusRequester(amountFocusRequester)
+                    .fillMaxWidth()
             )
         }
 
@@ -1114,7 +1158,12 @@ fun AddTransactionScreen(
             label = { Text(stringResource(R.string.description)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            modifier = Modifier.fillMaxWidth()
+            keyboardActions = KeyboardActions(
+                onDone = { focusManager.clearFocus() }
+            ),
+            modifier = Modifier
+                .focusRequester(descriptionFocusRequester)
+                .fillMaxWidth()
         )
 
         // ── 9. Date & Time Selection (Time is optional, defaults to current time)

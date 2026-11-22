@@ -73,6 +73,16 @@
   - **Live Sync Total with Splits**: Added an interactive chip displaying the real-time split sum (`≈ $XX.XX JOD (Sync from splits)`). If the user adds split items without entering a total receipt amount, saving automatically derives the total from the split sum without blocking form validation.
   - **Split Item Header Amount Badges**: Each split card now features a prominent formatted amount badge in its header (`CurrencyUtils.formatCurrency` with tabular figures) and an explicit `Amount (${currency})` input field.
   - **Atomic Remainder Allocation**: Upgraded "+ Add Split Item" and "Fill Remainder" to atomically prefill unallocated amounts, resolving race conditions.
+- **Form Keyboard Focus Flow & Subcategory Clear Action**:
+  - **Direct Focus Progression**: Configured `KeyboardActions(onNext)` and `FocusRequester` chains so clicking "Next" from Subcategory proceeds directly to Amount, and from Amount proceeds to Description, skipping read-only dropdowns (Currency/Category) to prevent unexpected keyboard closure.
+  - **Subcategory Clear 'X' Button**: Added an inline clear button (`Icons.Outlined.Close`) in the Subcategory text field when text is present, allowing one-tap clearing of custom subcategory inputs.
+- **Dual-Period Subcategory Drill-Down & Comparison Inspection**:
+  - **Multi-Month Comparison Drill-Down**: Upgraded `SubcategoryDrillDownBottomSheet` to support viewing both Base (Current) and Compare (Previous) period transactions and metrics with interactive period selector chips.
+  - **Targeted Progress Bar Interaction**: Tapping the "Current" or "Previous" comparison bars or the difference row in `SubcategoryComparisonCard` opens the bottom sheet pre-focused on that specific month's transaction records.
+- **Category & Subcategory Exclusion Filtering in Transaction History**:
+  - Added dedicated **Exclude Categories (Hide)** and **Exclude Subcategories (Hide)** multi-select filters inside `TransactionFilterBottomSheet`.
+  - When exclusions are active, an interactive banner appears at the top of `HistoryScreen` displaying active exclusion chips with one-tap removal and a "Clear All" button.
+  - Excluded categories and subcategories are skipped in `HistoryGrouping` across parent expenses and multi-item transaction splits.
 
 ---
 

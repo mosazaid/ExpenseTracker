@@ -232,7 +232,9 @@ fun StatisticsScreen(
                 onSelectMode = { viewModel.setComparisonMode(it) },
                 onSelectBaseIndex = { viewModel.setBasePeriodIndex(it) },
                 onSelectCompareIndex = { viewModel.setComparePeriodIndex(it) },
-                onSubcategoryClick = { catId, subName -> viewModel.openSubcategoryDrillDown(catId, subName) }
+                onSubcategoryClick = { catId, subName, initialPeriod ->
+                    viewModel.openSubcategoryDrillDown(catId, subName, initialPeriod)
+                }
             )
 
             // ── Annual Vault & Capital Purchases Card (Shown in YEAR period)

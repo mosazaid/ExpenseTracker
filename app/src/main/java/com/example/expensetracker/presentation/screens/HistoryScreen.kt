@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Search
@@ -51,7 +52,7 @@ import com.example.expensetracker.presentation.viewModel.HistoryViewModel
 import kotlinx.coroutines.launch
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun HistoryScreen(
     navController: NavController,
@@ -62,6 +63,8 @@ fun HistoryScreen(
     var selectedTypeFilter by remember { mutableStateOf(TransactionTypeFilter.ALL) }
     var selectedCategoryFilter by remember { mutableStateOf<Category?>(null) }
     var selectedSubCategoryFilter by remember { mutableStateOf<String?>(null) }
+    var excludedCategoryIds by remember { mutableStateOf(setOf<Long>()) }
+    var excludedSubCategories by remember { mutableStateOf(setOf<String>()) }
     var selectedMonthFilter by remember { mutableStateOf<HistoryMonthOption?>(null) }
     var monthMenuExpanded by remember { mutableStateOf(false) }
     var categoryMenuExpanded by remember { mutableStateOf(false) }
@@ -93,6 +96,17 @@ fun HistoryScreen(
 
     val allTransactions by viewModel.allTransactions.collectAsState(initial = emptyList())
     val splitsMap by viewModel.splitsMap.collectAsState()
+
+    val availableSubCategoryNames = remember(allTransactions, splitsMap) {
+        val names = mutableSetOf<String>()
+        allTransactions.forEach { txn ->
+            txn.subDescription?.trim()?.takeIf { it.isNotBlank() }?.let { names.add(it) }
+            splitsMap[txn.id]?.forEach { split ->
+                split.subCategoryName?.trim()?.takeIf { it.isNotBlank() }?.let { names.add(it) }
+            }
+        }
+        names.toList().sorted()
+    }
 
     LaunchedEffect(selectedPeriod, monthMode) {
         periodBounds = viewModel.getPeriodBounds(selectedPeriod, monthMode, now)
@@ -236,7 +250,9 @@ fun HistoryScreen(
         reimbursedExpenseIds,
         monthMode,
         salaryWalletYearSummary,
-        splitsMap
+        splitsMap,
+        excludedCategoryIds,
+        excludedSubCategories
     ) {
         HistoryGrouping.group(
             transactions = filteredTransactions,
@@ -249,7 +265,9 @@ fun HistoryScreen(
             monthMode = monthMode,
             salaryPeriods = salaryWalletYearSummary,
             splitsMap = splitsMap,
-            monthOptionFilter = selectedMonthFilter
+            monthOptionFilter = selectedMonthFilter,
+            excludedCategoryIds = excludedCategoryIds,
+            excludedSubCategories = excludedSubCategories
         )
     }
 
@@ -269,6 +287,10 @@ fun HistoryScreen(
             selectedSortOrder = selectedSortOrder,
             monthOptions = monthOptions,
             selectedMonth = selectedMonthFilter,
+            categories = expenseCategories,
+            excludedCategoryIds = excludedCategoryIds,
+            availableSubCategories = availableSubCategoryNames,
+            excludedSubCategories = excludedSubCategories,
             onTypeSelected = { selectedTypeFilter = it },
             onPeriodSelected = {
                 selectedPeriod = it
@@ -278,6 +300,24 @@ fun HistoryScreen(
             },
             onSortOrderSelected = { selectedSortOrder = it },
             onMonthSelected = { selectedMonthFilter = it },
+            onToggleExcludedCategory = { catId ->
+                excludedCategoryIds = if (catId in excludedCategoryIds) {
+                    excludedCategoryIds - catId
+                } else {
+                    excludedCategoryIds + catId
+                }
+            },
+            onToggleExcludedSubCategory = { subName ->
+                excludedSubCategories = if (subName in excludedSubCategories) {
+                    excludedSubCategories - subName
+                } else {
+                    excludedSubCategories + subName
+                }
+            },
+            onClearAllExclusions = {
+                excludedCategoryIds = emptySet()
+                excludedSubCategories = emptySet()
+            },
             onDismiss = { showFilterSheet = false }
         )
     }
@@ -455,6 +495,83 @@ fun HistoryScreen(
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
                 )
             )
+        }
+
+        // ── Active Exclusions Banner
+        if (excludedCategoryIds.isNotEmpty() || excludedSubCategories.isNotEmpty()) {
+            item(key = "active-exclusions-banner") {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Block,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "Active Exclusions (${excludedCategoryIds.size + excludedSubCategories.size})",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                            TextButton(
+                                onClick = {
+                                    excludedCategoryIds = emptySet()
+                                    excludedSubCategories = emptySet()
+                                },
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Text("Clear All", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            excludedCategoryIds.forEach { id ->
+                                val cat = categoryMap[id]
+                                InputChip(
+                                    selected = true,
+                                    onClick = { excludedCategoryIds = excludedCategoryIds - id },
+                                    label = { Text("${cat?.icon ?: "🚫"} ${cat?.name ?: "Category"}") },
+                                    trailingIcon = {
+                                        Icon(Icons.Filled.Close, contentDescription = "Remove", modifier = Modifier.size(14.dp))
+                                    }
+                                )
+                            }
+                            excludedSubCategories.forEach { sub ->
+                                InputChip(
+                                    selected = true,
+                                    onClick = { excludedSubCategories = excludedSubCategories - sub },
+                                    label = { Text("🚫 $sub") },
+                                    trailingIcon = {
+                                        Icon(Icons.Filled.Close, contentDescription = "Remove", modifier = Modifier.size(14.dp))
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // ── 2. Compact toggle for Salary/Calendar month + Filter icon button

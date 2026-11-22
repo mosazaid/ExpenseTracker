@@ -3,16 +3,21 @@ package com.example.expensetracker.presentation.components
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.domain.HistoryPeriod
 import com.example.expensetracker.presentation.screens.HistoryMonthOption
 import com.example.expensetracker.presentation.screens.TransactionSortOrder
 import com.example.expensetracker.presentation.screens.TransactionTypeFilter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TransactionFilterBottomSheet(
     selectedType: TransactionTypeFilter,
@@ -20,10 +25,17 @@ fun TransactionFilterBottomSheet(
     selectedSortOrder: TransactionSortOrder = TransactionSortOrder.DESC,
     monthOptions: List<HistoryMonthOption> = emptyList(),
     selectedMonth: HistoryMonthOption? = null,
+    categories: List<Category> = emptyList(),
+    excludedCategoryIds: Set<Long> = emptySet(),
+    availableSubCategories: List<String> = emptyList(),
+    excludedSubCategories: Set<String> = emptySet(),
     onTypeSelected: (TransactionTypeFilter) -> Unit,
     onPeriodSelected: (HistoryPeriod) -> Unit,
     onSortOrderSelected: (TransactionSortOrder) -> Unit = {},
     onMonthSelected: (HistoryMonthOption?) -> Unit = {},
+    onToggleExcludedCategory: (Long) -> Unit = {},
+    onToggleExcludedSubCategory: (String) -> Unit = {},
+    onClearAllExclusions: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(
@@ -33,13 +45,29 @@ fun TransactionFilterBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 32.dp),
+                .padding(bottom = 32.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Filters & Sorting",
-                style = MaterialTheme.typography.titleLarge
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Filters & Sorting",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                if (excludedCategoryIds.isNotEmpty() || excludedSubCategories.isNotEmpty()) {
+                    TextButton(onClick = onClearAllExclusions) {
+                        Text(
+                            "Clear Exclusions (${excludedCategoryIds.size + excludedSubCategories.size})",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
 
             // Period Filter Section
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -145,13 +173,117 @@ fun TransactionFilterBottomSheet(
                 }
             }
 
+            // Exclude Categories Section
+            if (categories.isNotEmpty()) {
+                HorizontalDivider()
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Exclude Categories (Hide)",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (excludedCategoryIds.isNotEmpty()) {
+                            Text(
+                                text = "${excludedCategoryIds.size} hidden",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        categories.forEach { category ->
+                            val isExcluded = category.id in excludedCategoryIds
+                            FilterChip(
+                                selected = isExcluded,
+                                onClick = { onToggleExcludedCategory(category.id) },
+                                label = { Text("${category.icon} ${category.name}") },
+                                leadingIcon = if (isExcluded) {
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Block,
+                                            contentDescription = "Excluded",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                } else null,
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                                    selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Exclude Subcategories Section
+            if (availableSubCategories.isNotEmpty()) {
+                HorizontalDivider()
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Exclude Subcategories (Hide)",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (excludedSubCategories.isNotEmpty()) {
+                            Text(
+                                text = "${excludedSubCategories.size} hidden",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        availableSubCategories.forEach { subName ->
+                            val isExcluded = subName in excludedSubCategories
+                            FilterChip(
+                                selected = isExcluded,
+                                onClick = { onToggleExcludedSubCategory(subName) },
+                                label = { Text(subName) },
+                                leadingIcon = if (isExcluded) {
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Block,
+                                            contentDescription = "Excluded",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                } else null,
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                                    selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Apply")
+                Text("Apply Filters")
             }
         }
     }

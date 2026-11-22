@@ -11,7 +11,7 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,6 +35,14 @@ fun SubcategoryDrillDownBottomSheet(
     onDismiss: () -> Unit
 ) {
     if (data == null) return
+
+    var selectedPeriodIndex by remember(data) { mutableIntStateOf(data.initialPeriodIndex) }
+
+    val activePeriod = if (selectedPeriodIndex == 1 && data.comparePeriod != null) {
+        data.comparePeriod
+    } else {
+        data.basePeriod
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -95,7 +103,7 @@ fun SubcategoryDrillDownBottomSheet(
                                 color = MaterialTheme.colorScheme.outlineVariant
                             )
                             Text(
-                                text = data.periodLabel,
+                                text = activePeriod.periodLabel,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
@@ -116,6 +124,51 @@ fun SubcategoryDrillDownBottomSheet(
                 }
             }
 
+            // Period Selector Tabs (when comparing multiple periods)
+            if (data.comparePeriod != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = selectedPeriodIndex == 0,
+                        onClick = { selectedPeriodIndex = 0 },
+                        label = {
+                            Text(
+                                text = "${data.basePeriod.periodLabel} (${CurrencyUtils.formatCurrency(data.basePeriod.totalAmount)})",
+                                style = MaterialTheme.typography.labelSmall.withTabularNums(),
+                                fontWeight = if (selectedPeriodIndex == 0) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = selectedPeriodIndex == 1,
+                        onClick = { selectedPeriodIndex = 1 },
+                        label = {
+                            Text(
+                                text = "${data.comparePeriod.periodLabel} (${CurrencyUtils.formatCurrency(data.comparePeriod.totalAmount)})",
+                                style = MaterialTheme.typography.labelSmall.withTabularNums(),
+                                fontWeight = if (selectedPeriodIndex == 1) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
             // Summary metrics card
             Surface(
                 shape = RoundedCornerShape(16.dp),
@@ -132,12 +185,12 @@ fun SubcategoryDrillDownBottomSheet(
                 ) {
                     Column {
                         Text(
-                            text = "Total Spending",
+                            text = "Total Spending (${activePeriod.periodLabel})",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.outline
                         )
                         Text(
-                            text = CurrencyUtils.formatCurrency(data.totalAmount),
+                            text = CurrencyUtils.formatCurrency(activePeriod.totalAmount),
                             style = MaterialTheme.typography.titleLarge.withTabularNums(),
                             fontWeight = FontWeight.Bold,
                             color = FinanceNegative
@@ -149,7 +202,7 @@ fun SubcategoryDrillDownBottomSheet(
                         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
                     ) {
                         Text(
-                            text = "${data.transactionCount} ${if (data.transactionCount == 1) "transaction" else "transactions"}",
+                            text = "${activePeriod.transactionCount} ${if (activePeriod.transactionCount == 1) "transaction" else "transactions"}",
                             style = MaterialTheme.typography.labelMedium.withTabularNums(),
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -161,14 +214,14 @@ fun SubcategoryDrillDownBottomSheet(
 
             // Transaction list header
             Text(
-                text = "Transactions in Period",
+                text = "Transactions in ${activePeriod.periodLabel}",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
             // Transactions lazy list
-            if (data.transactions.isEmpty()) {
+            if (activePeriod.transactions.isEmpty()) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f),
@@ -181,7 +234,7 @@ fun SubcategoryDrillDownBottomSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No individual transactions found in this period.",
+                            text = "No individual transactions found in ${activePeriod.periodLabel}.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.outline
                         )
@@ -194,7 +247,7 @@ fun SubcategoryDrillDownBottomSheet(
                         .heightIn(max = 380.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(data.transactions, key = { it.id }) { item ->
+                    items(activePeriod.transactions, key = { it.id }) { item ->
                         DrillDownTransactionRow(item = item)
                     }
                 }

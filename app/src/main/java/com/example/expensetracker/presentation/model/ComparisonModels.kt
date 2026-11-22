@@ -49,16 +49,28 @@ data class DrillDownTransactionItem(
     val parentAmount: Double? = null
 )
 
-data class SubcategoryDrillDownData(
-    val categoryId: Long,
-    val categoryName: String,
-    val categoryIcon: String,
-    val subcategoryName: String,
+data class SubcategoryPeriodDrillDown(
     val periodLabel: String,
     val totalAmount: Double,
     val transactionCount: Int,
     val transactions: List<DrillDownTransactionItem>
 )
+
+data class SubcategoryDrillDownData(
+    val categoryId: Long,
+    val categoryName: String,
+    val categoryIcon: String,
+    val subcategoryName: String,
+    val basePeriod: SubcategoryPeriodDrillDown,
+    val comparePeriod: SubcategoryPeriodDrillDown? = null,
+    val initialPeriodIndex: Int = 0
+) {
+    // Backwards-compatible accessors targeting basePeriod
+    val periodLabel: String get() = basePeriod.periodLabel
+    val totalAmount: Double get() = basePeriod.totalAmount
+    val transactionCount: Int get() = basePeriod.transactionCount
+    val transactions: List<DrillDownTransactionItem> get() = basePeriod.transactions
+}
 
 data class AdvancedComparisonData(
     val basePeriod: PeriodBounds,

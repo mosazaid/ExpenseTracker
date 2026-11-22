@@ -96,7 +96,9 @@ object HistoryGrouping {
         monthMode: MonthMode = MonthMode.CALENDAR,
         salaryPeriods: List<SalaryWalletPeriodSummary> = emptyList(),
         splitsMap: Map<Long, List<TransactionSplit>> = emptyMap(),
-        monthOptionFilter: HistoryMonthOption? = null
+        monthOptionFilter: HistoryMonthOption? = null,
+        excludedCategoryIds: Set<Long> = emptySet(),
+        excludedSubCategories: Set<String> = emptySet()
     ): List<HistorySection> {
         val baseTransactions = if (period == HistoryPeriod.YEAR && monthOptionFilter != null) {
             transactions.filter { it.date.time in monthOptionFilter.start.time..monthOptionFilter.end.time }
@@ -120,6 +122,10 @@ object HistoryGrouping {
             filtered = filtered.filter { it.categoryId == categoryIdFilter }
         }
 
+        if (excludedCategoryIds.isNotEmpty()) {
+            filtered = filtered.filter { it.categoryId !in excludedCategoryIds }
+        }
+
         if (!subCategoryFilter.isNullOrBlank()) {
             filtered = if (subCategoryFilter.equals(SUBCATEGORY_OTHER, ignoreCase = true)) {
                 filtered.filter { txn ->
@@ -138,6 +144,22 @@ object HistoryGrouping {
                     } else {
                         txn.subDescription.equals(subCategoryFilter, ignoreCase = true)
                     }
+                }
+            }
+        }
+
+        if (excludedSubCategories.isNotEmpty()) {
+            val lowerExcluded = excludedSubCategories.map { it.trim().lowercase() }.toSet()
+            filtered = filtered.filterNot { txn ->
+                val splits = splitsMap[txn.id].orEmpty()
+                if (splits.isNotEmpty()) {
+                    splits.all {
+                        val name = it.subCategoryName?.trim()?.lowercase() ?: SUBCATEGORY_OTHER.lowercase()
+                        name in lowerExcluded
+                    }
+                } else {
+                    val sub = txn.subDescription?.trim()?.lowercase() ?: SUBCATEGORY_OTHER.lowercase()
+                    sub in lowerExcluded
                 }
             }
         }
