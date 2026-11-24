@@ -18,6 +18,7 @@ import com.mousa.mizani.presentation.feature.loans.LoansScreen
 import com.mousa.mizani.presentation.feature.onboarding.OnboardingScreen
 import com.mousa.mizani.presentation.feature.overview.OverviewScreen
 import com.mousa.mizani.presentation.feature.recurring.RecurringScreen
+import com.mousa.mizani.presentation.feature.settings.CalculationSettingsScreen
 import com.mousa.mizani.presentation.feature.settings.NotificationSettingsScreen
 import com.mousa.mizani.presentation.feature.settings.SettingsScreen
 import com.mousa.mizani.presentation.feature.statistics.StatisticsScreen
@@ -74,6 +75,7 @@ import com.mousa.mizani.presentation.navigation.Onboarding
 import com.mousa.mizani.presentation.navigation.Overview
 import com.mousa.mizani.presentation.navigation.Recurring
 import com.mousa.mizani.presentation.navigation.Settings
+import com.mousa.mizani.presentation.navigation.CalculationSettings
 import com.mousa.mizani.presentation.navigation.NotificationSettings
 import com.mousa.mizani.presentation.navigation.ZakahCalculator
 import com.mousa.mizani.presentation.navigation.PrayerQiblah
@@ -318,6 +320,7 @@ fun MainScreen(
             composable<Wallet>         { WalletScreen(navController) }
             composable<Categories>     { CategoriesScreen(navController) }
             composable<Settings>       { SettingsScreen(navController) }
+            composable<CalculationSettings> { CalculationSettingsScreen(navController) }
             composable<NotificationSettings> { NotificationSettingsScreen(navController) }
             composable<Recurring>      { RecurringScreen(navController) }
             composable<DatabaseBrowser> { DatabaseBrowserScreen(navController) }

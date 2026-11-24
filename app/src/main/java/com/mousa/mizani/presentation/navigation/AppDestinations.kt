@@ -17,6 +17,7 @@ import kotlinx.serialization.Serializable
 @Serializable object Recurring
 @Serializable object Categories
 @Serializable object Settings
+@Serializable object CalculationSettings
 @Serializable object NotificationSettings
 @Serializable object DatabaseBrowser
 @Serializable object Onboarding

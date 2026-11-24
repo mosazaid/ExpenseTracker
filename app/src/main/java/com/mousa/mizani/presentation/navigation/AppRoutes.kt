@@ -9,6 +9,7 @@ object AppRoutes {
     const val TRANSFER = "transfer"
     const val WALLET = "wallet"
     const val SETTINGS = "settings"
+    const val CALCULATION_SETTINGS = "calculationSettings"
     const val NOTIFICATION_SETTINGS = "notificationSettings"
     const val DATABASE_BROWSER = "databaseBrowser"
     const val MORE = "more"

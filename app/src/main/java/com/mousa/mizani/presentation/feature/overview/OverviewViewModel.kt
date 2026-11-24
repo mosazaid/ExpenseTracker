@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.mousa.mizani.data.database.entities.Category
 import com.mousa.mizani.data.database.entities.RecurringTransaction
 import com.mousa.mizani.data.database.entities.Transaction
+import com.mousa.mizani.data.preferences.CalculationPreferences
 import com.mousa.mizani.data.preferences.MonthMode
 import com.mousa.mizani.data.preferences.UserPreferences
 import com.mousa.mizani.domain.calculator.BalanceCalculator
@@ -60,20 +61,23 @@ class OverviewViewModel @Inject constructor(
     val monthMode: StateFlow<MonthMode> = userPreferences.monthMode
         .stateIn(viewModelScope, SharingStarted.Eagerly, MonthMode.CALENDAR)
 
+    val calculationPreferences: StateFlow<CalculationPreferences> = userPreferences.calculationPreferences
+        .stateIn(viewModelScope, SharingStarted.Eagerly, CalculationPreferences())
+
     val allTransactions = transactionRepository.getAllTransactions()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val allCategories: Flow<List<Category>> = categoryRepository.getCategoriesSortedByUsage()
 
     /**
-     * Derives a [MonthSummaryUiState] reactively from [monthMode] + [allTransactions] + [_refreshTrigger].
+     * Derives a [MonthSummaryUiState] reactively from [monthMode] + [allTransactions] + [calculationPreferences] + [_refreshTrigger].
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     val monthSummary: StateFlow<MonthSummaryUiState> =
-        combine(monthMode, allTransactions, _refreshTrigger) { mode, txns, trigger ->
-            Triple(mode, txns, trigger)
+        combine(monthMode, allTransactions, calculationPreferences, _refreshTrigger) { mode, _, _, _ ->
+            mode
         }
-            .flatMapLatest { (mode, _, _) ->
+            .flatMapLatest { mode ->
                 flow { emit(buildMonthSummary(mode, Date())) }
             }
             .stateIn(

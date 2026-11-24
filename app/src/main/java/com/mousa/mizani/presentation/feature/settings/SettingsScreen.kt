@@ -54,6 +54,7 @@ import com.mousa.mizani.core.format.CurrencyUtils
 import com.mousa.mizani.core.time.DateUtils
 import com.mousa.mizani.presentation.common.AppTopBar
 import com.mousa.mizani.presentation.navigation.Categories
+import com.mousa.mizani.presentation.navigation.CalculationSettings
 import com.mousa.mizani.presentation.navigation.DatabaseBrowser
 import com.mousa.mizani.presentation.navigation.NotificationSettings
 import com.mousa.mizani.presentation.feature.settings.ExportFormat
@@ -596,6 +597,50 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
+            }
+
+            HorizontalDivider()
+
+            // ── Calculation Rules & Insights
+            Text(stringResource(R.string.calculation_rules_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { navController.navigate(CalculationSettings) }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.calculation_rules_entry_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = stringResource(R.string.calculation_rules_entry_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             HorizontalDivider()

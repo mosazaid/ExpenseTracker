@@ -43,7 +43,9 @@ object SpendingPacingCalculator {
         currentDate: Date = Date(),
         periodStartDate: Date? = null,
         periodEndDate: Date? = null,
-        cycleLabel: String? = null
+        cycleLabel: String? = null,
+        useAvailableBalanceFloor: Boolean = true,
+        reserveWalletFromBudget: Boolean = false
     ): PacingAnalysis {
         // 1. Calculate Period Boundaries (Salary or Calendar)
         val (totalPeriodDays, dayOfPeriod, daysRemaining) = if (periodStartDate != null && periodEndDate != null) {
@@ -71,8 +73,15 @@ object SpendingPacingCalculator {
         // has not yet been logged for the current period or when savings/vault moves occurred.
         // Priority 2: In cycles where income was recorded, baseline takes the larger of income pool or available balance.
         // Priority 3: Fallback floor (totalExpense * 1.15).coerceAtLeast(100.0) only if no income and no liquid funds exist.
-        val effectiveIncome = if (currentAvailableBalance > 0.0) {
-            maxOf(totalIncome, currentAvailableBalance)
+        val adjustedIncome = if (reserveWalletFromBudget) {
+            max(0.0, totalIncome - walletReserved)
+        } else {
+            totalIncome
+        }
+        val effectiveIncome = if (useAvailableBalanceFloor && currentAvailableBalance > 0.0) {
+            maxOf(adjustedIncome, currentAvailableBalance)
+        } else if (reserveWalletFromBudget) {
+            adjustedIncome
         } else {
             val spendableAfterWallet = max(0.0, totalIncome - walletReserved)
             if (spendableAfterWallet > 0) spendableAfterWallet else totalIncome
@@ -80,7 +89,7 @@ object SpendingPacingCalculator {
 
         val baselineBudget = when {
             effectiveIncome > 0.0 -> effectiveIncome
-            currentAvailableBalance > 0.0 -> currentAvailableBalance
+            useAvailableBalanceFloor && currentAvailableBalance > 0.0 -> currentAvailableBalance
             else -> (totalExpense * 1.15).coerceAtLeast(100.0)
         }
         val budgetConsumedRatio = if (baselineBudget > 0) (totalExpense / baselineBudget).toFloat() else 0f

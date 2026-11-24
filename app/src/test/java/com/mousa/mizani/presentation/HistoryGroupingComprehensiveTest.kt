@@ -181,4 +181,38 @@ class HistoryGroupingComprehensiveTest {
         assertEquals(1, excludeBothSections.size)
         assertEquals(1L, excludeBothSections.first().id)
     }
+
+    @Test
+    fun testFilteredHeaderExpenseTotalMatchesFilter() {
+        val now = Date()
+        val t1 = Transaction(id = 1L, amount = 50.0, type = TransactionType.EXPENSE, categoryId = 10L, subDescription = "Fuel", accountType = AccountType.CASH, date = now, description = "Gas")
+        val t2 = Transaction(id = 2L, amount = 100.0, type = TransactionType.EXPENSE, categoryId = 20L, subDescription = "Rent", accountType = AccountType.CASH, date = now, description = "Apartment")
+        val tSplit = Transaction(id = 3L, amount = 90.0, type = TransactionType.EXPENSE, categoryId = 10L, accountType = AccountType.CASH, date = now, description = "Service")
+        val splitsMap = mapOf(
+            3L to listOf(
+                com.mousa.mizani.data.database.entities.TransactionSplit(id = 1L, transactionId = 3L, subCategoryName = "Fuel", amount = 25.0),
+                com.mousa.mizani.data.database.entities.TransactionSplit(id = 2L, transactionId = 3L, subCategoryName = "Wash", amount = 65.0)
+            )
+        )
+
+        // Category filter -> header should be 50 + 90 = 140 (excluding t2 = 100)
+        val catFiltered = HistoryGrouping.group(
+            transactions = listOf(t1, t2, tSplit),
+            period = HistoryPeriod.MONTH,
+            typeFilter = TransactionTypeFilter.ALL,
+            categoryIdFilter = 10L,
+            splitsMap = splitsMap
+        )
+        assertEquals(140.0, catFiltered.first().expenseTotal, 0.001)
+
+        // Subcategory filter "Fuel" -> header should be 50 (t1) + 25 (matching split of tSplit) = 75
+        val subFiltered = HistoryGrouping.group(
+            transactions = listOf(t1, t2, tSplit),
+            period = HistoryPeriod.MONTH,
+            typeFilter = TransactionTypeFilter.ALL,
+            subCategoryFilter = "Fuel",
+            splitsMap = splitsMap
+        )
+        assertEquals(75.0, subFiltered.first().expenseTotal, 0.001)
+    }
 }

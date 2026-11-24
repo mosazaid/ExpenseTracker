@@ -1,4 +1,4 @@
-# ExpenseTracker Implementation and Architecture Guide
+# Mizani (`com.mousa.mizani`) Implementation and Architecture Guide
 
 This document is the technical and business reference for the current app state through Room DB version **21** (November 2026).
 
@@ -96,12 +96,15 @@ ExpenseTracker helps a user manage personal money with:
 
 Android MVVM with Compose + Room + Hilt.
 
-### 2.1 Layers
+### 2.1 Layers & Package Layout (`com.mousa.mizani`)
 
-- **Presentation**: Compose screens + ViewModels + custom Canvas charts
-- **Domain**: calculators, exporters, importers, inspectors
-- **Data**: Room entities/DAO + repositories + DataStore preferences
-- **Core**: `core/time/DateUtils`, `core/locale/LocaleHelper`, `core/security/BiometricAuthManager`
+- **Presentation** (`presentation/`):
+  - `presentation/feature/<name>/`: feature-scoped Compose screens, ViewModels, feature components, and UI models (`add_transaction`, `alerts`, `budget`, `categories`, `currency`, `debug`, `deposit`, `financial_tools`, `history`, `islamic`, `loans`, `main`, `onboarding`, `overview`, `recurring`, `settings`, `statistics`, `subscription`, `transfer`, `trips`, `wallet`).
+  - `presentation/common/`: shared composables (`AppTopBar`, `TransactionItem`, `TransactionDetailBottomSheet`, `TransactionFilterBottomSheet`, `BiometricGate`, `BiometricLockScreen`, `PermissionRationaleDialog`, `ZoomableImageDialog`, `AccountBalanceCards`).
+  - `presentation/navigation/` & `presentation/theme/`: type-safe Navigation (`AppDestinations`, `AppRoutes`) and Material 3 themes.
+- **Domain** (`domain/`): `calculator/` (including `calculator/runway/`), `prayer/`, `constants/`, `usecase/`, `repository/`, `model/`, `currency/`, `islamic/`, `monetization/`, `sms/`, `trip/`.
+- **Data** (`data/`): Room entities/DAO + repositories + `UserPreferences` DataStore (including `CalculationPreferences`) + WorkManager workers + Hilt DI modules.
+- **Core** (`core/`): `core/time/DateUtils`, `core/format/CurrencyUtils`, `core/locale/LocaleHelper`, `core/security/BiometricAuthManager`, `core/export/`, `core/math/ArithmeticEvaluator`.
 
 ### 2.2 ViewModels
 
@@ -115,6 +118,7 @@ Android MVVM with Compose + Room + Hilt.
 | `DepositViewModel` | Master Great Wallet (Vault) capital assets, biometric gate, capital purchases isolation |
 | `BudgetViewModel` | Category budgets from Categories screen |
 | `SettingsViewModel` | Balances, language, export/import, salary reminder controls |
+| `CalculationSettingsViewModel` | Configurable checkbox rules for Income, Expense, and Smart Financial Insights (`CalculationPreferences`) |
 | `StatisticsViewModel` | Period totals, 3-month multi-chart stats, category comparison waterfall engine, day-normalized pacing, transaction drilldown |
 | `DatabaseBrowserViewModel` | Table listing and filtered raw queries across all 13 Room tables |
 | `BiometricLockViewModel` | Unlock state, error message, lock on background lifecycle events |

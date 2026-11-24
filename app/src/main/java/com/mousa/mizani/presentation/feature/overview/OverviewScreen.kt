@@ -85,6 +85,7 @@ fun OverviewScreen(
     budgetViewModel: BudgetViewModel = hiltViewModel()
 ) {
     val monthMode by viewModel.monthMode.collectAsState()
+    val calcPrefs by viewModel.calculationPreferences.collectAsState()
     val allTransactions by viewModel.allTransactions.collectAsState(initial = emptyList())
     val allCategories by viewModel.allCategories.collectAsState(initial = emptyList())
     val categoryMap = remember(allCategories) { allCategories.associateBy { it.id } }
@@ -325,12 +326,13 @@ fun OverviewScreen(
                 FinancialInsightsCard(
                     totalIncome = monthSummary.monthIncome,
                     totalExpense = monthSummary.monthExpense,
-                    totalWallet = 0.0, // Wallet reserves and vault funds are isolated and not deducted from the budget
+                    totalWallet = monthSummary.walletBalance,
                     carriedForwardBalance = monthSummary.broughtForward,
                     currentAvailableBalance = totalAvailable,
                     periodStartDate = monthSummary.monthBounds?.start,
                     periodEndDate = monthSummary.monthBounds?.end,
-                    cycleLabel = monthSummary.monthBounds?.label
+                    cycleLabel = monthSummary.monthBounds?.label,
+                    calcPrefs = calcPrefs
                 )
             }
 

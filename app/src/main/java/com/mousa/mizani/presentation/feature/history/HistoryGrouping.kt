@@ -166,15 +166,43 @@ object HistoryGrouping {
 
         if (filtered.isEmpty()) return emptyList()
 
+        val expenseAmountFor: (Transaction) -> Double = { txn ->
+            if (txn.type != TransactionType.EXPENSE) {
+                0.0
+            } else {
+                val splits = splitsMap[txn.id].orEmpty()
+                val hasSubFilter = !subCategoryFilter.isNullOrBlank()
+                val hasSubExclusions = excludedSubCategories.isNotEmpty()
+                if (splits.isNotEmpty() && (hasSubFilter || hasSubExclusions)) {
+                    val lowerExcluded = excludedSubCategories.map { it.trim().lowercase() }.toSet()
+                    splits.filter { split ->
+                        val name = split.subCategoryName?.trim().orEmpty()
+                        val normalized = name.lowercase().ifBlank { SUBCATEGORY_OTHER.lowercase() }
+                        val matchesInclude = if (!hasSubFilter) {
+                            true
+                        } else if (subCategoryFilter.equals(SUBCATEGORY_OTHER, ignoreCase = true)) {
+                            name.isBlank() || name.equals(SUBCATEGORY_OTHER, ignoreCase = true)
+                        } else {
+                            name.equals(subCategoryFilter, ignoreCase = true)
+                        }
+                        val notExcluded = !hasSubExclusions || normalized !in lowerExcluded
+                        matchesInclude && notExcluded
+                    }.sumOf { it.amount }
+                } else {
+                    txn.amount
+                }
+            }
+        }
+
         return when (period) {
-            HistoryPeriod.DAY -> listOf(buildDaySection(baseTransactions, filtered, sortOrder))
-            HistoryPeriod.WEEK -> buildDaySections(baseTransactions, filtered, sortOrder)
-            HistoryPeriod.MONTH -> buildWeekSections(baseTransactions, filtered, sortOrder)
+            HistoryPeriod.DAY -> listOf(buildDaySection(baseTransactions, filtered, sortOrder, expenseAmountFor))
+            HistoryPeriod.WEEK -> buildDaySections(filtered, sortOrder, expenseAmountFor)
+            HistoryPeriod.MONTH -> buildWeekSections(filtered, sortOrder, expenseAmountFor)
             HistoryPeriod.YEAR -> {
                 if (monthMode == MonthMode.SALARY && salaryPeriods.isNotEmpty()) {
-                    buildSalaryMonthSections(baseTransactions, filtered, salaryPeriods, sortOrder)
+                    buildSalaryMonthSections(filtered, salaryPeriods, sortOrder, expenseAmountFor)
                 } else {
-                    buildMonthSections(baseTransactions, filtered, sortOrder)
+                    buildMonthSections(filtered, sortOrder, expenseAmountFor)
                 }
             }
         }
@@ -183,12 +211,11 @@ object HistoryGrouping {
     private fun buildDaySection(
         allTransactions: List<Transaction>,
         filtered: List<Transaction>,
-        sortOrder: TransactionSortOrder
+        sortOrder: TransactionSortOrder,
+        expenseAmountFor: (Transaction) -> Double
     ): HistorySection {
         val referenceDate = filtered.firstOrNull()?.date ?: allTransactions.first().date
-        val expenseTotal = allTransactions
-            .filter { it.type == TransactionType.EXPENSE }
-            .sumOf { it.amount }
+        val expenseTotal = filtered.sumOf(expenseAmountFor)
 
         val sortedTxns = if (sortOrder == TransactionSortOrder.DESC) {
             filtered.sortedByDescending { it.date }
@@ -205,12 +232,11 @@ object HistoryGrouping {
     }
 
     private fun buildDaySections(
-        allTransactions: List<Transaction>,
         filtered: List<Transaction>,
-        sortOrder: TransactionSortOrder
+        sortOrder: TransactionSortOrder,
+        expenseAmountFor: (Transaction) -> Double
     ): List<HistorySection> {
         val filteredByDay = filtered.groupBy { DateUtils.getDayKey(it.date) }
-        val allByDay = allTransactions.groupBy { DateUtils.getDayKey(it.date) }
 
         val sortedKeys = if (sortOrder == TransactionSortOrder.DESC) {
             filteredByDay.keys.sortedDescending()
@@ -220,10 +246,7 @@ object HistoryGrouping {
 
         return sortedKeys.map { dayKey ->
             val sectionTransactions = filteredByDay[dayKey].orEmpty()
-            val expenseTotal = allByDay[dayKey]
-                .orEmpty()
-                .filter { it.type == TransactionType.EXPENSE }
-                .sumOf { it.amount }
+            val expenseTotal = sectionTransactions.sumOf(expenseAmountFor)
 
             val sortedTxns = if (sortOrder == TransactionSortOrder.DESC) {
                 sectionTransactions.sortedByDescending { it.date }
@@ -241,12 +264,11 @@ object HistoryGrouping {
     }
 
     private fun buildWeekSections(
-        allTransactions: List<Transaction>,
         filtered: List<Transaction>,
-        sortOrder: TransactionSortOrder
+        sortOrder: TransactionSortOrder,
+        expenseAmountFor: (Transaction) -> Double
     ): List<HistorySection> {
         val filteredByWeek = filtered.groupBy { DateUtils.getWeekKey(it.date) }
-        val allByWeek = allTransactions.groupBy { DateUtils.getWeekKey(it.date) }
 
         val sortedKeys = if (sortOrder == TransactionSortOrder.DESC) {
             filteredByWeek.keys.sortedDescending()
@@ -256,10 +278,7 @@ object HistoryGrouping {
 
         return sortedKeys.map { weekKey ->
             val sectionTransactions = filteredByWeek[weekKey].orEmpty()
-            val expenseTotal = allByWeek[weekKey]
-                .orEmpty()
-                .filter { it.type == TransactionType.EXPENSE }
-                .sumOf { it.amount }
+            val expenseTotal = sectionTransactions.sumOf(expenseAmountFor)
 
             val sortedTxns = if (sortOrder == TransactionSortOrder.DESC) {
                 sectionTransactions.sortedByDescending { it.date }
@@ -277,12 +296,11 @@ object HistoryGrouping {
     }
 
     private fun buildMonthSections(
-        allTransactions: List<Transaction>,
         filtered: List<Transaction>,
-        sortOrder: TransactionSortOrder
+        sortOrder: TransactionSortOrder,
+        expenseAmountFor: (Transaction) -> Double
     ): List<HistorySection> {
         val filteredByMonth = filtered.groupBy { DateUtils.getMonthKey(it.date) }
-        val allByMonth = allTransactions.groupBy { DateUtils.getMonthKey(it.date) }
 
         val sortedKeys = if (sortOrder == TransactionSortOrder.DESC) {
             filteredByMonth.keys.sortedDescending()
@@ -292,10 +310,7 @@ object HistoryGrouping {
 
         return sortedKeys.map { monthKey ->
             val sectionTransactions = filteredByMonth[monthKey].orEmpty()
-            val expenseTotal = allByMonth[monthKey]
-                .orEmpty()
-                .filter { it.type == TransactionType.EXPENSE }
-                .sumOf { it.amount }
+            val expenseTotal = sectionTransactions.sumOf(expenseAmountFor)
 
             val sortedTxns = if (sortOrder == TransactionSortOrder.DESC) {
                 sectionTransactions.sortedByDescending { it.date }
@@ -313,17 +328,16 @@ object HistoryGrouping {
     }
 
     private fun buildSalaryMonthSections(
-        allTransactions: List<Transaction>,
         filtered: List<Transaction>,
         salaryPeriods: List<SalaryWalletPeriodSummary>,
-        sortOrder: TransactionSortOrder
+        sortOrder: TransactionSortOrder,
+        expenseAmountFor: (Transaction) -> Double
     ): List<HistorySection> {
         val sortedPeriods = if (sortOrder == TransactionSortOrder.DESC) {
             salaryPeriods.sortedByDescending { it.start }
         } else {
             salaryPeriods.sortedBy { it.start }
         }
-        val allExpense = allTransactions.filter { it.type == TransactionType.EXPENSE }
 
         val sections = mutableListOf<HistorySection>()
 
@@ -332,9 +346,7 @@ object HistoryGrouping {
                 txn.date >= period.start && txn.date <= period.end
             }
             if (matchingFiltered.isNotEmpty()) {
-                val expenseTotal = allExpense
-                    .filter { txn -> txn.date >= period.start && txn.date <= period.end }
-                    .sumOf { it.amount }
+                val expenseTotal = matchingFiltered.sumOf(expenseAmountFor)
 
                 val sortedTxns = if (sortOrder == TransactionSortOrder.DESC) {
                     matchingFiltered.sortedByDescending { it.date }
@@ -366,9 +378,7 @@ object HistoryGrouping {
             }
             sortedMonthKeys.forEach { monthKey ->
                 val txns = outsideByMonth[monthKey].orEmpty()
-                val expenseTotal = allExpense
-                    .filter { txn -> txns.any { it.id == txn.id } }
-                    .sumOf { it.amount }
+                val expenseTotal = txns.sumOf(expenseAmountFor)
 
                 val sortedTxns = if (sortOrder == TransactionSortOrder.DESC) {
                     txns.sortedByDescending { it.date }

@@ -34,6 +34,25 @@ enum class TimeFormatPreference {
     H24
 }
 
+/**
+ * User-configurable rules controlling which transactions and balances are included
+ * in Income, Expense, and Smart Financial Insights calculations.
+ * Defaults preserve standard Mizani accounting behavior.
+ */
+data class CalculationPreferences(
+    // Section 1: Income Calculations
+    val includeDepositIncome: Boolean = false,
+    val deductLoansFromIncome: Boolean = true,
+    // Section 2: Expense Calculations
+    val includeWalletExpenses: Boolean = false,
+    val includeDepositExpenses: Boolean = false,
+    val includeLoanLinkedExpenses: Boolean = false,
+    // Section 3: Smart Financial Insights
+    val includeCarriedForwardInInsights: Boolean = true,
+    val useAvailableBalanceFloorInInsights: Boolean = true,
+    val reserveWalletInInsights: Boolean = false
+)
+
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = "user_preferences"
 )
@@ -87,6 +106,16 @@ class UserPreferences @Inject constructor(
     private val stickyBudgetAlertsKey = booleanPreferencesKey("sticky_budget_alerts_enabled")
     private val stickyLoanAlertsKey = booleanPreferencesKey("sticky_loan_alerts_enabled")
     private val stickySalaryAlertsKey = booleanPreferencesKey("sticky_salary_alerts_enabled")
+
+    // Calculation Rules keys
+    private val calcIncludeDepositIncomeKey = booleanPreferencesKey("calc_include_deposit_income")
+    private val calcDeductLoansFromIncomeKey = booleanPreferencesKey("calc_deduct_loans_from_income")
+    private val calcIncludeWalletExpensesKey = booleanPreferencesKey("calc_include_wallet_expenses")
+    private val calcIncludeDepositExpensesKey = booleanPreferencesKey("calc_include_deposit_expenses")
+    private val calcIncludeLoanLinkedExpensesKey = booleanPreferencesKey("calc_include_loan_linked_expenses")
+    private val calcIncludeCarriedForwardInsightsKey = booleanPreferencesKey("calc_include_carried_forward_insights")
+    private val calcUseAvailableFloorInsightsKey = booleanPreferencesKey("calc_use_available_floor_insights")
+    private val calcReserveWalletInsightsKey = booleanPreferencesKey("calc_reserve_wallet_insights")
 
     val stickyPrayerAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[stickyPrayerAlertsKey] ?: false
@@ -496,6 +525,67 @@ class UserPreferences @Inject constructor(
 
     suspend fun getLastDebtRolloverMonth(): String? = lastDebtRolloverMonth.first()
 
+    val calculationPreferences: Flow<CalculationPreferences> = context.dataStore.data.map { prefs ->
+        CalculationPreferences(
+            includeDepositIncome = prefs[calcIncludeDepositIncomeKey] ?: false,
+            deductLoansFromIncome = prefs[calcDeductLoansFromIncomeKey] ?: true,
+            includeWalletExpenses = prefs[calcIncludeWalletExpensesKey] ?: false,
+            includeDepositExpenses = prefs[calcIncludeDepositExpensesKey] ?: false,
+            includeLoanLinkedExpenses = prefs[calcIncludeLoanLinkedExpensesKey] ?: false,
+            includeCarriedForwardInInsights = prefs[calcIncludeCarriedForwardInsightsKey] ?: true,
+            useAvailableBalanceFloorInInsights = prefs[calcUseAvailableFloorInsightsKey] ?: true,
+            reserveWalletInInsights = prefs[calcReserveWalletInsightsKey] ?: false
+        )
+    }
+
+    suspend fun getCalculationPreferences(): CalculationPreferences = calculationPreferences.first()
+
+    suspend fun setCalcIncludeDepositIncome(enabled: Boolean) {
+        context.dataStore.edit { it[calcIncludeDepositIncomeKey] = enabled }
+    }
+
+    suspend fun setCalcDeductLoansFromIncome(enabled: Boolean) {
+        context.dataStore.edit { it[calcDeductLoansFromIncomeKey] = enabled }
+    }
+
+    suspend fun setCalcIncludeWalletExpenses(enabled: Boolean) {
+        context.dataStore.edit { it[calcIncludeWalletExpensesKey] = enabled }
+    }
+
+    suspend fun setCalcIncludeDepositExpenses(enabled: Boolean) {
+        context.dataStore.edit { it[calcIncludeDepositExpensesKey] = enabled }
+    }
+
+    suspend fun setCalcIncludeLoanLinkedExpenses(enabled: Boolean) {
+        context.dataStore.edit { it[calcIncludeLoanLinkedExpensesKey] = enabled }
+    }
+
+    suspend fun setCalcIncludeCarriedForwardInsights(enabled: Boolean) {
+        context.dataStore.edit { it[calcIncludeCarriedForwardInsightsKey] = enabled }
+    }
+
+    suspend fun setCalcUseAvailableFloorInsights(enabled: Boolean) {
+        context.dataStore.edit { it[calcUseAvailableFloorInsightsKey] = enabled }
+    }
+
+    suspend fun setCalcReserveWalletInsights(enabled: Boolean) {
+        context.dataStore.edit { it[calcReserveWalletInsightsKey] = enabled }
+    }
+
+    suspend fun resetCalculationPreferences() {
+        val defaults = CalculationPreferences()
+        context.dataStore.edit { prefs ->
+            prefs[calcIncludeDepositIncomeKey] = defaults.includeDepositIncome
+            prefs[calcDeductLoansFromIncomeKey] = defaults.deductLoansFromIncome
+            prefs[calcIncludeWalletExpensesKey] = defaults.includeWalletExpenses
+            prefs[calcIncludeDepositExpensesKey] = defaults.includeDepositExpenses
+            prefs[calcIncludeLoanLinkedExpensesKey] = defaults.includeLoanLinkedExpenses
+            prefs[calcIncludeCarriedForwardInsightsKey] = defaults.includeCarriedForwardInInsights
+            prefs[calcUseAvailableFloorInsightsKey] = defaults.useAvailableBalanceFloorInInsights
+            prefs[calcReserveWalletInsightsKey] = defaults.reserveWalletInInsights
+        }
+    }
+
     private fun recurringDismissKey(recurringId: Long, dueMillis: Long): String =
         "$recurringId:$dueMillis"
 
@@ -553,6 +643,14 @@ class UserPreferences @Inject constructor(
             map[stickyBudgetAlertsKey.name]?.toBooleanStrictOrNull()?.let { prefs[stickyBudgetAlertsKey] = it }
             map[stickyLoanAlertsKey.name]?.toBooleanStrictOrNull()?.let { prefs[stickyLoanAlertsKey] = it }
             map[stickySalaryAlertsKey.name]?.toBooleanStrictOrNull()?.let { prefs[stickySalaryAlertsKey] = it }
+            map[calcIncludeDepositIncomeKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcIncludeDepositIncomeKey] = it }
+            map[calcDeductLoansFromIncomeKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcDeductLoansFromIncomeKey] = it }
+            map[calcIncludeWalletExpensesKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcIncludeWalletExpensesKey] = it }
+            map[calcIncludeDepositExpensesKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcIncludeDepositExpensesKey] = it }
+            map[calcIncludeLoanLinkedExpensesKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcIncludeLoanLinkedExpensesKey] = it }
+            map[calcIncludeCarriedForwardInsightsKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcIncludeCarriedForwardInsightsKey] = it }
+            map[calcUseAvailableFloorInsightsKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcUseAvailableFloorInsightsKey] = it }
+            map[calcReserveWalletInsightsKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcReserveWalletInsightsKey] = it }
             map[lastLoanSheetDateKey.name]?.let { prefs[lastLoanSheetDateKey] = it }
             map[lastDebtRolloverMonthKey.name]?.let { prefs[lastDebtRolloverMonthKey] = it }
             map[dismissedRecurringKey.name]?.let {

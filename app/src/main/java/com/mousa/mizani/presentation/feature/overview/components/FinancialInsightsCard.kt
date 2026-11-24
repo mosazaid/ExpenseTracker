@@ -37,6 +37,7 @@ import com.mousa.mizani.core.format.CurrencyUtils
 import com.mousa.mizani.domain.calculator.SpendingPacingCalculator
 import com.mousa.mizani.presentation.theme.FinanceNegative
 import com.mousa.mizani.presentation.theme.FinancePositive
+import com.mousa.mizani.data.preferences.CalculationPreferences
 import com.mousa.mizani.presentation.theme.FinanceWarning
 import com.mousa.mizani.presentation.theme.withTabularNums
 import java.util.Date
@@ -52,19 +53,23 @@ fun FinancialInsightsCard(
     periodStartDate: Date? = null,
     periodEndDate: Date? = null,
     cycleLabel: String? = null,
+    calcPrefs: CalculationPreferences = CalculationPreferences(),
     modifier: Modifier = Modifier
 ) {
     var showInfoDialog by remember { mutableStateOf(false) }
 
-    val analysis = remember(totalIncome, totalExpense, totalWallet, carriedForwardBalance, currentAvailableBalance, periodStartDate, periodEndDate, cycleLabel) {
+    val effectiveCarriedForward = if (calcPrefs.includeCarriedForwardInInsights) carriedForwardBalance else 0.0
+    val analysis = remember(totalIncome, totalExpense, totalWallet, effectiveCarriedForward, currentAvailableBalance, periodStartDate, periodEndDate, cycleLabel, calcPrefs) {
         SpendingPacingCalculator.analyze(
-            totalIncome = totalIncome + carriedForwardBalance,
+            totalIncome = totalIncome + effectiveCarriedForward,
             totalExpense = totalExpense,
             walletReserved = totalWallet,
             currentAvailableBalance = currentAvailableBalance,
             periodStartDate = periodStartDate,
             periodEndDate = periodEndDate,
-            cycleLabel = cycleLabel
+            cycleLabel = cycleLabel,
+            useAvailableBalanceFloor = calcPrefs.useAvailableBalanceFloorInInsights,
+            reserveWalletFromBudget = calcPrefs.reserveWalletInInsights
         )
     }
 

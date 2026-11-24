@@ -625,5 +625,34 @@
     <string name="all_months">All Months</string>
     <string name="filter_by_month">Filter by Month</string>
     <string name="month_filter_label">Month</string>
+
+    <!-- Calculation Rules & Insights Preferences -->
+    <string name="calculation_rules_title">Calculation Rules</string>
+    <string name="calculation_rules_reset">Reset</string>
+    <string name="calculation_rules_subtitle">Choose which accounts, deductions, and balances are included in your monthly totals and Smart Financial Insights.</string>
+    <string name="calculation_rules_entry_title">Customize Income, Expense &amp; Insights</string>
+    <string name="calculation_rules_entry_desc">Control whether Wallet, Deposit/Vault, Loans, and Carried-Forward balances affect your calculations</string>
+
+    <string name="calculation_section_income">Income Calculations</string>
+    <string name="calc_include_deposit_income_title">Include Deposit / Vault Income</string>
+    <string name="calc_include_deposit_income_desc">Count income deposited into the Vault toward monthly income (off by default — isolated in Vault).</string>
+    <string name="calc_deduct_loans_income_title">Deduct Loan Payments from Income</string>
+    <string name="calc_deduct_loans_income_desc">Subtract loan payments marked “deduct from income” from monthly period income (on by default).</string>
+
+    <string name="calculation_section_expense">Expense Calculations</string>
+    <string name="calc_include_wallet_expense_title">Include Wallet Expenses</string>
+    <string name="calc_include_wallet_expense_desc">Count pocket-money Wallet spending toward monthly expenses (off by default).</string>
+    <string name="calc_include_deposit_expense_title">Include Deposit / Vault Expenses</string>
+    <string name="calc_include_deposit_expense_desc">Count Vault capital purchases toward monthly expenses (off by default).</string>
+    <string name="calc_include_loan_expense_title">Include Loan-Linked Expense Transactions</string>
+    <string name="calc_include_loan_expense_desc">Count loan-payment expense transactions in monthly expenses even when deducted from income (off by default).</string>
+
+    <string name="calculation_section_insights">Smart Financial Insights</string>
+    <string name="calc_insights_carried_forward_title">Include Carried-Forward Balance</string>
+    <string name="calc_insights_carried_forward_desc">Add the previous salary cycle’s carried-forward balance to the Smart Financial Insights budget (on by default).</string>
+    <string name="calc_insights_liquid_floor_title">Use Available Liquid Balance as Floor</string>
+    <string name="calc_insights_liquid_floor_desc">Use your current Cash + Bank balance as a minimum budget baseline so unlogged salary or prior savings avoid false deficit alerts (on by default).</string>
+    <string name="calc_insights_reserve_wallet_title">Reserve Wallet Allocation from Budget</string>
+    <string name="calc_insights_reserve_wallet_desc">Subtract your Salary Wallet balance from the spendable Smart Financial Insights budget (off by default).</string>
 </resources>
 

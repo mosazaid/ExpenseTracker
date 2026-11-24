@@ -3,6 +3,7 @@
 import com.mousa.mizani.data.database.entities.AccountType
 import com.mousa.mizani.data.database.entities.Transaction
 import com.mousa.mizani.data.database.entities.TransactionType
+import com.mousa.mizani.data.preferences.CalculationPreferences
 import com.mousa.mizani.data.preferences.UserPreferences
 import com.mousa.mizani.domain.repository.ITransactionRepository
 import java.util.Date
@@ -84,13 +85,15 @@ class BalanceCalculator @Inject constructor(
     suspend fun buildMonthFinancialSummary(startDate: Date, endDate: Date): MonthFinancialSummary {
         val transactions = transactionRepository.getTransactionsBetweenDatesSnapshot(startDate, endDate)
         val paidLoans = monthlyLoanPaymentDao?.getPaidLoansBetweenDates(startDate, endDate) ?: emptyList()
-        return computeMonthFinancialSummary(transactions, getAllTimeBalances(), paidLoans)
+        val calcPrefs = userPreferences.getCalculationPreferences()
+        return computeMonthFinancialSummary(transactions, getAllTimeBalances(), paidLoans, calcPrefs)
     }
 
     internal fun computeMonthFinancialSummary(
         periodTransactions: List<Transaction>,
         currentBalances: AccountBalances,
-        paidLoans: List<com.mousa.mizani.data.database.dao.PaidLoanInfo> = emptyList()
+        paidLoans: List<com.mousa.mizani.data.database.dao.PaidLoanInfo> = emptyList(),
+        calcPrefs: CalculationPreferences = CalculationPreferences()
     ): MonthFinancialSummary {
         var rawIncome = 0.0
         var periodExpense = 0.0
@@ -101,14 +104,18 @@ class BalanceCalculator @Inject constructor(
         var cashTransferImpact = 0.0
         var bankTransferImpact = 0.0
 
-        val loansDeductedFromIncome = paidLoans.filter { it.deductFromIncome }
-        val loansDeductedTxnIds = loansDeductedFromIncome.mapNotNull { it.transactionId }.toSet()
+        val loansDeductedFromIncome = if (calcPrefs.deductLoansFromIncome) {
+            paidLoans.filter { it.deductFromIncome }
+        } else {
+            emptyList()
+        }
+        val loansDeductedTxnIds = paidLoans.filter { it.deductFromIncome }.mapNotNull { it.transactionId }.toSet()
 
         for (transaction in periodTransactions) {
             when (transaction.type) {
                 TransactionType.INCOME -> {
-                    if (transaction.accountType == AccountType.DEPOSIT) {
-                        // Deposit income is isolated to the Great Wallet
+                    if (transaction.accountType == AccountType.DEPOSIT && !calcPrefs.includeDepositIncome) {
+                        // Deposit income is isolated to the Great Wallet unless enabled
                     } else {
                         rawIncome += transaction.amount
                         when (transaction.accountType) {
@@ -119,14 +126,12 @@ class BalanceCalculator @Inject constructor(
                     }
                 }
                 TransactionType.EXPENSE -> {
-                    // Automatically exclude:
-                    // • Loan deductions (tracked separately)
-                    // • Wallet expenses (pocket money — always isolated from operational cash flow)
-                    // • Deposit/Vault expenses (capital purchases — always isolated)
-                    // • Any transaction manually flagged excludeFromMonthExpenses
-                    if (transaction.id in loansDeductedTxnIds
-                        || transaction.accountType == AccountType.WALLET
-                        || transaction.accountType == AccountType.DEPOSIT
+                    val excludedByLoan = !calcPrefs.includeLoanLinkedExpenses && (transaction.id in loansDeductedTxnIds)
+                    val excludedByWallet = !calcPrefs.includeWalletExpenses && (transaction.accountType == AccountType.WALLET)
+                    val excludedByDeposit = !calcPrefs.includeDepositExpenses && (transaction.accountType == AccountType.DEPOSIT)
+                    if (excludedByLoan
+                        || excludedByWallet
+                        || excludedByDeposit
                         || transaction.excludeFromMonthExpenses
                     ) {
                         // Excluded: deducts from respective account balance only

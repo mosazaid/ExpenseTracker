@@ -1,5 +1,22 @@
 # Release Notes
 
+## Version 2.1.0 — Mizani Rebrand, Clean Architecture & Calculation Rules (November 2026)
+
+### Highlights
+- **Package & Namespace Rebrand (`com.mousa.mizani`)**:
+  - Updated `namespace`, `applicationId`, `AndroidManifest.xml` alarm actions, and all `main`/`test`/`androidTest` source trees from `com.example.expensetracker` to `com.mousa.mizani`.
+- **Feature-by-Feature Clean Architecture Restructure**:
+  - Organized `domain/` into `calculator/` (including `calculator/runway/`), `prayer/`, and `constants/`.
+  - Grouped `presentation/` into `feature/<name>/` packages (`overview`, `history`, `add_transaction`, `statistics`, `transfer`, `wallet`, `deposit`, `budget`, `categories`, `loans`, `recurring`, `currency`, `trips`, `settings`, `alerts`, `islamic`, `financial_tools`, `subscription`, `onboarding`, `main`, `debug`), with shared composables consolidated in `presentation/common/`.
+- **Customizable Calculation Rules (`CalculationSettingsScreen`)**:
+  - Added a dedicated **Calculation Rules** screen in **Settings** with 3 checkbox sections:
+    - **Income Calculations**: Include Deposit / Vault Income; Deduct Loan Payments from Income.
+    - **Expense Calculations**: Include Wallet Expenses; Include Deposit / Vault Expenses; Include Loan-Linked Expense Transactions.
+    - **Smart Financial Insights**: Include Carried-Forward Balance; Use Available Liquid Balance as Floor; Reserve Wallet Allocation from Budget.
+  - Wired `CalculationPreferences` (DataStore) into `BalanceCalculator`, `SpendingPacingCalculator`, `FinancialInsightsCard`, `OverviewViewModel`, `GlanceDataRepository`, and `UserPreferences.importAllPreferencesMap`, with a **Reset** action to restore defaults.
+- **History Filtered Header Totals Fix**:
+  - Fixed `HistoryGrouping` across all period modes (`DAY`, `WEEK`, `MONTH`, `YEAR` calendar & salary) so section header `expenseTotal` reflects only the **filtered** expenses—and sums only matching split amounts when subcategory filters or exclusions are active.
+
 ## Version 2.0.0 — Master Product & Architecture Program & Notification Overhaul (November 2026)
 
 ### Highlights
