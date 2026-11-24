@@ -1,9 +1,9 @@
-package com.example.expensetracker.presentation
+﻿package com.example.expensetracker.presentation
 
-import com.example.expensetracker.presentation.components.parseCategoryColor
-import com.example.expensetracker.presentation.viewModel.CategoryExpenseShare
-import com.example.expensetracker.presentation.viewModel.MonthlyBreakdown
-import com.example.expensetracker.presentation.viewModel.ThreeMonthStats
+import com.example.expensetracker.presentation.feature.statistics.components.parseCategoryColor
+import com.example.expensetracker.presentation.feature.statistics.CategoryExpenseShare
+import com.example.expensetracker.presentation.feature.statistics.MonthlyBreakdown
+import com.example.expensetracker.presentation.feature.statistics.ThreeMonthStats
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
@@ -110,7 +110,7 @@ class StatisticsCalculationsTest {
         val chickenDelta = chickenBase - chickenComp
         val chickenPct = (((chickenBase - chickenComp) / chickenComp) * 100f).toFloat()
 
-        val chickenItem = com.example.expensetracker.presentation.model.SubcategoryComparisonItem(
+        val chickenItem = com.example.expensetracker.presentation.feature.statistics.model.SubcategoryComparisonItem(
             name = "Chicken & Meat",
             baseAmount = chickenBase,
             compareAmount = chickenComp,
@@ -129,7 +129,7 @@ class StatisticsCalculationsTest {
         val snackComp = 80.0
         val snackPct = (((snackBase - snackComp) / snackComp) * 100f).toFloat()
 
-        val snackItem = com.example.expensetracker.presentation.model.SubcategoryComparisonItem(
+        val snackItem = com.example.expensetracker.presentation.feature.statistics.model.SubcategoryComparisonItem(
             name = "Snacks",
             baseAmount = snackBase,
             compareAmount = snackComp,
@@ -142,7 +142,7 @@ class StatisticsCalculationsTest {
         assertEquals(-18.75f, snackItem.deltaPercent ?: 0f, 0.01f)
 
         // New item (no compare)
-        val newItem = com.example.expensetracker.presentation.model.SubcategoryComparisonItem(
+        val newItem = com.example.expensetracker.presentation.feature.statistics.model.SubcategoryComparisonItem(
             name = "New Equipment",
             baseAmount = 70.0,
             compareAmount = 0.0,
@@ -155,7 +155,7 @@ class StatisticsCalculationsTest {
 
     @Test
     fun testCategoryComparisonItem_waterfallTotals() {
-        val sub1 = com.example.expensetracker.presentation.model.SubcategoryComparisonItem(
+        val sub1 = com.example.expensetracker.presentation.feature.statistics.model.SubcategoryComparisonItem(
             name = "Chicken & Meat",
             baseAmount = 110.0,
             compareAmount = 75.0,
@@ -163,7 +163,7 @@ class StatisticsCalculationsTest {
             deltaPercent = 46.7f,
             baseTxnCount = 4
         )
-        val sub2 = com.example.expensetracker.presentation.model.SubcategoryComparisonItem(
+        val sub2 = com.example.expensetracker.presentation.feature.statistics.model.SubcategoryComparisonItem(
             name = "Snacks",
             baseAmount = 65.0,
             compareAmount = 80.0,
@@ -171,7 +171,7 @@ class StatisticsCalculationsTest {
             deltaPercent = -18.75f,
             baseTxnCount = 2
         )
-        val sub3 = com.example.expensetracker.presentation.model.SubcategoryComparisonItem(
+        val sub3 = com.example.expensetracker.presentation.feature.statistics.model.SubcategoryComparisonItem(
             name = "Other",
             baseAmount = 70.0,
             compareAmount = 35.0,
@@ -186,7 +186,7 @@ class StatisticsCalculationsTest {
         val catDelta = baseTotal - compTotal // 55.0
         val catDeltaPct = (((baseTotal - compTotal) / compTotal) * 100f).toFloat() // +28.947%
 
-        val catItem = com.example.expensetracker.presentation.model.CategoryComparisonItem(
+        val catItem = com.example.expensetracker.presentation.feature.statistics.model.CategoryComparisonItem(
             categoryId = 10L,
             categoryName = "Shopping",
             categoryIcon = "🛒",

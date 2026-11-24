@@ -1,11 +1,11 @@
-package com.example.expensetracker.data.worker
+﻿package com.example.expensetracker.data.worker
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.expensetracker.data.preferences.UserPreferences
-import com.example.expensetracker.domain.PeriodCalculator
+import com.example.expensetracker.domain.calculator.PeriodCalculator
 import com.example.expensetracker.domain.repository.IAlertRepository
 import com.example.expensetracker.domain.repository.ILoanRepository
 import com.example.expensetracker.util.NotificationHelper

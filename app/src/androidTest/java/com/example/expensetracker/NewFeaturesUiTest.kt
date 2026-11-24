@@ -1,4 +1,4 @@
-package com.example.expensetracker
+﻿package com.example.expensetracker
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -7,12 +7,11 @@ import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Category
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
-import com.example.expensetracker.domain.CategoryBudgetProgress
-import com.example.expensetracker.presentation.components.CategoryBudgetsCard
-import com.example.expensetracker.presentation.components.CategoryRow
-import com.example.expensetracker.presentation.components.FinancialHealthScoreCard
-import com.example.expensetracker.presentation.components.FinancialInsightsCard
-import com.example.expensetracker.presentation.components.TransactionDetailBottomSheet
+import com.example.expensetracker.presentation.feature.statistics.components.CategoryBudgetsCard
+import com.example.expensetracker.presentation.feature.statistics.components.CategoryRow
+import com.example.expensetracker.presentation.feature.overview.components.FinancialHealthScoreCard
+import com.example.expensetracker.presentation.feature.overview.components.FinancialInsightsCard
+import com.example.expensetracker.presentation.common.TransactionDetailBottomSheet
 import com.example.expensetracker.presentation.theme.ExpenseTrackerTheme
 import org.junit.Rule
 import org.junit.Test

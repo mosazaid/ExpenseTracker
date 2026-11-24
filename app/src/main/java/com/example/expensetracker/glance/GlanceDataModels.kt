@@ -1,6 +1,6 @@
-package com.example.expensetracker.glance
+﻿package com.example.expensetracker.glance
 
-import com.example.expensetracker.domain.PacingStatus
+import com.example.expensetracker.domain.calculator.PacingStatus
 
 data class PaydayPacingWidgetData(
     val liquidCash: Double,

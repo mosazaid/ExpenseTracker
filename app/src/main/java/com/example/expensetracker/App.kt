@@ -1,4 +1,4 @@
-package com.example.expensetracker
+﻿package com.example.expensetracker
 
 import android.app.Application
 import android.content.Context
@@ -18,8 +18,8 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 import com.example.expensetracker.core.location.LocationHelper
-import com.example.expensetracker.domain.PrayerCalculationMethod
-import com.example.expensetracker.domain.PrayerTimesCalculator
+import com.example.expensetracker.domain.prayer.PrayerCalculationMethod
+import com.example.expensetracker.domain.prayer.PrayerTimesCalculator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first

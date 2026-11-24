@@ -1,5 +1,6 @@
-package com.example.expensetracker.glance
+﻿package com.example.expensetracker.glance
 
+import com.example.expensetracker.domain.calculator.PacingStatus
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -23,7 +24,6 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.example.expensetracker.MainActivity
 import com.example.expensetracker.core.format.CurrencyUtils
-import com.example.expensetracker.domain.PacingStatus
 
 class PaydayPacingWidget : GlanceAppWidget() {
 

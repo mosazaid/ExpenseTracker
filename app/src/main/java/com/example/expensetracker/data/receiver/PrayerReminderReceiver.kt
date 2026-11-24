@@ -1,11 +1,11 @@
-package com.example.expensetracker.data.receiver
+﻿package com.example.expensetracker.data.receiver
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.example.expensetracker.data.preferences.UserPreferences
-import com.example.expensetracker.domain.PrayerCalculationMethod
-import com.example.expensetracker.domain.PrayerTimesCalculator
+import com.example.expensetracker.domain.prayer.PrayerCalculationMethod
+import com.example.expensetracker.domain.prayer.PrayerTimesCalculator
 import com.example.expensetracker.util.AlarmScheduler
 import com.example.expensetracker.util.NotificationHelper
 import dagger.hilt.android.AndroidEntryPoint
@@ -50,7 +50,7 @@ class PrayerReminderReceiver : BroadcastReceiver() {
                             }
                             if (isPrayerEnabled) {
                                 val soundKey = userPreferences.prayerAdhanSound.first()
-                                val soundOption = com.example.expensetracker.domain.AdhanSoundOption.fromId(soundKey)
+                                val soundOption = com.example.expensetracker.domain.prayer.AdhanSoundOption.fromId(soundKey)
                                 notificationHelper.showPrayerReminderNotification(prayerName, prayerTime, soundOption)
                             }
                         }

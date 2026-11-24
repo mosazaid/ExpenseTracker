@@ -1,13 +1,13 @@
-package com.example.expensetracker.glance
+﻿package com.example.expensetracker.glance
 
+import com.example.expensetracker.domain.calculator.PacingStatus
 import android.content.Context
 import com.example.expensetracker.core.time.DateUtils
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
-import com.example.expensetracker.domain.HistoryPeriod
-import com.example.expensetracker.domain.PacingStatus
-import com.example.expensetracker.domain.SpendingPacingCalculator
+import com.example.expensetracker.domain.constants.HistoryPeriod
+import com.example.expensetracker.domain.calculator.SpendingPacingCalculator
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 import java.util.Date

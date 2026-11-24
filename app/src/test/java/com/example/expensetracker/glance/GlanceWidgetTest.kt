@@ -1,6 +1,6 @@
-package com.example.expensetracker.glance
+﻿package com.example.expensetracker.glance
 
-import com.example.expensetracker.domain.PacingStatus
+import com.example.expensetracker.domain.calculator.PacingStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

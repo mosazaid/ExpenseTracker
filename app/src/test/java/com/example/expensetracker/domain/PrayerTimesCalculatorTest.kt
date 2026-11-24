@@ -1,5 +1,7 @@
-package com.example.expensetracker.domain
+﻿package com.example.expensetracker.domain
 
+import com.example.expensetracker.domain.prayer.PrayerCalculationMethod
+import com.example.expensetracker.domain.prayer.PrayerTimesCalculator
 import org.junit.Assert.*
 import org.junit.Test
 import java.util.Date

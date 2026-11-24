@@ -1,4 +1,4 @@
-package com.example.expensetracker
+﻿package com.example.expensetracker
 
 import android.Manifest
 import android.content.Intent
@@ -24,12 +24,12 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.example.expensetracker.data.preferences.ThemeMode
 import com.example.expensetracker.data.preferences.UserPreferences
-import com.example.expensetracker.presentation.components.BiometricGate
-import com.example.expensetracker.presentation.screens.MainScreen
+import com.example.expensetracker.presentation.common.BiometricGate
+import com.example.expensetracker.presentation.feature.main.MainScreen
 import com.example.expensetracker.presentation.theme.ExpenseTrackerTheme
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import com.example.expensetracker.presentation.screens.OnboardingScreen
+import com.example.expensetracker.presentation.feature.onboarding.OnboardingScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 

@@ -1,5 +1,7 @@
-package com.example.expensetracker.domain.runway
+﻿package com.example.expensetracker.domain.runway
 
+import com.example.expensetracker.domain.calculator.runway.FinancialRunwayCalculator
+import com.example.expensetracker.domain.calculator.runway.RunwayVulnerability
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

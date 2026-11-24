@@ -1,7 +1,7 @@
-package com.example.expensetracker
+﻿package com.example.expensetracker
 
-import com.example.expensetracker.domain.AccountBalances
-import com.example.expensetracker.presentation.model.MonthSummaryUiState
+import com.example.expensetracker.domain.calculator.AccountBalances
+import com.example.expensetracker.presentation.feature.overview.model.MonthSummaryUiState
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

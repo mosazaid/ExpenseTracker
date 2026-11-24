@@ -1,4 +1,4 @@
-package com.example.expensetracker.core.location
+﻿package com.example.expensetracker.core.location
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -10,8 +10,8 @@ import android.location.LocationManager
 import android.os.Build
 import androidx.core.content.ContextCompat
 import com.example.expensetracker.core.format.CurrencyUtils
-import com.example.expensetracker.domain.CityLocation
-import com.example.expensetracker.domain.PrayerTimesCalculator
+import com.example.expensetracker.domain.prayer.CityLocation
+import com.example.expensetracker.domain.prayer.PrayerTimesCalculator
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Locale
 import javax.inject.Inject

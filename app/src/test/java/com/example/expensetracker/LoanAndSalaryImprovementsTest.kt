@@ -1,4 +1,4 @@
-package com.example.expensetracker
+﻿package com.example.expensetracker
 
 import com.example.expensetracker.data.database.dao.MonthlyLoanPaymentDao
 import com.example.expensetracker.data.database.dao.TransactionDao
@@ -10,11 +10,11 @@ import com.example.expensetracker.data.database.entities.TransactionType
 import com.example.expensetracker.data.preferences.MonthMode
 import com.example.expensetracker.data.preferences.UserPreferences
 import com.example.expensetracker.data.repository.TransactionRepositoryImpl
-import com.example.expensetracker.domain.BalanceCalculator
-import com.example.expensetracker.domain.PeriodCalculator
+import com.example.expensetracker.domain.calculator.BalanceCalculator
+import com.example.expensetracker.domain.calculator.PeriodCalculator
 import com.example.expensetracker.domain.model.MonthlyLoanItem
 import com.example.expensetracker.domain.repository.ILoanRepository
-import com.example.expensetracker.presentation.viewModel.LoansViewModel
+import com.example.expensetracker.presentation.feature.loans.LoansViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow

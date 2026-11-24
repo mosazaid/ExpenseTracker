@@ -1,5 +1,7 @@
-package com.example.expensetracker.domain
+﻿package com.example.expensetracker.domain
 
+import com.example.expensetracker.domain.calculator.BudgetProgressCalculator
+import com.example.expensetracker.domain.calculator.CategoryBudgetProgress
 import com.example.expensetracker.data.database.entities.Budget
 import com.example.expensetracker.data.repository.BudgetRepository
 import com.example.expensetracker.data.repository.TransactionRepository

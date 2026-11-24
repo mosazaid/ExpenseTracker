@@ -1,13 +1,13 @@
-package com.example.expensetracker.presentation
+﻿package com.example.expensetracker.presentation
 
 import com.example.expensetracker.data.database.entities.AccountType
 import com.example.expensetracker.data.database.entities.Transaction
 import com.example.expensetracker.data.database.entities.TransactionType
-import com.example.expensetracker.domain.HistoryPeriod
-import com.example.expensetracker.presentation.screens.HistoryGrouping
-import com.example.expensetracker.presentation.screens.SUBCATEGORY_OTHER
-import com.example.expensetracker.presentation.screens.TransactionSortOrder
-import com.example.expensetracker.presentation.screens.TransactionTypeFilter
+import com.example.expensetracker.domain.constants.HistoryPeriod
+import com.example.expensetracker.presentation.feature.history.HistoryGrouping
+import com.example.expensetracker.presentation.feature.history.SUBCATEGORY_OTHER
+import com.example.expensetracker.presentation.feature.history.TransactionSortOrder
+import com.example.expensetracker.presentation.feature.history.TransactionTypeFilter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

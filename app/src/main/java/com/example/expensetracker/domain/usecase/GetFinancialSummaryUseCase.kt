@@ -1,7 +1,7 @@
-package com.example.expensetracker.domain.usecase
+﻿package com.example.expensetracker.domain.usecase
 
-import com.example.expensetracker.domain.BalanceCalculator
-import com.example.expensetracker.domain.MonthFinancialSummary
+import com.example.expensetracker.domain.calculator.MonthFinancialSummary
+import com.example.expensetracker.domain.calculator.BalanceCalculator
 import java.util.Date
 import javax.inject.Inject
 

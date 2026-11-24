@@ -1,4 +1,4 @@
-package com.example.expensetracker.util
+﻿package com.example.expensetracker.util
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -306,7 +306,7 @@ class NotificationHelper @Inject constructor(
     fun showPrayerReminderNotification(
         prayerName: String,
         prayerTime: String,
-        soundOption: com.example.expensetracker.domain.AdhanSoundOption = com.example.expensetracker.domain.AdhanSoundOption.MAKKAH
+        soundOption: com.example.expensetracker.domain.prayer.AdhanSoundOption = com.example.expensetracker.domain.prayer.AdhanSoundOption.MAKKAH
     ) {
         if (!hasPermission()) return
         createChannels()
