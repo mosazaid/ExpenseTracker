@@ -1,0 +1,33 @@
+﻿package com.mousa.mizani.presentation.feature.alerts
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mousa.mizani.data.database.entities.AppAlert
+import com.mousa.mizani.domain.repository.IAlertRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class AlertsViewModel @Inject constructor(
+    private val alertRepository: IAlertRepository
+) : ViewModel() {
+
+    val alerts: StateFlow<List<AppAlert>> = alertRepository.getActiveAlertsFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun dismissAlert(id: Long) {
+        viewModelScope.launch {
+            alertRepository.dismissAlert(id)
+        }
+    }
+
+    fun dismissAllAlerts() {
+        viewModelScope.launch {
+            alertRepository.dismissAllAlerts()
+        }
+    }
+}

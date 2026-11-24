@@ -1,0 +1,121 @@
+﻿package com.mousa.mizani
+
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
+import com.mousa.mizani.data.preferences.ThemeMode
+import com.mousa.mizani.data.preferences.UserPreferences
+import com.mousa.mizani.presentation.common.BiometricGate
+import com.mousa.mizani.presentation.feature.main.MainScreen
+import com.mousa.mizani.presentation.theme.ExpenseTrackerTheme
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.mousa.mizani.presentation.feature.onboarding.OnboardingScreen
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+
+@AndroidEntryPoint
+class MainActivity : FragmentActivity() {
+
+    @Inject
+    lateinit var userPreferences: UserPreferences
+
+    private val navigationTarget = mutableStateOf<String?>(null)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        handleIntent(intent)
+        enableEdgeToEdge()
+        setContent {
+            val themeMode by userPreferences.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
+            val themePalette by userPreferences.themePalette.collectAsState(initial = com.mousa.mizani.data.preferences.ThemePalette.EMERALD)
+            val onboardingCompleted by userPreferences.onboardingCompleted.collectAsState(initial = true)
+            val isDark = when (themeMode) {
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+            ExpenseTrackerTheme(
+                darkTheme = isDark,
+                palette = themePalette
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
+                ) {
+                    NotificationPermissionRequester()
+
+                    if (!onboardingCompleted) {
+                        OnboardingScreen(
+                            onFinish = {
+                                lifecycleScope.launch {
+                                    userPreferences.setOnboardingCompleted(true)
+                                }
+                            }
+                        )
+                    } else {
+                        BiometricGate {
+                            MainScreen(
+                                initialRecurringId = intent?.getLongExtra("recurringId", -1L)
+                                    ?.takeIf { it != -1L },
+                                initialNavigateTo = navigationTarget.value,
+                                onNavigateHandled = { navigationTarget.value = null }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        val target = intent?.getStringExtra("navigate_to")
+            ?: intent?.getStringExtra("nav_destination")
+            ?: intent?.getStringExtra("action")
+        if (!target.isNullOrBlank()) {
+            navigationTarget.value = target
+        }
+    }
+}
+
+@Composable
+private fun NotificationPermissionRequester() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val context = LocalContext.current
+        val launcher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+        ) { /* Granted state handled by system */ }
+
+        LaunchedEffect(Unit) {
+            val isGranted = com.mousa.mizani.core.permission.PermissionHelper.hasNotificationPermission(context)
+            if (!isGranted) {
+                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+}
+
