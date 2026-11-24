@@ -9,11 +9,13 @@
   - Organized `domain/` into `calculator/` (including `calculator/runway/`), `prayer/`, and `constants/`.
   - Grouped `presentation/` into `feature/<name>/` packages (`overview`, `history`, `add_transaction`, `statistics`, `transfer`, `wallet`, `deposit`, `budget`, `categories`, `loans`, `recurring`, `currency`, `trips`, `settings`, `alerts`, `islamic`, `financial_tools`, `subscription`, `onboarding`, `main`, `debug`), with shared composables consolidated in `presentation/common/`.
 - **Customizable Calculation Rules (`CalculationSettingsScreen`)**:
-  - Added a dedicated **Calculation Rules** screen in **Settings** with 3 checkbox sections:
+  - Added a dedicated **Calculation Rules** screen in **Settings** with 5 checkbox sections:
     - **Income Calculations**: Include Deposit / Vault Income; Deduct Loan Payments from Income.
     - **Expense Calculations**: Include Wallet Expenses; Include Deposit / Vault Expenses; Include Loan-Linked Expense Transactions.
     - **Smart Financial Insights**: Include Carried-Forward Balance; Use Available Liquid Balance as Floor; Reserve Wallet Allocation from Budget.
-  - Wired `CalculationPreferences` (DataStore) into `BalanceCalculator`, `SpendingPacingCalculator`, `FinancialInsightsCard`, `OverviewViewModel`, `GlanceDataRepository`, and `UserPreferences.importAllPreferencesMap`, with a **Reset** action to restore defaults.
+    - **Statistics Calculations**: Apply Income & Expense Rules to Statistics; Include Manually Excluded Expenses in Statistics.
+    - **Financial Runway & Zakah**: Include Vault Balance in Financial Runway; Exclude Wallet & Vault from Runway Burn Rate; Include Vault Balance in Zakah Auto-Sync.
+  - Wired `CalculationPreferences` (DataStore) into `BalanceCalculator`, `SpendingPacingCalculator`, `FinancialInsightsCard`, `OverviewViewModel`, `StatisticsViewModel`, `FinancialRunwayViewModel`, `ZakahViewModel`, `GlanceDataRepository`, and `UserPreferences.importAllPreferencesMap`, with a **Reset** action to restore defaults.
 - **History Filtered Header Totals Fix**:
   - Fixed `HistoryGrouping` across all period modes (`DAY`, `WEEK`, `MONTH`, `YEAR` calendar & salary) so section header `expenseTotal` reflects only the **filtered** expenses—and sums only matching split amounts when subcategory filters or exclusions are active.
 

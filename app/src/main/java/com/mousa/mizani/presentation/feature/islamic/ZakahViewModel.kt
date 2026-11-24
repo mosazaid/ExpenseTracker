@@ -3,6 +3,7 @@
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mousa.mizani.data.database.entities.AccountType
+import com.mousa.mizani.data.preferences.UserPreferences
 import com.mousa.mizani.domain.calculator.BalanceCalculator
 import com.mousa.mizani.domain.calculator.DepositCalculator
 import com.mousa.mizani.domain.calculator.ZakahCalculator
@@ -39,7 +40,8 @@ data class ZakahUiState(
 @HiltViewModel
 class ZakahViewModel @Inject constructor(
     private val balanceCalculator: BalanceCalculator,
-    private val depositCalculator: DepositCalculator
+    private val depositCalculator: DepositCalculator,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ZakahUiState())
@@ -51,13 +53,15 @@ class ZakahViewModel @Inject constructor(
 
     fun syncBalances() {
         viewModelScope.launch {
+            val calcPrefs = userPreferences.getCalculationPreferences()
             val balances = balanceCalculator.getAllTimeBalances()
-            val vault = depositCalculator.getDepositBalance()
+            val vault = if (calcPrefs.zakahIncludeVaultOnAutoSync) depositCalculator.getDepositBalance() else 0.0
             val current = _uiState.value
             _uiState.value = current.copy(
                 cashBalance = balances.cash,
                 bankBalance = balances.bank,
-                vaultBalance = vault
+                vaultBalance = vault,
+                includeVault = calcPrefs.zakahIncludeVaultOnAutoSync
             )
             recalculate()
         }

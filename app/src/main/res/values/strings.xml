@@ -654,5 +654,19 @@
     <string name="calc_insights_liquid_floor_desc">Use your current Cash + Bank balance as a minimum budget baseline so unlogged salary or prior savings avoid false deficit alerts (on by default).</string>
     <string name="calc_insights_reserve_wallet_title">Reserve Wallet Allocation from Budget</string>
     <string name="calc_insights_reserve_wallet_desc">Subtract your Salary Wallet balance from the spendable Smart Financial Insights budget (off by default).</string>
+
+    <string name="calculation_section_statistics">Statistics Calculations</string>
+    <string name="calc_stats_apply_global_title">Apply Income &amp; Expense Rules to Statistics</string>
+    <string name="calc_stats_apply_global_desc">Use your Wallet, Deposit/Vault, and Loan inclusion settings in Statistics charts, 3-month trends, and category comparisons (on by default).</string>
+    <string name="calc_stats_include_excluded_title">Include Manually Excluded Expenses in Statistics</string>
+    <string name="calc_stats_include_excluded_desc">Show transactions flagged “Exclude from monthly expenses” inside Statistics charts and comparisons (off by default).</string>
+
+    <string name="calculation_section_tools">Financial Runway &amp; Zakah</string>
+    <string name="calc_runway_include_vault_title">Include Vault Balance in Financial Runway</string>
+    <string name="calc_runway_include_vault_desc">Count your Deposit / Vault savings toward emergency liquid wealth when calculating survival months (on by default).</string>
+    <string name="calc_runway_exclude_wallet_deposit_title">Exclude Wallet &amp; Vault from Runway Burn Rate</string>
+    <string name="calc_runway_exclude_wallet_deposit_desc">Base 90-day essential monthly burn rate only on Cash &amp; Bank operational expenses (off by default).</string>
+    <string name="calc_zakah_include_vault_title">Include Vault Balance in Zakah Auto-Sync</string>
+    <string name="calc_zakah_include_vault_desc">Include Deposit / Vault savings when auto-syncing liquid balances in the Zakah Calculator (on by default).</string>
 </resources>
 

@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material3.*
@@ -141,6 +143,53 @@ fun CalculationSettingsScreen(
                     subtitle = stringResource(R.string.calc_insights_reserve_wallet_desc),
                     checked = prefs.reserveWalletInInsights,
                     onCheckedChange = viewModel::setReserveWalletInInsights
+                )
+            }
+
+            // Section 4: Statistics Calculations
+            CalculationSectionCard(
+                title = stringResource(R.string.calculation_section_statistics),
+                icon = Icons.Outlined.BarChart
+            ) {
+                CalculationCheckboxRow(
+                    title = stringResource(R.string.calc_stats_apply_global_title),
+                    subtitle = stringResource(R.string.calc_stats_apply_global_desc),
+                    checked = prefs.statsApplyGlobalIncomeExpenseRules,
+                    onCheckedChange = viewModel::setStatsApplyGlobalRules
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                CalculationCheckboxRow(
+                    title = stringResource(R.string.calc_stats_include_excluded_title),
+                    subtitle = stringResource(R.string.calc_stats_include_excluded_desc),
+                    checked = prefs.statsIncludeManuallyExcluded,
+                    onCheckedChange = viewModel::setStatsIncludeManuallyExcluded
+                )
+            }
+
+            // Section 5: Other Financial Tools (Runway & Zakah)
+            CalculationSectionCard(
+                title = stringResource(R.string.calculation_section_tools),
+                icon = Icons.Outlined.Calculate
+            ) {
+                CalculationCheckboxRow(
+                    title = stringResource(R.string.calc_runway_include_vault_title),
+                    subtitle = stringResource(R.string.calc_runway_include_vault_desc),
+                    checked = prefs.runwayIncludeVaultBalance,
+                    onCheckedChange = viewModel::setRunwayIncludeVault
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                CalculationCheckboxRow(
+                    title = stringResource(R.string.calc_runway_exclude_wallet_deposit_title),
+                    subtitle = stringResource(R.string.calc_runway_exclude_wallet_deposit_desc),
+                    checked = prefs.runwayExcludeWalletAndDepositBurn,
+                    onCheckedChange = viewModel::setRunwayExcludeWalletDeposit
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                CalculationCheckboxRow(
+                    title = stringResource(R.string.calc_zakah_include_vault_title),
+                    subtitle = stringResource(R.string.calc_zakah_include_vault_desc),
+                    checked = prefs.zakahIncludeVaultOnAutoSync,
+                    onCheckedChange = viewModel::setZakahIncludeVault
                 )
             }
 

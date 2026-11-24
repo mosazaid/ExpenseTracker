@@ -51,6 +51,26 @@ class CalculationSettingsViewModel @Inject constructor(
         viewModelScope.launch { userPreferences.setCalcReserveWalletInsights(enabled) }
     }
 
+    fun setStatsApplyGlobalRules(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setCalcStatsApplyGlobalRules(enabled) }
+    }
+
+    fun setStatsIncludeManuallyExcluded(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setCalcStatsIncludeManuallyExcluded(enabled) }
+    }
+
+    fun setRunwayIncludeVault(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setCalcRunwayIncludeVault(enabled) }
+    }
+
+    fun setRunwayExcludeWalletDeposit(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setCalcRunwayExcludeWalletDeposit(enabled) }
+    }
+
+    fun setZakahIncludeVault(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setCalcZakahIncludeVault(enabled) }
+    }
+
     fun resetToDefaults() {
         viewModelScope.launch { userPreferences.resetCalculationPreferences() }
     }

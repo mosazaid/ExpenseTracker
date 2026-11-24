@@ -9,6 +9,7 @@ import com.mousa.mizani.data.database.entities.AccountType
 import com.mousa.mizani.data.database.entities.Transaction
 import com.mousa.mizani.data.database.entities.TransactionSplit
 import com.mousa.mizani.data.database.entities.TransactionType
+import com.mousa.mizani.data.preferences.CalculationPreferences
 import com.mousa.mizani.data.preferences.MonthMode
 import com.mousa.mizani.data.preferences.UserPreferences
 import com.mousa.mizani.domain.repository.ICategoryRepository
@@ -130,22 +131,52 @@ class StatisticsViewModel @Inject constructor(
     private var cachedDrillDownCompareTxns: List<Transaction> = emptyList()
     private var cachedDrillDownCompareBounds: PeriodBounds? = null
 
+    private fun isStatsExpenseIncluded(
+        txn: Transaction,
+        paidLoanTxnIds: Set<Long>,
+        calcPrefs: CalculationPreferences
+    ): Boolean {
+        if (txn.type != TransactionType.EXPENSE) return false
+        if (!calcPrefs.statsIncludeManuallyExcluded && txn.excludeFromMonthExpenses) return false
+        if (!calcPrefs.statsApplyGlobalIncomeExpenseRules) return true
+        if (!calcPrefs.includeLoanLinkedExpenses && txn.id in paidLoanTxnIds) return false
+        if (!calcPrefs.includeWalletExpenses && txn.accountType == AccountType.WALLET) return false
+        if (!calcPrefs.includeDepositExpenses && txn.accountType == AccountType.DEPOSIT) return false
+        return true
+    }
+
+    private fun computeStatsIncome(
+        txns: List<Transaction>,
+        paidLoans: List<com.mousa.mizani.data.database.dao.PaidLoanInfo>,
+        calcPrefs: CalculationPreferences
+    ): Double {
+        val rawIncome = txns.filter {
+            it.type == TransactionType.INCOME &&
+                (!calcPrefs.statsApplyGlobalIncomeExpenseRules ||
+                    calcPrefs.includeDepositIncome ||
+                    it.accountType != AccountType.DEPOSIT)
+        }.sumOf { it.amount }
+        val loansDeducted = if (!calcPrefs.statsApplyGlobalIncomeExpenseRules || calcPrefs.deductLoansFromIncome) {
+            paidLoans.filter { it.deductFromIncome }.sumOf { it.amount }
+        } else {
+            0.0
+        }
+        return (rawIncome - loansDeducted).coerceAtLeast(0.0)
+    }
+
     fun loadStatisticsForPeriod(period: HistoryPeriod, referenceDate: Date = Date()) {
         viewModelScope.launch {
             _statisticsState.value = _statisticsState.value.copy(isLoading = true)
             val bounds = periodCalculator.getBounds(period, referenceDate, monthMode.value)
-            val rawTotalIncome = transactionRepository.getTotalAmountByTypeAndDateRange(
-                TransactionType.INCOME, bounds.start, bounds.end
-            )
-            val rawTotalExpense = transactionRepository.getTotalAmountByTypeAndDateRange(
-                TransactionType.EXPENSE, bounds.start, bounds.end
-            )
+            val calcPrefs = userPreferences.getCalculationPreferences()
+            val periodTxns = transactionRepository.getTransactionsBetweenDatesSnapshot(bounds.start, bounds.end)
             val paidLoans = monthlyLoanPaymentDao?.getPaidLoansBetweenDates(bounds.start, bounds.end) ?: emptyList()
-            val loansDeductedFromIncome = paidLoans.filter { it.deductFromIncome }
-            val loansDeducted = loansDeductedFromIncome.sumOf { it.amount }
+            val paidLoanTxnIds = paidLoans.filter { it.deductFromIncome }.mapNotNull { it.transactionId }.toSet()
 
-            val totalIncome = (rawTotalIncome - loansDeducted).coerceAtLeast(0.0)
-            val totalExpense = (rawTotalExpense - loansDeducted).coerceAtLeast(0.0)
+            val totalIncome = computeStatsIncome(periodTxns, paidLoans, calcPrefs)
+            val totalExpense = periodTxns
+                .filter { isStatsExpenseIncluded(it, paidLoanTxnIds, calcPrefs) }
+                .sumOf { it.amount }
             val totalWallet = walletCalculator.getWalletBalance(bounds.start, bounds.end)
 
             val threeMonthStats = calculateThreeMonthStats(referenceDate, monthMode.value)
@@ -337,23 +368,14 @@ class StatisticsViewModel @Inject constructor(
         val allThreeMonthExpenses = mutableListOf<com.mousa.mizani.data.database.entities.Transaction>()
         val periodExpenseList = mutableListOf<List<com.mousa.mizani.data.database.entities.Transaction>>()
 
+        val calcPrefs = userPreferences.getCalculationPreferences()
         val monthlyBreakdowns = periods.map { bounds ->
             val txns = transactionRepository.getTransactionsBetweenDates(bounds.start, bounds.end).first()
             val paidLoans = monthlyLoanPaymentDao?.getPaidLoansBetweenDates(bounds.start, bounds.end) ?: emptyList()
-            val loansDeductedFromIncome = paidLoans.filter { it.deductFromIncome }
-            val paidTxnIds = loansDeductedFromIncome.mapNotNull { it.transactionId }.toSet()
-            val loansDeducted = loansDeductedFromIncome.sumOf { it.amount }
+            val paidTxnIds = paidLoans.filter { it.deductFromIncome }.mapNotNull { it.transactionId }.toSet()
 
-            val rawIncome = txns.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
-            val income = (rawIncome - loansDeducted).coerceAtLeast(0.0)
-
-            val expenseTxns = txns.filter {
-                it.type == TransactionType.EXPENSE &&
-                it.accountType != AccountType.WALLET &&
-                it.accountType != AccountType.DEPOSIT &&
-                !it.excludeFromMonthExpenses &&
-                it.id !in paidTxnIds
-            }
+            val income = computeStatsIncome(txns, paidLoans, calcPrefs)
+            val expenseTxns = txns.filter { isStatsExpenseIncluded(it, paidTxnIds, calcPrefs) }
             val expense = expenseTxns.sumOf { it.amount }
             val wallet = walletCalculator.getWalletBalance(bounds.start, bounds.end)
 
@@ -523,14 +545,12 @@ class StatisticsViewModel @Inject constructor(
         val paidLoansCompare = monthlyLoanPaymentDao?.getPaidLoansBetweenDates(compareOption.bounds.start, compareOption.bounds.end) ?: emptyList()
         val paidLoansCompareIds = paidLoansCompare.filter { it.deductFromIncome }.mapNotNull { it.transactionId }.toSet()
 
+        val calcPrefs = userPreferences.getCalculationPreferences()
+
         fun filterTxns(txns: List<Transaction>, bounds: PeriodBounds, paidLoanIds: Set<Long>): List<Transaction> {
             return txns.filter { txn ->
-                txn.type == TransactionType.EXPENSE &&
-                txn.accountType != AccountType.WALLET &&
-                txn.accountType != AccountType.DEPOSIT &&
-                !txn.excludeFromMonthExpenses &&
-                txn.id !in paidLoanIds &&
-                (cutoffDay == null || getDayOffset(txn.date, bounds.start) <= cutoffDay)
+                isStatsExpenseIncluded(txn, paidLoanIds, calcPrefs) &&
+                    (cutoffDay == null || getDayOffset(txn.date, bounds.start) <= cutoffDay)
             }
         }
 

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mousa.mizani.data.database.entities.AccountType
 import com.mousa.mizani.data.database.entities.TransactionType
+import com.mousa.mizani.data.preferences.UserPreferences
 import com.mousa.mizani.domain.calculator.BalanceCalculator
 import com.mousa.mizani.domain.calculator.DepositCalculator
 import com.mousa.mizani.domain.repository.ITransactionRepository
@@ -30,7 +31,8 @@ data class RunwayUiState(
 class FinancialRunwayViewModel @Inject constructor(
     private val balanceCalculator: BalanceCalculator,
     private val depositCalculator: DepositCalculator,
-    private val transactionRepository: ITransactionRepository
+    private val transactionRepository: ITransactionRepository,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
 
     private val _simulatedEmergency = MutableStateFlow(0.0)
@@ -38,10 +40,11 @@ class FinancialRunwayViewModel @Inject constructor(
 
     val uiState: StateFlow<RunwayUiState> = combine(
         transactionRepository.getAllTransactions(),
-        _simulatedEmergency
-    ) { transactions, simulatedShock ->
+        _simulatedEmergency,
+        userPreferences.calculationPreferences
+    ) { transactions, simulatedShock, calcPrefs ->
         val balances = balanceCalculator.getAllTimeBalances()
-        val vaultBalance = depositCalculator.getDepositBalance()
+        val vaultBalance = if (calcPrefs.runwayIncludeVaultBalance) depositCalculator.getDepositBalance() else 0.0
         val totalLiquid = balances.cash + balances.bank + vaultBalance
 
         // Calculate average monthly essential expense over past 90 days
@@ -49,6 +52,8 @@ class FinancialRunwayViewModel @Inject constructor(
         val recentExpenses = transactions.filter {
             it.type == TransactionType.EXPENSE &&
             !it.excludeFromMonthExpenses &&
+            (!calcPrefs.runwayExcludeWalletAndDepositBurn ||
+                (it.accountType != AccountType.WALLET && it.accountType != AccountType.DEPOSIT)) &&
             it.date.after(ninetyDaysAgo)
         }
         val total90DaySpend = recentExpenses.sumOf { it.amount }

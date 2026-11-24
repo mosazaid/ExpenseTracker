@@ -50,7 +50,14 @@ data class CalculationPreferences(
     // Section 3: Smart Financial Insights
     val includeCarriedForwardInInsights: Boolean = true,
     val useAvailableBalanceFloorInInsights: Boolean = true,
-    val reserveWalletInInsights: Boolean = false
+    val reserveWalletInInsights: Boolean = false,
+    // Section 4: Statistics Calculations
+    val statsApplyGlobalIncomeExpenseRules: Boolean = true,
+    val statsIncludeManuallyExcluded: Boolean = false,
+    // Section 5: Other Financial Tools (Runway & Zakah)
+    val runwayIncludeVaultBalance: Boolean = true,
+    val runwayExcludeWalletAndDepositBurn: Boolean = false,
+    val zakahIncludeVaultOnAutoSync: Boolean = true
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
@@ -116,6 +123,11 @@ class UserPreferences @Inject constructor(
     private val calcIncludeCarriedForwardInsightsKey = booleanPreferencesKey("calc_include_carried_forward_insights")
     private val calcUseAvailableFloorInsightsKey = booleanPreferencesKey("calc_use_available_floor_insights")
     private val calcReserveWalletInsightsKey = booleanPreferencesKey("calc_reserve_wallet_insights")
+    private val calcStatsApplyGlobalRulesKey = booleanPreferencesKey("calc_stats_apply_global_rules")
+    private val calcStatsIncludeManuallyExcludedKey = booleanPreferencesKey("calc_stats_include_manually_excluded")
+    private val calcRunwayIncludeVaultKey = booleanPreferencesKey("calc_runway_include_vault")
+    private val calcRunwayExcludeWalletDepositKey = booleanPreferencesKey("calc_runway_exclude_wallet_deposit")
+    private val calcZakahIncludeVaultKey = booleanPreferencesKey("calc_zakah_include_vault")
 
     val stickyPrayerAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[stickyPrayerAlertsKey] ?: false
@@ -534,7 +546,12 @@ class UserPreferences @Inject constructor(
             includeLoanLinkedExpenses = prefs[calcIncludeLoanLinkedExpensesKey] ?: false,
             includeCarriedForwardInInsights = prefs[calcIncludeCarriedForwardInsightsKey] ?: true,
             useAvailableBalanceFloorInInsights = prefs[calcUseAvailableFloorInsightsKey] ?: true,
-            reserveWalletInInsights = prefs[calcReserveWalletInsightsKey] ?: false
+            reserveWalletInInsights = prefs[calcReserveWalletInsightsKey] ?: false,
+            statsApplyGlobalIncomeExpenseRules = prefs[calcStatsApplyGlobalRulesKey] ?: true,
+            statsIncludeManuallyExcluded = prefs[calcStatsIncludeManuallyExcludedKey] ?: false,
+            runwayIncludeVaultBalance = prefs[calcRunwayIncludeVaultKey] ?: true,
+            runwayExcludeWalletAndDepositBurn = prefs[calcRunwayExcludeWalletDepositKey] ?: false,
+            zakahIncludeVaultOnAutoSync = prefs[calcZakahIncludeVaultKey] ?: true
         )
     }
 
@@ -572,6 +589,26 @@ class UserPreferences @Inject constructor(
         context.dataStore.edit { it[calcReserveWalletInsightsKey] = enabled }
     }
 
+    suspend fun setCalcStatsApplyGlobalRules(enabled: Boolean) {
+        context.dataStore.edit { it[calcStatsApplyGlobalRulesKey] = enabled }
+    }
+
+    suspend fun setCalcStatsIncludeManuallyExcluded(enabled: Boolean) {
+        context.dataStore.edit { it[calcStatsIncludeManuallyExcludedKey] = enabled }
+    }
+
+    suspend fun setCalcRunwayIncludeVault(enabled: Boolean) {
+        context.dataStore.edit { it[calcRunwayIncludeVaultKey] = enabled }
+    }
+
+    suspend fun setCalcRunwayExcludeWalletDeposit(enabled: Boolean) {
+        context.dataStore.edit { it[calcRunwayExcludeWalletDepositKey] = enabled }
+    }
+
+    suspend fun setCalcZakahIncludeVault(enabled: Boolean) {
+        context.dataStore.edit { it[calcZakahIncludeVaultKey] = enabled }
+    }
+
     suspend fun resetCalculationPreferences() {
         val defaults = CalculationPreferences()
         context.dataStore.edit { prefs ->
@@ -583,6 +620,11 @@ class UserPreferences @Inject constructor(
             prefs[calcIncludeCarriedForwardInsightsKey] = defaults.includeCarriedForwardInInsights
             prefs[calcUseAvailableFloorInsightsKey] = defaults.useAvailableBalanceFloorInInsights
             prefs[calcReserveWalletInsightsKey] = defaults.reserveWalletInInsights
+            prefs[calcStatsApplyGlobalRulesKey] = defaults.statsApplyGlobalIncomeExpenseRules
+            prefs[calcStatsIncludeManuallyExcludedKey] = defaults.statsIncludeManuallyExcluded
+            prefs[calcRunwayIncludeVaultKey] = defaults.runwayIncludeVaultBalance
+            prefs[calcRunwayExcludeWalletDepositKey] = defaults.runwayExcludeWalletAndDepositBurn
+            prefs[calcZakahIncludeVaultKey] = defaults.zakahIncludeVaultOnAutoSync
         }
     }
 
@@ -651,6 +693,11 @@ class UserPreferences @Inject constructor(
             map[calcIncludeCarriedForwardInsightsKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcIncludeCarriedForwardInsightsKey] = it }
             map[calcUseAvailableFloorInsightsKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcUseAvailableFloorInsightsKey] = it }
             map[calcReserveWalletInsightsKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcReserveWalletInsightsKey] = it }
+            map[calcStatsApplyGlobalRulesKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcStatsApplyGlobalRulesKey] = it }
+            map[calcStatsIncludeManuallyExcludedKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcStatsIncludeManuallyExcludedKey] = it }
+            map[calcRunwayIncludeVaultKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcRunwayIncludeVaultKey] = it }
+            map[calcRunwayExcludeWalletDepositKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcRunwayExcludeWalletDepositKey] = it }
+            map[calcZakahIncludeVaultKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcZakahIncludeVaultKey] = it }
             map[lastLoanSheetDateKey.name]?.let { prefs[lastLoanSheetDateKey] = it }
             map[lastDebtRolloverMonthKey.name]?.let { prefs[lastDebtRolloverMonthKey] = it }
             map[dismissedRecurringKey.name]?.let {
