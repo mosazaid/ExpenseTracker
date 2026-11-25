@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Expense Tracker"
+rootProject.name = "Mizani"
 include(":app")

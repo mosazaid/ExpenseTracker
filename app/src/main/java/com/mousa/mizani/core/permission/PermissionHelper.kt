@@ -12,7 +12,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 
 /**
- * Centralized Permission Handler for Android runtime permissions across ExpenseTracker.
+ * Centralized Permission Handler for Android runtime permissions across Mizani.
  * Handles Camera, Location (GPS/Prayer/Currency), Notifications (Android 13+), and Exact Alarms (Android 12+).
  */
 object PermissionHelper {

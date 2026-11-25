@@ -38,7 +38,7 @@ fun BiometricLockScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = stringResource(R.string.app_name),
+                text = stringResource(R.string.app_short_name),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground
             )

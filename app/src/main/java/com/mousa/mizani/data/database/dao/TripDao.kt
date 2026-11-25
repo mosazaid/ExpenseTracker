@@ -51,5 +51,14 @@ interface TripDao {
 
     @Query("UPDATE trips SET isActive = 0 WHERE id = :tripId")
     suspend fun deactivateTrip(tripId: Long)
-}
 
+    // ---- Full backup support ----
+    @Query("SELECT * FROM trips")
+    suspend fun getAllTripsSnapshot(): List<Trip>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTrips(trips: List<Trip>)
+
+    @Query("DELETE FROM trips")
+    suspend fun deleteAllTrips()
+}

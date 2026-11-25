@@ -26,7 +26,7 @@ class StyledExcelExporterTest {
     @Before
     fun setup() {
         context = Mockito.mock(Context::class.java)
-        Mockito.`when`(context.getString(R.string.app_name)).thenReturn("ExpenseTracker")
+        Mockito.`when`(context.getString(R.string.app_name)).thenReturn("Mizani")
         Mockito.`when`(context.resources).thenReturn(Mockito.mock(android.content.res.Resources::class.java))
         exporter = StyledExcelExporter(context)
     }
@@ -39,7 +39,7 @@ class StyledExcelExporterTest {
         assertTrue(outputFile.exists())
         val content = outputFile.readText()
         assertTrue(content.contains("<!DOCTYPE html>"))
-        assertTrue(content.contains("ExpenseTracker"))
+        assertTrue(content.contains("Mizani"))
         assertTrue(content.contains("No transactions found in this period."))
     }
 

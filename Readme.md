@@ -1,10 +1,10 @@
-# ExpenseTracker — Documentation
+# Mizani – Expense & Budget Tracker — Documentation
 
 A modern Android expense tracking app built with **Kotlin**, **Jetpack Compose**, **Room**, **Hilt**, and **MVVM**.
 
 ## Overview
 
-ExpenseTracker helps you track personal money with salary-aware months, Cash/Bank/Wallet accounts, reimbursements, multi-split transactions, category budgets, AI spending pacing, offline Islamic finance tools (Zakah & Prayer/Qiblah), and local backup via import/export.
+Mizani helps you track personal money with salary-aware months, Cash/Bank/Wallet accounts, reimbursements, multi-split transactions, category budgets, AI spending pacing, offline Islamic finance tools (Zakah & Prayer/Qiblah), and local backup via import/export.
 
 ---
 

@@ -40,5 +40,14 @@ interface CurrencyExchangeDao {
 
     @Query("DELETE FROM currency_exchanges WHERE id = :id")
     suspend fun deleteExchangeById(id: Long)
-}
 
+    // ---- Full backup support ----
+    @Query("SELECT * FROM currency_exchanges")
+    suspend fun getAllExchangesSnapshot(): List<CurrencyExchange>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertExchanges(exchanges: List<CurrencyExchange>)
+
+    @Query("DELETE FROM currency_exchanges")
+    suspend fun deleteAllExchanges()
+}

@@ -77,7 +77,7 @@ class PaydayPacingWidget : GlanceAppWidget() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Expense Tracker",
+                        text = "Mizani",
                         style = TextStyle(
                             color = primaryColor,
                             fontSize = 12.sp,

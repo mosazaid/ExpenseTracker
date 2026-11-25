@@ -168,7 +168,7 @@ fun MoreScreen(navController: NavController) {
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Text(
-                                    text = "ExpenseTracker Pro",
+                                    text = "Mizani Pro",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface

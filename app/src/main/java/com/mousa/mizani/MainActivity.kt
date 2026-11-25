@@ -26,7 +26,7 @@ import com.mousa.mizani.data.preferences.ThemeMode
 import com.mousa.mizani.data.preferences.UserPreferences
 import com.mousa.mizani.presentation.common.BiometricGate
 import com.mousa.mizani.presentation.feature.main.MainScreen
-import com.mousa.mizani.presentation.theme.ExpenseTrackerTheme
+import com.mousa.mizani.presentation.theme.MizaniTheme
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.mousa.mizani.presentation.feature.onboarding.OnboardingScreen
@@ -54,7 +54,7 @@ class MainActivity : FragmentActivity() {
                 ThemeMode.DARK -> true
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
-            ExpenseTrackerTheme(
+            MizaniTheme(
                 darkTheme = isDark,
                 palette = themePalette
             ) {

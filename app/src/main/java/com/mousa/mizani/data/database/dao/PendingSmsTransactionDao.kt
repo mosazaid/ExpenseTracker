@@ -24,5 +24,14 @@ interface PendingSmsTransactionDao {
 
     @Query("DELETE FROM pending_sms_transactions WHERE id = :id")
     suspend fun deletePendingSms(id: Long)
-}
 
+    // ---- Full backup support ----
+    @Query("SELECT * FROM pending_sms_transactions")
+    suspend fun getAllPendingSmsSnapshot(): List<PendingSmsTransaction>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllPendingSms(items: List<PendingSmsTransaction>)
+
+    @Query("DELETE FROM pending_sms_transactions")
+    suspend fun deleteAllPendingSms()
+}

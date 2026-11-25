@@ -48,5 +48,14 @@ interface ItemPriceHistoryDao {
 
     @Query("DELETE FROM item_price_history WHERE id = :id")
     suspend fun deleteById(id: Long)
-}
 
+    // ---- Full backup support ----
+    @Query("SELECT * FROM item_price_history")
+    suspend fun getAllPriceRecordsSnapshot(): List<ItemPriceRecord>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertRecords(records: List<ItemPriceRecord>)
+
+    @Query("DELETE FROM item_price_history")
+    suspend fun deleteAllRecords()
+}

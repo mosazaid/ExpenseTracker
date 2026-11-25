@@ -815,7 +815,7 @@ private val EspressoDarkColorScheme = darkColorScheme(
 )
 
 @Composable
-fun ExpenseTrackerTheme(
+fun MizaniTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     palette: ThemePalette = ThemePalette.EMERALD,
     dynamicColor: Boolean = false,

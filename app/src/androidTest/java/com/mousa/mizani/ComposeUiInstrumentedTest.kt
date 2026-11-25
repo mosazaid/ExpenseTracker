@@ -6,7 +6,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.mousa.mizani.presentation.theme.ExpenseTrackerTheme
+import com.mousa.mizani.presentation.theme.MizaniTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,13 +18,13 @@ class ComposeUiInstrumentedTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun testExpenseTrackerTheme_rendersTextCorrectly() {
+    fun testMizaniTheme_rendersTextCorrectly() {
         composeTestRule.setContent {
-            ExpenseTrackerTheme {
-                Text(text = "Expense Tracker Test Header")
+            MizaniTheme {
+                Text(text = "Mizani Test Header")
             }
         }
 
-        composeTestRule.onNodeWithText("Expense Tracker Test Header").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Mizani Test Header").assertIsDisplayed()
     }
 }

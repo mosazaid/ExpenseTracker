@@ -7,12 +7,13 @@ import com.mousa.mizani.data.database.entities.AccountType
 import com.mousa.mizani.data.database.entities.Category
 import com.mousa.mizani.data.database.entities.Transaction
 import com.mousa.mizani.data.database.entities.TransactionType
+import com.mousa.mizani.domain.calculator.CategoryBudgetProgress
 import com.mousa.mizani.presentation.feature.statistics.components.CategoryBudgetsCard
 import com.mousa.mizani.presentation.feature.statistics.components.CategoryRow
 import com.mousa.mizani.presentation.feature.overview.components.FinancialHealthScoreCard
 import com.mousa.mizani.presentation.feature.overview.components.FinancialInsightsCard
 import com.mousa.mizani.presentation.common.TransactionDetailBottomSheet
-import com.mousa.mizani.presentation.theme.ExpenseTrackerTheme
+import com.mousa.mizani.presentation.theme.MizaniTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,7 +37,7 @@ class NewFeaturesUiTest {
         )
 
         composeTestRule.setContent {
-            ExpenseTrackerTheme {
+            MizaniTheme {
                 CategoryRow(
                     category = category,
                     budgetProgress = null,
@@ -68,7 +69,7 @@ class NewFeaturesUiTest {
         )
 
         composeTestRule.setContent {
-            ExpenseTrackerTheme {
+            MizaniTheme {
                 CategoryRow(
                     category = category,
                     budgetProgress = progress,
@@ -87,7 +88,7 @@ class NewFeaturesUiTest {
     @Test
     fun testCategoryBudgetsCard_rendersEmptyState() {
         composeTestRule.setContent {
-            ExpenseTrackerTheme {
+            MizaniTheme {
                 CategoryBudgetsCard(
                     budgetProgressMap = emptyMap(),
                     categoryMap = emptyMap(),
@@ -113,7 +114,7 @@ class NewFeaturesUiTest {
         val progress = CategoryBudgetProgress(categoryId = 5L, limit = 200.0, spent = 160.0)
 
         composeTestRule.setContent {
-            ExpenseTrackerTheme {
+            MizaniTheme {
                 CategoryBudgetsCard(
                     budgetProgressMap = mapOf(5L to progress),
                     categoryMap = mapOf(5L to cat),
@@ -130,7 +131,7 @@ class NewFeaturesUiTest {
     @Test
     fun testFinancialInsightsCard_rendersOnTrack() {
         composeTestRule.setContent {
-            ExpenseTrackerTheme {
+            MizaniTheme {
                 FinancialInsightsCard(
                     totalIncome = 3000.0,
                     totalExpense = 800.0,
@@ -146,7 +147,7 @@ class NewFeaturesUiTest {
     @Test
     fun testFinancialHealthScoreCard_rendersScoreCard() {
         composeTestRule.setContent {
-            ExpenseTrackerTheme {
+            MizaniTheme {
                 FinancialHealthScoreCard(
                     totalIncome = 5000.0,
                     totalExpense = 1500.0,
@@ -180,7 +181,7 @@ class NewFeaturesUiTest {
         )
 
         composeTestRule.setContent {
-            ExpenseTrackerTheme {
+            MizaniTheme {
                 TransactionDetailBottomSheet(
                     transaction = transaction,
                     category = category,

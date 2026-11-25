@@ -176,7 +176,7 @@ fun OverviewScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             AppTopBar(
-                title = stringResource(R.string.app_name),
+                title = stringResource(R.string.app_short_name),
                 navController = navController,
                 actions = {
                     IconButton(

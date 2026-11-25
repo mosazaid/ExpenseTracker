@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">Expense Tracker</string>
+    <string name="app_name">Mizani – Expense &amp; Budget Tracker</string>
+    <string name="app_short_name">Mizani</string>
 
     <!-- Navigation -->
     <string name="nav_overview">Overview</string>
@@ -66,7 +67,7 @@
     <string name="biometric_lock_help">When enabled, fingerprint or device PIN is required to view your data. Failed attempts show an error and keep data hidden.</string>
     <string name="biometric_locked_message">Authenticate to view your expenses and balances.</string>
     <string name="biometric_unlock">Unlock</string>
-    <string name="biometric_prompt_title">Unlock Expense Tracker</string>
+    <string name="biometric_prompt_title">Unlock Mizani</string>
     <string name="biometric_prompt_subtitle">Use fingerprint or device credentials</string>
     <string name="biometric_not_recognized">Not recognized. Try again.</string>
 
@@ -286,7 +287,7 @@
     <string name="add_new_transaction">Add Transaction</string>
     <string name="more_screen_hub_title">Financial Hub &amp; Tools</string>
     <string name="more_screen_hub_desc">Manage loans, debts, categories, and system settings</string>
-    <string name="app_version_label">ExpenseTracker • v1.0.0</string>
+    <string name="app_version_label">Mizani • v1.0.0</string>
     <string name="offline_storage_secure">Offline &amp; Secure Local Storage</string>
     <string name="financial_insights_title">Smart Insights</string>
     <string name="insight_high_spending">High Spending: You have used %1$d%% of your income this month. Consider pacing non-essential expenses.</string>
@@ -570,6 +571,7 @@
     <string name="full_backup_import_confirm_desc">This will replace current app data and preferences with the contents of the backup file. Proceed?</string>
     <string name="full_backup_success">Backup restored: %1$d transactions, %2$d categories, %3$d loans, and all preferences restored.</string>
     <string name="full_backup_error">Backup restoration failed: %1$s</string>
+    <string name="full_backup_fixed_records">%1$d broken records from the old data were skipped or repaired (details in Logcat, tag FullBackup).</string>
     <!-- Great Wallet (Deposit Vault) & Expense Exclusions -->
     <string name="deposit_vault_title">Great Wallet (Deposit Vault)</string>
     <string name="deposit_vault_subtitle">Master reserve &amp; capital assets guarded outside daily circulation</string>

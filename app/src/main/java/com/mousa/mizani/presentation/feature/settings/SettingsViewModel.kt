@@ -269,6 +269,11 @@ class SettingsViewModel @Inject constructor(
                 val result = fullBackupManager.importFullBackup(content)
                 _fullBackupResult.emit(result)
             }.onFailure { error ->
+                android.util.Log.e(
+                    com.mousa.mizani.core.export.FullBackupManager.TAG,
+                    "Could not read backup file",
+                    error
+                )
                 _fullBackupResult.emit(
                     com.mousa.mizani.core.export.FullBackupRestoreResult(
                         isSuccess = false,

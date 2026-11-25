@@ -55,7 +55,7 @@ fun SubscriptionScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "ExpenseTracker Pro",
+                title = "Mizani Pro",
                 navController = navController,
                 canNavigateBack = true
             )
@@ -129,7 +129,7 @@ fun SubscriptionScreen(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "Upgrade to ExpenseTracker Pro",
+                    text = "Upgrade to Mizani Pro",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
@@ -223,7 +223,7 @@ fun SubscriptionScreen(
                         )
                     } else if (status.isSubscribed) {
                         Text(
-                            text = "Thank you for supporting ExpenseTracker! All current and future Pro features are permanently enabled.",
+                            text = "Thank you for supporting Mizani! All current and future Pro features are permanently enabled.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

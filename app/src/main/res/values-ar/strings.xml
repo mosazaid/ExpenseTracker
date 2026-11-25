@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">متتبع المصروفات</string>
+    <string name="app_name">ميزاني – مصاريفك وميزانيتك</string>
+    <string name="app_short_name">ميزاني</string>
 
     <!-- Navigation -->
     <string name="nav_overview">نظرة عامة</string>
@@ -66,7 +67,7 @@
     <string name="biometric_lock_help">عند التفعيل، يلزم البصمة أو رمز الجهاز لعرض بياناتك. المحاولات الفاشلة تظهر خطأ وتبقي البيانات مخفية.</string>
     <string name="biometric_locked_message">تحقق من هويتك لعرض مصروفاتك وأرصدتك.</string>
     <string name="biometric_unlock">فتح</string>
-    <string name="biometric_prompt_title">فتح متتبع المصروفات</string>
+    <string name="biometric_prompt_title">فتح ميزاني</string>
     <string name="biometric_prompt_subtitle">استخدم البصمة أو بيانات اعتماد الجهاز</string>
     <string name="biometric_not_recognized">لم يتم التعرف. حاول مرة أخرى.</string>
 
@@ -286,7 +287,7 @@
     <string name="add_new_transaction">إضافة معاملة</string>
     <string name="more_screen_hub_title">مركز المال والأدوات</string>
     <string name="more_screen_hub_desc">إدارة القروض، الديون، الفئات، وإعدادات النظام</string>
-    <string name="app_version_label">ExpenseTracker • الإصدار 1.0.0</string>
+    <string name="app_version_label">ميزاني • الإصدار 1.0.0</string>
     <string name="offline_storage_secure">تخزين محلي آمن وبدون إنترنت</string>
     <string name="financial_insights_title">رؤى مالية ذكية</string>
     <string name="insight_high_spending">إنفاق مرتفع: لقد استخدمت %1$d%% من دخلك هذا الشهر. يُنصح بترشيد المصاريف غير الضرورية.</string>
@@ -570,6 +571,7 @@
     <string name="full_backup_import_confirm_desc">سيتم استبدال بيانات التطبيق والإعدادات الحالية ببيانات ملف النسخة الاحتياطية. هل أنت متأكد من المتابعة؟</string>
     <string name="full_backup_success">تمت استعادة النسخة بنجاح: %1$d معاملة، %2$d تصنيف، %3$d قرض، وكافة الإعدادات.</string>
     <string name="full_backup_error">فشلت استعادة النسخة الاحتياطية: %1$s</string>
+    <string name="full_backup_fixed_records">تم تخطي أو إصلاح %1$d من السجلات التالفة في البيانات القديمة.</string>
     <!-- Great Wallet (Deposit Vault) & Expense Exclusions -->
     <string name="deposit_vault_title">الخزنة (المحفظة الكبرى)</string>
     <string name="deposit_vault_subtitle">رأس المال ومدخرات الأصول المحفوظة بأمان خارج السيولة اليومية</string>

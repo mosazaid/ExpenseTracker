@@ -16,7 +16,7 @@ class CsvExporter @Inject constructor(
         val rows = loader.loadRows(filter)
         val filterLabel = filter?.label ?: "All transactions"
         val headerComments = listOf(
-            "# Expense Tracker — transaction export",
+            "# Mizani — transaction export",
             "# Filter: $filterLabel",
             "# Generated: ${dateFormat.format(Date())}",
             "# Import: use the header row below (lines starting with # are ignored)",

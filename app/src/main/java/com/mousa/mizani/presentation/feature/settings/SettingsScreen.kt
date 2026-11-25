@@ -174,13 +174,19 @@ fun SettingsScreen(
     LaunchedEffect(Unit) {
         viewModel.fullBackupResult.collect { result ->
             if (result.isSuccess) {
+                val restoredMessage = context.getString(
+                    R.string.full_backup_success,
+                    result.transactionCount,
+                    result.categoryCount,
+                    result.loanCount
+                )
+                val fixedMessage = if (result.fixedRecordsCount > 0) {
+                    " " + context.getString(R.string.full_backup_fixed_records, result.fixedRecordsCount)
+                } else {
+                    ""
+                }
                 snackbarHostState.showSnackbar(
-                    context.getString(
-                        R.string.full_backup_success,
-                        result.transactionCount,
-                        result.categoryCount,
-                        result.loanCount
-                    )
+                    restoredMessage + fixedMessage
                 )
                 currentCash = viewModel.getCurrentCashBalance()
                 currentBank = viewModel.getCurrentBankBalance()
@@ -911,7 +917,7 @@ fun SettingsScreen(
             HorizontalDivider()
 
             Text(
-                "Expense Tracker v1.1",
+                "Mizani v1.1",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
             )

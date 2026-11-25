@@ -116,7 +116,7 @@ class SubscriptionViewModel @Inject constructor(
             userPreferences.setIsProSubscriber(true)
             userPreferences.setUserPlanTier(tier.name)
             _uiState.value = _uiState.value.copy(
-                feedbackMessage = "Welcome to ExpenseTracker ${tier.displayName}! All features are now unlocked."
+                feedbackMessage = "Welcome to Mizani ${tier.displayName}! All features are now unlocked."
             )
             updateStatus()
         }
