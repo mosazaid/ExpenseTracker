@@ -2,7 +2,7 @@
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import androidx.core.graphics.drawable.toBitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -21,6 +21,9 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
+
+/** Pixel size the adaptive launcher icon is rendered at for export headers. */
+private const val APP_ICON_SIZE_PX = 192
 
 @Singleton
 class PdfTransactionExporter @Inject constructor(
@@ -289,7 +292,8 @@ class PdfTransactionExporter @Inject constructor(
 
     private fun loadAppIcon(): Bitmap? {
         return runCatching {
-            BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher)
+            androidx.core.content.ContextCompat.getDrawable(context, R.mipmap.ic_launcher)
+                ?.toBitmap(APP_ICON_SIZE_PX, APP_ICON_SIZE_PX)
         }.getOrNull()
     }
 

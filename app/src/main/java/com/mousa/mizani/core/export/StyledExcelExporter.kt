@@ -1,7 +1,7 @@
 ﻿package com.mousa.mizani.core.export
 
 import android.content.Context
-import android.graphics.BitmapFactory
+import androidx.core.graphics.drawable.toBitmap
 import android.util.Base64
 import com.mousa.mizani.R
 import com.mousa.mizani.core.format.CurrencyUtils
@@ -19,6 +19,9 @@ import javax.inject.Singleton
  * Styled spreadsheet export as HTML — opens in Excel, Sheets, or a browser with rich executive colors and branding.
  * Saved as .html because legacy HTML-as-.xls is blocked by modern Microsoft Office.
  */
+/** Pixel size the adaptive launcher icon is rendered at for export headers. */
+private const val APP_ICON_SIZE_PX = 192
+
 @Singleton
 class StyledExcelExporter @Inject constructor(
     @ApplicationContext private val context: Context
@@ -298,7 +301,8 @@ class StyledExcelExporter @Inject constructor(
 
     private fun loadIconBase64(): String? {
         return runCatching {
-            val bitmap = BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher)
+            val bitmap = androidx.core.content.ContextCompat.getDrawable(context, R.mipmap.ic_launcher)
+                ?.toBitmap(APP_ICON_SIZE_PX, APP_ICON_SIZE_PX)
                 ?: return null
             ByteArrayOutputStream().use { stream ->
                 bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
