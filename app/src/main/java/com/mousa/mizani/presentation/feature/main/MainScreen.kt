@@ -26,6 +26,7 @@ import com.mousa.mizani.presentation.feature.subscription.SubscriptionScreen
 import com.mousa.mizani.presentation.feature.transfer.TransferScreen
 import com.mousa.mizani.presentation.feature.trips.TravelModeScreen
 import com.mousa.mizani.presentation.feature.wallet.WalletScreen
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -300,7 +301,10 @@ fun MainScreen(
         NavHost(
             navController = navController,
             startDestination = Overview,
-            modifier = Modifier.padding(innerPadding),
+            // Mark the system-bar insets as used, so inner top bars do not add them a second time.
+            modifier = Modifier
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding),
             enterTransition = { fadeIn(animationSpec = tween(220)) },
             exitTransition = { fadeOut(animationSpec = tween(180)) },
             popEnterTransition = { fadeIn(animationSpec = tween(220)) },

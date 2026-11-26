@@ -11,6 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -65,6 +66,9 @@ class MainActivity : FragmentActivity() {
 
                     if (!onboardingCompleted) {
                         OnboardingScreen(
+                            // Edge-to-edge: keep the bottom buttons above the system navigation bar.
+                            // (The in-app route gets these insets from MainScreen's Scaffold.)
+                            modifier = Modifier.safeDrawingPadding(),
                             onFinish = {
                                 lifecycleScope.launch {
                                     userPreferences.setOnboardingCompleted(true)

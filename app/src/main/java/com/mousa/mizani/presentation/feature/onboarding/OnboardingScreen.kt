@@ -184,7 +184,7 @@ fun OnboardingScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
-                .padding(top = 40.dp, bottom = 24.dp),
+                .padding(top = 12.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // ── Top Navigation Bar: Step Badge & Skip Button ────────────────
