@@ -698,6 +698,15 @@ class UserPreferences @Inject constructor(
             map[calcRunwayIncludeVaultKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcRunwayIncludeVaultKey] = it }
             map[calcRunwayExcludeWalletDepositKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcRunwayExcludeWalletDepositKey] = it }
             map[calcZakahIncludeVaultKey.name]?.toBooleanStrictOrNull()?.let { prefs[calcZakahIncludeVaultKey] = it }
+            map[sadaqahRoundUpEnabledKey.name]?.toBooleanStrictOrNull()?.let { prefs[sadaqahRoundUpEnabledKey] = it }
+            map[sadaqahFridayReminderEnabledKey.name]?.toBooleanStrictOrNull()?.let { prefs[sadaqahFridayReminderEnabledKey] = it }
+            map[enableDepositWalletTransferKey.name]?.toBooleanStrictOrNull()?.let { prefs[enableDepositWalletTransferKey] = it }
+            map[sadaqahJarBalanceKey.name]?.let { prefs[sadaqahJarBalanceKey] = it }
+            map[prayerAdhanSoundKey.name]?.let { prefs[prayerAdhanSoundKey] = it }
+            map.filterKeys { it.startsWith("salah_checklist_") }.forEach { (name, value) ->
+                prefs[stringSetPreferencesKey(name)] = value.split(",").filter { it.isNotBlank() }.toSet()
+            }
+            // Pro / owner entitlement keys are deliberately not restored: the file is user-editable.
             map[lastLoanSheetDateKey.name]?.let { prefs[lastLoanSheetDateKey] = it }
             map[lastDebtRolloverMonthKey.name]?.let { prefs[lastDebtRolloverMonthKey] = it }
             map[dismissedRecurringKey.name]?.let {
