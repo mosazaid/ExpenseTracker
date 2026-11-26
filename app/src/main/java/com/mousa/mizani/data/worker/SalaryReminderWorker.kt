@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.mousa.mizani.domain.repository.IRecurringRepository
+import com.mousa.mizani.domain.usecase.itemsToRemind
 import com.mousa.mizani.util.NotificationHelper
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -20,7 +21,8 @@ class SalaryReminderWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         return try {
-            val dueReminders = recurringRepository.getDueReminders(Date())
+            // Auto-add items are recorded and notified by AutoDeductRecurringWorker.
+            val dueReminders = recurringRepository.getDueReminders(Date()).itemsToRemind()
             dueReminders.forEach { reminder ->
                 notificationHelper.showSalaryReminderNotification(reminder)
             }

@@ -670,5 +670,16 @@
     <string name="calc_runway_exclude_wallet_deposit_desc">Base 90-day essential monthly burn rate only on Cash &amp; Bank operational expenses (off by default).</string>
     <string name="calc_zakah_include_vault_title">Include Vault Balance in Zakah Auto-Sync</string>
     <string name="calc_zakah_include_vault_desc">Include Deposit / Vault savings when auto-syncing liquid balances in the Zakah Calculator (on by default).</string>
+    <string name="recurring_auto_add_title">Add transaction automatically</string>
+    <string name="recurring_auto_add_on_desc">On: the transaction is recorded for you when due.</string>
+    <string name="recurring_auto_add_off_desc">Off: you only get a reminder. Tap it to review and save.</string>
+    <string name="recurring_mode_auto">Auto-add</string>
+    <string name="recurring_mode_remind">Remind only</string>
+    <string name="notif_recurring_payment_due_title">Payment due</string>
+    <string name="notif_recurring_income_due_title">Income due</string>
+    <string name="notif_recurring_due_desc">%1$s: %2$s. Tap to record it.</string>
+    <string name="notif_recurring_auto_added_title">Recurring transaction added</string>
+    <string name="notif_recurring_blocked_title">Not added: balance too low</string>
+    <string name="notif_recurring_blocked_desc">%1$s: %2$s. Tap to review and record it.</string>
 </resources>
 

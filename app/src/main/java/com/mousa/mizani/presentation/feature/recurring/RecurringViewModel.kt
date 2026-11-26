@@ -2,7 +2,10 @@
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mousa.mizani.core.time.DateUtils
 import com.mousa.mizani.data.database.entities.Category
+import com.mousa.mizani.domain.calculator.anchorDayFor
+import com.mousa.mizani.domain.calculator.skippingMissedBefore
 import com.mousa.mizani.data.database.entities.RecurringTransaction
 import com.mousa.mizani.data.database.entities.Transaction
 import com.mousa.mizani.domain.repository.ICategoryRepository
@@ -15,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -47,7 +51,15 @@ class RecurringViewModel @Inject constructor(
 
     fun toggleActive(id: Long, currentActive: Boolean) {
         viewModelScope.launch {
-            recurringRepository.setRecurringActive(id, !currentActive)
+            val resumed = recurringRepository.getRecurringById(id)?.takeIf { !currentActive && it.autoAdd }
+            if (resumed == null) {
+                recurringRepository.setRecurringActive(id, !currentActive)
+            } else {
+                // Resuming must not back-fill the periods that passed while paused.
+                recurringRepository.updateRecurring(
+                    resumed.skippingMissedBefore(DateUtils.getStartOfDay(Date())).copy(isActive = true)
+                )
+            }
         }
     }
 
@@ -56,6 +68,10 @@ class RecurringViewModel @Inject constructor(
             recurringRepository.deleteRecurringById(id)
         }
     }
+
+    /** Turning auto-add on starts from today; it never back-fills older periods. */
+    private fun RecurringTransaction.readyToSave(wasAutoAdd: Boolean): RecurringTransaction =
+        if (autoAdd && !wasAutoAdd) skippingMissedBefore(DateUtils.getStartOfDay(Date())) else this
 
     fun saveRecurringTransaction(
         id: Long = 0,
@@ -66,12 +82,12 @@ class RecurringViewModel @Inject constructor(
         accountType: com.mousa.mizani.data.database.entities.AccountType,
         frequency: com.mousa.mizani.data.database.entities.RecurrenceFrequency,
         nextDueDate: java.util.Date,
-        isActive: Boolean = true
+        isActive: Boolean = true,
+        autoAdd: Boolean = false
     ) {
         viewModelScope.launch {
             if (id == 0L) {
-                recurringRepository.insertRecurringTransaction(
-                    RecurringTransaction(
+                val created = RecurringTransaction(
                         amount = amount,
                         description = description,
                         type = type,
@@ -79,14 +95,15 @@ class RecurringViewModel @Inject constructor(
                         accountType = accountType,
                         frequency = frequency,
                         nextDueDate = nextDueDate,
-                        isActive = isActive
+                        isActive = isActive,
+                        autoAdd = autoAdd,
+                        anchorDay = anchorDayFor(null, nextDueDate, frequency)
                     )
-                )
+                recurringRepository.insertRecurringTransaction(created.readyToSave(wasAutoAdd = false))
             } else {
                 val existing = recurringRepository.getRecurringById(id)
                 if (existing != null) {
-                    recurringRepository.updateRecurring(
-                        existing.copy(
+                    val updated = existing.copy(
                             amount = amount,
                             description = description,
                             type = type,
@@ -94,9 +111,11 @@ class RecurringViewModel @Inject constructor(
                             accountType = accountType,
                             frequency = frequency,
                             nextDueDate = nextDueDate,
-                            isActive = isActive
+                            isActive = isActive,
+                            autoAdd = autoAdd,
+                            anchorDay = anchorDayFor(existing, nextDueDate, frequency)
                         )
-                    )
+                    recurringRepository.updateRecurring(updated.readyToSave(wasAutoAdd = existing.autoAdd))
                 }
             }
         }

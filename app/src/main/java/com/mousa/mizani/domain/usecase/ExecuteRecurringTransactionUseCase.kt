@@ -1,5 +1,6 @@
 ﻿package com.mousa.mizani.domain.usecase
 
+import com.mousa.mizani.data.database.entities.AccountType
 import com.mousa.mizani.data.database.entities.RecurringTransaction
 import com.mousa.mizani.data.database.entities.Transaction
 import com.mousa.mizani.domain.repository.IRecurringRepository
@@ -26,7 +27,10 @@ class ExecuteRecurringTransactionUseCase @Inject constructor(
             type = recurring.type,
             categoryId = recurring.categoryId,
             accountType = recurring.accountType,
-            recurringId = recurring.id
+            recurringId = recurring.id,
+            // Same rule as manual entry: Wallet and Vault spending stays out of monthly expenses.
+            excludeFromMonthExpenses = recurring.accountType == AccountType.WALLET ||
+                recurring.accountType == AccountType.DEPOSIT
         )
         val insertedId = transactionRepository.insertTransaction(transaction)
         recurringRepository.advanceRecurringDueDate(recurring)

@@ -5,6 +5,7 @@ import com.mousa.mizani.data.database.entities.AccountType
 import com.mousa.mizani.data.database.entities.RecurrenceFrequency
 import com.mousa.mizani.data.database.entities.RecurringTransaction
 import com.mousa.mizani.data.database.entities.TransactionType
+import com.mousa.mizani.domain.calculator.advanced
 import com.mousa.mizani.domain.repository.IRecurringRepository
 import kotlinx.coroutines.flow.Flow
 import java.util.Calendar
@@ -45,23 +46,14 @@ class RecurringRepositoryImpl @Inject constructor(
                 categoryId = salaryCategoryId,
                 accountType = accountType,
                 frequency = RecurrenceFrequency.MONTHLY,
-                nextDueDate = nextDue
+                nextDueDate = nextDue,
+                anchorDay = dayOfMonth
             )
         )
     }
 
     override suspend fun advanceRecurringDueDate(recurring: RecurringTransaction) {
-        val calendar = Calendar.getInstance()
-        calendar.time = recurring.nextDueDate
-        when (recurring.frequency) {
-            RecurrenceFrequency.DAILY -> calendar.add(Calendar.DAY_OF_YEAR, 1)
-            RecurrenceFrequency.WEEKLY -> calendar.add(Calendar.WEEK_OF_YEAR, 1)
-            RecurrenceFrequency.MONTHLY -> calendar.add(Calendar.MONTH, 1)
-            RecurrenceFrequency.YEARLY -> calendar.add(Calendar.YEAR, 1)
-        }
-        recurringTransactionDao.updateRecurringTransaction(
-            recurring.copy(nextDueDate = calendar.time)
-        )
+        recurringTransactionDao.updateRecurringTransaction(recurring.advanced())
     }
 
     override fun getAllRecurringTransactions(): Flow<List<RecurringTransaction>> {

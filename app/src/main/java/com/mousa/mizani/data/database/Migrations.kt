@@ -606,3 +606,13 @@ val MIGRATION_20_21 = Migration(20, 21) { db ->
 
 
 
+
+/** Automatic recording of recurring items is opt-in; existing items default to reminder only. */
+val MIGRATION_21_22 = Migration(21, 22) { db ->
+    db.execSQL("ALTER TABLE recurring_transactions ADD COLUMN autoAdd INTEGER NOT NULL DEFAULT 0")
+}
+
+/** Remembers the intended day of month so month-end items stop drifting. */
+val MIGRATION_22_23 = Migration(22, 23) { db ->
+    db.execSQL("ALTER TABLE recurring_transactions ADD COLUMN anchorDay INTEGER")
+}

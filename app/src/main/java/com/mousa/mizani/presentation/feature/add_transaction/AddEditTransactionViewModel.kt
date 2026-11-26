@@ -57,6 +57,7 @@ class AddEditTransactionViewModel @Inject constructor(
     private val transactionRepository: ITransactionRepository,
     private val categoryRepository: ICategoryRepository,
     private val recurringRepository: IRecurringRepository,
+    private val budgetAlert: com.mousa.mizani.domain.usecase.BudgetAlertUseCase,
     private val tripRepository: ITripRepository,
     private val itemPriceRepository: com.mousa.mizani.domain.repository.IItemPriceRepository,
     private val userPreferences: UserPreferences,
@@ -339,8 +340,8 @@ class AddEditTransactionViewModel @Inject constructor(
             }
         }
 
-        // Optional micro-charity Sadaqah Round-Up
-        if (transaction.type == TransactionType.EXPENSE) {
+        // Optional micro-charity Sadaqah Round-Up (new expenses only, so edits don't add it again)
+        if (transaction.type == TransactionType.EXPENSE && transaction.id == 0L) {
             val isRoundUpEnabled = userPreferences.sadaqahRoundUpEnabled.first()
             if (isRoundUpEnabled && txn.amount > 0) {
                 val ceiling = kotlin.math.ceil(txn.amount)
@@ -353,50 +354,7 @@ class AddEditTransactionViewModel @Inject constructor(
 
         // Post-save checks for Budget notifications & alert records
         if (transaction.type == TransactionType.EXPENSE && transaction.categoryId != null) {
-            val mode = monthMode.first()
-            val bounds = periodCalculator.getBounds(HistoryPeriod.MONTH, transaction.date, mode)
-            val progress = budgetProgressCalculator.getProgressForCategory(
-                transaction.categoryId,
-                bounds.start,
-                bounds.end
-            )
-            if (progress != null) {
-                val category = categoryRepository.getCategoryById(transaction.categoryId)
-                val catName = category?.name ?: "Category"
-                val monthKey = SimpleDateFormat("yyyy-MM", Locale.US).format(transaction.date)
-
-                if (progress.isOverBudget) {
-                    notificationHelper.showBudgetNotification(
-                        catName,
-                        progress.spent,
-                        progress.limit,
-                        isExceeded = true
-                    )
-                    alertRepository.postBudgetAlert(
-                        transaction.categoryId,
-                        catName,
-                        progress.spent,
-                        progress.limit,
-                        isExceeded = true,
-                        periodKey = monthKey
-                    )
-                } else if (progress.isNearLimit) {
-                    notificationHelper.showBudgetNotification(
-                        catName,
-                        progress.spent,
-                        progress.limit,
-                        isExceeded = false
-                    )
-                    alertRepository.postBudgetAlert(
-                        transaction.categoryId,
-                        catName,
-                        progress.spent,
-                        progress.limit,
-                        isExceeded = false,
-                        periodKey = monthKey
-                    )
-                }
-            }
+            budgetAlert(transaction)
 
             // Dismiss daily expense alert if an expense was recorded today
             val todayKey = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
@@ -437,7 +395,8 @@ class AddEditTransactionViewModel @Inject constructor(
         categoryId: Long?,
         accountType: AccountType,
         frequency: RecurrenceFrequency,
-        nextDueDate: java.util.Date
+        nextDueDate: java.util.Date,
+        anchorDay: Int? = null
     ): Long {
         return recurringRepository.insertRecurringTransaction(
             RecurringTransaction(
@@ -448,7 +407,8 @@ class AddEditTransactionViewModel @Inject constructor(
                 accountType = accountType,
                 frequency = frequency,
                 nextDueDate = nextDueDate,
-                isActive = true
+                isActive = true,
+                anchorDay = anchorDay
             )
         )
     }

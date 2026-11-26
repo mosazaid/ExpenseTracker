@@ -112,7 +112,11 @@ class NotificationHelper @Inject constructor(
         }
     }
 
-    fun showSalaryReminderNotification(recurring: RecurringTransaction) {
+    fun showRecurringBlockedNotification(recurring: RecurringTransaction) {
+        showSalaryReminderNotification(recurring, insufficientBalance = true)
+    }
+
+    fun showSalaryReminderNotification(recurring: RecurringTransaction, insufficientBalance: Boolean = false) {
         if (!hasPermission()) return
         createChannels()
 
@@ -130,8 +134,24 @@ class NotificationHelper @Inject constructor(
         val sticky = isStickySalary()
         val builder = NotificationCompat.Builder(context, CHANNEL_SALARY)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Salary reminder")
-            .setContentText("Record ${CurrencyUtils.formatCurrency(recurring.amount)} salary")
+            .setContentTitle(
+                context.getString(
+                    if (insufficientBalance) {
+                        R.string.notif_recurring_blocked_title
+                    } else if (recurring.type == com.mousa.mizani.data.database.entities.TransactionType.INCOME) {
+                        R.string.notif_recurring_income_due_title
+                    } else {
+                        R.string.notif_recurring_payment_due_title
+                    }
+                )
+            )
+            .setContentText(
+                context.getString(
+                    if (insufficientBalance) R.string.notif_recurring_blocked_desc else R.string.notif_recurring_due_desc,
+                    recurring.description,
+                    CurrencyUtils.formatCurrency(recurring.amount)
+                )
+            )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setOngoing(sticky)
@@ -159,7 +179,7 @@ class NotificationHelper @Inject constructor(
         val sticky = isStickySalary()
         val builder = NotificationCompat.Builder(context, CHANNEL_SALARY)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Recurring Expense Auto-Deducted")
+            .setContentTitle(context.getString(R.string.notif_recurring_auto_added_title))
             .setContentText("$description: ${CurrencyUtils.formatCurrency(amount)}")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)

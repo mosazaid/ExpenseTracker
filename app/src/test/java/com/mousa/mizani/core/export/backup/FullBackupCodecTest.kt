@@ -39,7 +39,7 @@ class FullBackupCodecTest {
         ),
         recurringTransactions = listOf(
             RecurringTransaction(50, 9.99, "Netflix", TransactionType.EXPENSE, 1, AccountType.BANK,
-                RecurrenceFrequency.MONTHLY, t1, true, t0)
+                RecurrenceFrequency.MONTHLY, t1, true, t0, autoAdd = true, anchorDay = 31)
         ),
         transactions = listOf(
             Transaction(

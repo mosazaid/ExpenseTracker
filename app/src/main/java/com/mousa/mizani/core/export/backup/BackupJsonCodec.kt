@@ -106,7 +106,8 @@ object BackupJsonCodec {
         put("id", r.id); put("amount", r.amount); put("description", r.description); put("type", r.type.name)
         putNullable("categoryId", r.categoryId); put("accountType", r.accountType.name)
         put("frequency", r.frequency.name); put("nextDueDate", r.nextDueDate.time)
-        put("isActive", r.isActive); put("createdAt", r.createdAt.time)
+        put("isActive", r.isActive); put("createdAt", r.createdAt.time); put("autoAdd", r.autoAdd)
+        putNullable("anchorDay", r.anchorDay)
     }
 
     private fun encodeTransaction(t: Transaction) = JSONObject().apply {
@@ -229,7 +230,8 @@ object BackupJsonCodec {
         accountType = AccountType.valueOf(o.optString("accountType", "BANK")),
         frequency = RecurrenceFrequency.valueOf(o.optString("frequency", "MONTHLY")),
         nextDueDate = Date(o.getLong("nextDueDate")), isActive = o.optBoolean("isActive", true),
-        createdAt = o.dateOrNow("createdAt")
+        createdAt = o.dateOrNow("createdAt"), autoAdd = o.optBoolean("autoAdd", false),
+        anchorDay = o.longOrNull("anchorDay")?.toInt()
     )
 
     private fun decodeTransaction(o: JSONObject) = Transaction(

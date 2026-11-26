@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.mousa.mizani.domain.usecase.ExecuteAutoRecurringUseCase
+import com.mousa.mizani.glance.WidgetUpdateHelper
 import com.mousa.mizani.util.NotificationHelper
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -21,14 +22,17 @@ class AutoDeductRecurringWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         return try {
             val result = executeAutoRecurringUseCase(Date())
-            if (result.executedCount > 0) {
-                result.executedTransactions.forEach { tx ->
-                    notificationHelper.showRecurringAutoDeductNotification(
-                        description = tx.description,
-                        amount = tx.amount,
-                        txId = tx.id
-                    )
-                }
+            // One notification per item, even when several missed periods were caught up.
+            result.recorded.associateBy { it.id }.values.forEach { item ->
+                notificationHelper.showRecurringAutoDeductNotification(
+                    description = item.description,
+                    amount = item.amount,
+                    txId = item.id
+                )
+            }
+            result.blocked.forEach { notificationHelper.showRecurringBlockedNotification(it) }
+            if (result.recorded.isNotEmpty()) {
+                WidgetUpdateHelper.updateAllWidgets(context)
             }
             Result.success()
         } catch (_: Exception) {

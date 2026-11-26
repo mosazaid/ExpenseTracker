@@ -1669,14 +1669,7 @@ private suspend fun saveAndNavigate(
     if (recurringId != null) {
         viewModel.advanceRecurringAfterSave(recurringId)
     } else if (isRecurring) {
-        val calendar = Calendar.getInstance()
-        calendar.time = transaction.date
-        when (recurrenceFrequency) {
-            RecurrenceFrequency.DAILY -> calendar.add(Calendar.DAY_OF_YEAR, 1)
-            RecurrenceFrequency.WEEKLY -> calendar.add(Calendar.WEEK_OF_YEAR, 1)
-            RecurrenceFrequency.MONTHLY -> calendar.add(Calendar.MONTH, 1)
-            RecurrenceFrequency.YEARLY -> calendar.add(Calendar.YEAR, 1)
-        }
+        val anchorDay = com.mousa.mizani.domain.calculator.dayOfMonthOf(transaction.date)
         viewModel.createRecurringTemplate(
             amount = transaction.amount,
             description = transaction.description,
@@ -1684,7 +1677,10 @@ private suspend fun saveAndNavigate(
             categoryId = transaction.categoryId,
             accountType = transaction.accountType,
             frequency = recurrenceFrequency,
-            nextDueDate = calendar.time
+            nextDueDate = com.mousa.mizani.domain.calculator.nextDueDateAfter(
+                transaction.date, recurrenceFrequency, anchorDay
+            ),
+            anchorDay = anchorDay
         )
     }
     finishNavigate(viewModel, navController)

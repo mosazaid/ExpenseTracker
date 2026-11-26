@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -49,7 +51,8 @@ fun AddEditRecurringBottomSheet(
         categoryId: Long?,
         accountType: AccountType,
         frequency: RecurrenceFrequency,
-        nextDueDate: Date
+        nextDueDate: Date,
+        autoAdd: Boolean
     ) -> Unit,
     onDismissRequest: () -> Unit
 ) {
@@ -79,6 +82,10 @@ fun AddEditRecurringBottomSheet(
     }
     var selectedDate by remember(initialItem) {
         mutableStateOf(initialItem?.nextDueDate ?: Date())
+    }
+
+    var autoAdd by remember(initialItem) {
+        mutableStateOf(initialItem?.autoAdd ?: false)
     }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -384,6 +391,32 @@ fun AddEditRecurringBottomSheet(
                 }
             }
 
+            // When due: record automatically, or only remind
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(value = autoAdd, role = Role.Switch, onValueChange = { autoAdd = it }),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.recurring_auto_add_title),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = stringResource(
+                            if (autoAdd) R.string.recurring_auto_add_on_desc
+                            else R.string.recurring_auto_add_off_desc
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(checked = autoAdd, onCheckedChange = null)
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             // Action Buttons
@@ -422,7 +455,8 @@ fun AddEditRecurringBottomSheet(
                             selectedCategoryId,
                             selectedAccount,
                             selectedFrequency,
-                            selectedDate
+                            selectedDate,
+                            autoAdd
                         )
                         onDismissRequest()
                     },

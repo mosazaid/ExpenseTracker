@@ -219,7 +219,7 @@ fun RecurringScreen(
         AddEditRecurringBottomSheet(
             initialItem = target,
             categories = allCategories,
-            onSave = { id, description, amount, type, categoryId, accountType, frequency, nextDueDate ->
+            onSave = { id, description, amount, type, categoryId, accountType, frequency, nextDueDate, autoAdd ->
                 viewModel.saveRecurringTransaction(
                     id = id,
                     amount = amount,
@@ -228,7 +228,8 @@ fun RecurringScreen(
                     categoryId = categoryId,
                     accountType = accountType,
                     frequency = frequency,
-                    nextDueDate = nextDueDate
+                    nextDueDate = nextDueDate,
+                    autoAdd = autoAdd
                 )
             },
             onDismissRequest = {
@@ -490,6 +491,22 @@ private fun RecurringItemCard(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    }
+
+                    // Auto-add or reminder-only mode
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ) {
+                        Text(
+                            text = stringResource(
+                                if (item.autoAdd) R.string.recurring_mode_auto
+                                else R.string.recurring_mode_remind
+                            ),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
 
                     // 3. Next Due Date
