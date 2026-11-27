@@ -1,5 +1,46 @@
 # Release Notes
 
+## Unreleased — More & Settings Redesign and Recurring Reminders (November 2026)
+
+The app version number is unchanged (`versionName` 1.0). Room database version **23**.
+
+### Before installing over an existing copy
+- Export a backup, check the file is not empty, copy it off the phone, and keep receipt photos separately (backups do not include them).
+- If Android refuses to install over the old app, do not uninstall to force it: uninstalling deletes the data.
+- With App lock on, turn it off while making, restoring, importing or exporting. The lock engages when a file picker opens, so the choice may be lost or the saved file left empty (older behavior, not yet verified on a device).
+- Choose a currency in **Settings > Language and region**. Until then some screens show USD and others JOD. Amounts are not changed.
+
+### More and Settings
+- **More** shows grouped tool tiles (Everyday money, Plan and travel, Islamic) and two App rows (Settings, Help and guide), in English and Arabic.
+- **Settings** is a grouped list with pages for Appearance, Language and region, Accounts and balances, Month and calculations, Notifications, Backup and restore, and Import and export. App lock is a switch on the list.
+- The salary/calendar month choice is now in Settings as well as History.
+- Both screens show the same version number, taken from the build.
+- The database viewer is no longer on More. Debug builds always show it in Settings; release builds show it after 7 taps on the version (7 more hide it). This hides it; it is not password protection.
+- Mizani Pro is hidden. Its screen and code are kept.
+
+### Safer data handling
+- **Correct balance** changes one account at a time and previews the old amount, new amount and difference. Commas, minus signs and other symbols are rejected instead of being removed. Arabic and Persian digits and the Arabic decimal mark work. Extra decimals are rejected.
+- **Restore** rejects files that are not Mizani backups before deleting anything, finishes even if you leave the page, and says when settings could not be restored. Opening balances and the Sadaqah jar match the backup; a backup made before the jar existed resets it to zero.
+- **App lock** cannot be turned on, including by a restore, when the phone has no fingerprint or screen lock. Removing the screen lock while App lock is on can still lock you out.
+- The last backup date is shown. It and the database viewer unlock stay on the device and are not written into backups.
+- App content is no longer shown before the app knows whether it must be locked.
+
+### Recurring items and alerts
+- Recurring items are only recorded automatically if **Add transaction automatically** is on for that item (off by default).
+- When the app opens, a panel asks about due items that need you: **Add** (prefilled form), **Skip this time**, or **Later**. It returns on the next start, or after at least 30 minutes in the background. The loan payment sheet comes first.
+- Protection against recording one period twice: the panel and new notifications carry the due date, and the entry and next date are saved in one database transaction. Notifications posted by an older build carry no date, so check the prefilled form before saving.
+- The Budget and Salary & Recurring alert switches now work. Notices about automatic entries still appear. The debt alert switch is hidden because nothing sends debt phone notifications.
+
+### Fixes
+- **Download import template** is now blank. It previously exported every real transaction.
+- CSV files that start with a byte order mark can be imported.
+- The in-app language choice now applies to screens and layout direction. If you never chose a language, the app follows the phone's language. Some notification text updates after a restart.
+- Month names follow a language change without a restart.
+- Screen insets, a backup settings restore gap, and a missing launcher icon file were fixed.
+
+### Not yet verified
+Not tested on a physical phone, on a signed release build, with App lock enabled, or with real notification taps. Some features were checked on an emulator with test data before the final fixes.
+
 ## Version 2.1.0 — Mizani Rebrand, Clean Architecture & Calculation Rules (November 2026)
 
 ### Highlights

@@ -23,11 +23,11 @@ ExpenseTracker helps a user manage personal money with:
 - **configured recurring loans** with once-per-day bottom sheet reminders and salary preservation
 - persistent **in-app notification center** (`app_alerts`) with real-time badge count on the top app bar
 - **notification settings** with individual toggle controls for each alert channel
-- **"More" hub navigation screen** consolidating Debts, Loans, Categories, DB Browser, Settings, Prayer & Zakah
+- **"More" hub navigation screen**: grouped tiles and rows (Everyday money, Plan and travel, Islamic, App)
 - **time picker** support alongside date selection for exact timestamp logging
 - **CSV import** and **styled CSV/PDF export** for backup/share
 - **Arabic and English** UI with RTL layout support
-- **Biometric app lock** on launch and resume
+- optional **biometric app lock** on launch and resume
 - developer-style **database browser** for inspecting local data
 - **interactive multi-charts and 3-month category comparison pie charts**
 - **usage-based category sorting** and **subcategory filtering with "Other"**
@@ -45,7 +45,7 @@ ExpenseTracker helps a user manage personal money with:
    - balances computed separately for Cash and Bank (Wallet is separate monthly bucket)
    - transfer affects both Cash/Bank accounts
    - wallet moves affect Wallet + one liquid account (Cash or Bank)
-   - opening balances are configurable; **Settings recalibrates “money now”** via `BalanceCalculator.setCurrentBalance`
+   - opening balances are configurable; **Settings > Accounts and balances > Correct balance** recalibrates “money now” one account at a time via `BalanceCalculator.setCurrentBalance` and adds no transaction
 
 3. **Wallet (salary month only)**
    - `WALLET_MOVE` increases/decreases period wallet balance
@@ -85,7 +85,8 @@ ExpenseTracker helps a user manage personal money with:
     - hierarchical subcategories linked to parent categories, with an "Other" option in filters for unassigned transactions
 
 11. **Biometric app lock**
-    - enabled by default via `UserPreferences.biometricLockEnabled`
+    - **off by default** (`UserPreferences.biometricLockEnabled`); the switch is on the Settings list
+    - it cannot be turned on when the phone has no fingerprint or screen lock (`AppLockAvailability`); a restored backup cannot turn it on in that case either (`AppLockRestoreRule`)
     - `BiometricGate` wraps `MainScreen` in `MainActivity`
     - accepts **BIOMETRIC_STRONG** or **DEVICE_CREDENTIAL** (PIN/pattern)
     - on failure/cancel: lock screen + error message; no app content rendered
@@ -117,7 +118,12 @@ Android MVVM with Compose + Room + Hilt.
 | `WalletViewModel` | Wallet ↔ Cash/Bank moves, validation, closed-period guards |
 | `DepositViewModel` | Master Great Wallet (Vault) capital assets, biometric gate, capital purchases isolation |
 | `BudgetViewModel` | Category budgets from Categories screen |
-| `SettingsViewModel` | Balances, language, export/import, salary reminder controls |
+| `SettingsViewModel` | Appearance, language, currency, time format, month mode and wallet-vault transfer settings used by the Settings pages |
+| `SettingsIndexViewModel` | Settings list: row summaries, app lock switch (with availability check), version taps for the database viewer |
+| `AccountBalancesViewModel` | Cash and Bank balances and per-account balance correction |
+| `BackupViewModel` | Back up now, restore state, last backup created time (restore runs in `BackupRestoreRunner`, which outlives the page) |
+| `ImportExportViewModel` | Report export, CSV import result, blank import template |
+| `DueRecurringViewModel` | List of due recurring items that need the user; Add, Skip this time, Later |
 | `CalculationSettingsViewModel` | Configurable checkbox rules for Income, Expense, and Smart Financial Insights (`CalculationPreferences`) |
 | `StatisticsViewModel` | Period totals, 3-month multi-chart stats, category comparison waterfall engine, day-normalized pacing, transaction drilldown |
 | `DatabaseBrowserViewModel` | Table listing and filtered raw queries across all 13 Room tables |
@@ -157,15 +163,19 @@ Android MVVM with Compose + Room + Hilt.
 | `PrayerTimesCalculator` | High-precision NOAA solar coordinates, elevation horizon dip, 12 global calculation methods |
 | `QiblahCalculator` | Spherical forward azimuth calculation to Al-Kaaba in Makkah |
 | `CompassSensorManager` | Hardware sensor fusion (rotation vector / accelerometer + magnetometer) with circular low-pass filter |
-| `FullBackupManager` | Complete app backup and atomic FK-safe restore across all 13 Room tables and DataStore preferences |
+| `FullBackupManager` | Complete app backup (format version 2) and FK-safe restore of the database tables, then DataStore preferences |
 | `ReceiptStorageHelper` | Internal storage photo handling with EXIF orientation correction |
 | `GlanceDataRepository` | Prepares cached lightweight payloads for Android Home Screen widgets |
 | `WidgetUpdateHelper` | Broadcasts immediate update intents to `PaydayPacingWidget` and `QuickAddWidget` |
 | `TransactionExportLoader` | Filtered rows for export |
-| `CsvExporter` | Plain import-compatible CSV (with `#` comment header) |
-| `StyledExcelExporter` | Styled `.xls` (HTML Excel) with icon, title, colors |
+| `CsvExporter` | Plain import-compatible CSV (with `#` comment header) and the blank import template |
+| `StyledExcelExporter` | Styled HTML report (`.html` file) with icon, title, colors |
 | `PdfTransactionExporter` | Styled PDF report with icon, title, colored table |
-| `CsvImporter` | Parse CSV, upsert by id, skip `#` lines |
+| `CsvImporter` | Parse CSV, upsert by id, skip `#` lines and a leading byte-order mark |
+| `evaluateBalanceCorrection` | Reads a typed balance strictly: `Invalid`, `Unchanged` (equal at the shown decimals) or `Change` |
+| `DueRecurringAttentionUseCase` | Due items that need the user: all reminder-only items, plus auto-add items the account cannot cover |
+| `RecordRecurringOccurrenceUseCase` / `SkipRecurringOccurrenceUseCase` | Save-and-advance, or advance without a transaction, for one named due date; both use `RecurringScheduleLock` |
+| `RecurringReminderUseCase` | Recurring phone reminders; respects the salary and recurring switch |
 | `DatabaseInspector` | `PRAGMA table_info` + filtered `SELECT` on allowed tables |
 | `BiometricAuthManager` | Device capability check + `BiometricPrompt` authentication |
 | `AlarmScheduler` | Dual-mode daily 9 PM alarm scheduling (`setExactAndAllowWhileIdle` vs `setAndAllowWhileIdle`) |
@@ -185,8 +195,9 @@ Android MVVM with Compose + Room + Hilt.
 - Universal Top Bar: `AppTopBar` with unread notification badge on all screens
 - Navigation bar with 4 bottom destinations: **Overview**, **History**, **Statistics**, **More**
 - `SwipeableTransactionItem` wraps `TransactionItem` with `SwipeToDismissBox`
-- `BiometricGate` + `BiometricLockScreen` gate all financial UI until authenticated
+- `BiometricGate` + `BiometricLockScreen` gate all financial UI until authenticated (when app lock is on)
 - `LoanReminderBottomSheet` prompts once per day on month rollover / salary arrival
+- `DueRecurringSheet` follows the loan sheet (never stacked); `DueRecurringBanner` on Overview reopens it
 
 ### 2.5 Core security
 
@@ -223,16 +234,38 @@ Android MVVM with Compose + Room + Hilt.
 ### 3.6 Budgets
 - Period-bound budgets; progress in Filters → category dropdown
 
-### 3.7 Recurring salary reminders
-- Worker + notification; banner on History Overview tab
+### 3.7 Recurring items and reminders
+- Each item has "Add transaction automatically", **off** by default. On: the app records it. Off: the app reminds the user, who saves it through a prefilled form
+- Phone reminders come from the worker and follow the "Salary & Recurring Phone Notifications" switch. Notices about automatic entries (added, or blocked for low balance) are not gated by it
+- **Due sheet** on opening the app (after app lock and after the loan sheet): lists reminder-only due items and blocked auto-add items, oldest first. **Add** opens the form and the item advances only after saving; **Skip this time** asks for confirmation, advances one period and adds no transaction; **Later** closes it until the app is opened again (fresh process, or return after at least 30 minutes in the background; `OpeningPromptSession`). The notification switch does not affect this list
+- Opening from a recurring notification goes to that item's form (`LaunchRequest`); a form for a period already recorded or skipped saves nothing. The due sheet, notifications and the Recurring page all pass the shown due date (`recurringFormRoute`)
+- The Overview banner shows the number of due items and reopens the sheet (replaces the old one-item dismissible banner). When it appears while the list is at the top, the list scrolls to it (`DueBannerReveal`); a user who scrolled further down is not moved
 
-### 3.8 Settings, import/export, locale, DB browser, app lock
-- **Language**: `AppLanguage` EN/AR in DataStore; `activity.recreate()` on change
-- **App lock**: biometric/PIN toggle in Settings; default **on**
-- **Export scope**: all | current month
-- **Export format**: CSV (styled `.xls`) | PDF
-- **Import**: plain CSV; format spec in UI; template download
-- **Database browser**: transactions, categories, budgets, recurring_transactions
+### 3.8 More and Settings
+**More** (`MoreScreen`, menu list in `presentation/feature/main/more/MoreMenu.kt`, tiles in `MoreTiles.kt`):
+
+| Group | Items, in order | Style |
+|-------|-----------------|-------|
+| Everyday money | Recurring, Budgets and categories, Loans, Debts, Savings vault | Tiles |
+| Plan and travel | Trips, Currency exchange, Price memory, Emergency runway | Tiles |
+| Islamic | Zakah, Sadaqah jar, Prayer and Qibla, Murabaha | Tiles |
+| App | Settings, Help and guide | Rows |
+
+- Three tiles per row; two when a tile would be narrower than 100 dp or the font scale is 1.3 or more
+- Footer: offline storage note and `BuildConfig.VERSION_NAME`
+- No top card, Pro banner, Notifications or Database browser entry. The Mizani Pro screen and route are kept, but no control opens them
+
+**Settings** list (`SettingsScreen`): General (Appearance, Language and region), Money (Accounts and balances, Month and calculations), Alerts (Notifications), Data and security (App lock switch, Backup and restore, Import and export), then the version.
+
+- **Appearance**: System / Light / Dark and color themes
+- **Language and region**: EN/AR, currency with GPS detection, 12/24 hour time. The saved language is applied through `LocaleHelper` in `App` and `MainActivity.attachBaseContext`; changing it recreates the activity and stays on the page. A user who never chose a language follows the phone language. Until a currency is chosen, `CurrencyUtils.currencyWhenUnset` derives it from the saved language, not the phone region. `DateUtils` display formatters follow the new language at once. Known (2026-11-27): some application-context strings keep the previous language until restart, and screens can show different currencies before one is chosen
+- **Accounts and balances**: Cash and Bank, each with **Correct balance**. The field starts empty; the dialog shows old, new and difference. Arabic-Indic and Extended Arabic-Indic digits and `٫` are accepted and outer spaces trimmed; any other character (comma, Arabic comma, minus, letters) is invalid and nothing is silently removed. Confirm is disabled for blank, invalid or unchanged input. Only the chosen account changes and no transaction is added
+- **Month and calculations**: salary or calendar month (same setting as the History switch), Calculation rules, wallet-vault transfer switch
+- **Notifications**: Budget Warnings off stops the phone notification but keeps the in-app inbox entry. The debt reminder row is hidden (its preference stays). The pinned option mentions loans only
+- **App lock**: biometric/PIN switch on the list; **off** by default; cannot be turned on without device authentication
+- **Backup and restore**: last backup created (per device, updated only when the file is saved or the share window opens), Back up now, Restore with confirmation, receipt photo warning (section 10.3)
+- **Import and export**: report export (all | current salary/calendar month; CSV, styled HTML "Excel", PDF), CSV import, collapsible format help, blank template (comments, header and one commented example row; reads no transactions)
+- **Database browser**: row always shown in debug builds; in release builds 7 taps on the version show it and 7 more hide it (`VersionTapCounter`, stored per device). This hides the viewer; it is not password protection
 
 ### 3.9 Statistics Overview
 - Income, Expense, **Wallet**, Balance for selected period
@@ -306,12 +339,13 @@ Single calculator pass (`BalanceCalculator.buildMonthFinancialSummary`):
   `PATTERN_DEFAULT`, `PATTERN_FULL_DATE`, `PATTERN_SHORT_DATE`, `PATTERN_MONTH_DAY`, `PATTERN_MONTH_YEAR`, `PATTERN_TIME_24H`, `PATTERN_TIME_12H`, `PATTERN_DATE_TIME`, `PATTERN_ISO`.
 - `DateUtils.format(date, pattern, locale)` and `DateUtils.parse(dateString, pattern, locale)` allow formatting/parsing in any pattern needed.
 - `Date` extension functions: `Date.format(pattern)`, `Date.formatDate()`, `Date.formatTime()`, `Date.formatDateTime()`, `Date.formatMonthYear()`.
+- The cached display formatters follow the current default locale and are rebuilt when it changes, so month names switch with the app language without a restart. Formatters for stored or exported values pin `Locale.US`.
 
 ---
 
 ## 4. Database and Migration State
 
-**Current Room Database Version: 21 (November 2026)**
+**Current Room Database Version: 23 (November 2026)**
 
 | Migration | Summary |
 |-----------|---------|
@@ -334,6 +368,7 @@ Single calculator pass (`BalanceCalculator.buildMonthFinancialSummary`):
 | 18→19 | Multi-Currency & Travel Mode: added `currency_exchanges` and `trips` tables; added `currency`, `originalAmount`, `exchangeRateUsed`, and `tripId` to `transactions` |
 | 19→20 | Inflation Tracker & Price Memory: added `item_price_history` table with indexes on normalized name & date |
 | 20→21 | Bank SMS Ingestion & Auto-Deduct: added `pending_sms_transactions` table with status indexes |
+| 21→23 | Opt-in recurring auto-add: added `autoAdd` and `anchorDay` to `recurring_transactions` |
 
 ### Core Entities & Key Fields (13 Tables)
 
@@ -391,18 +426,18 @@ Edit from History → `addTransactionRoute(transactionId = id)`.
 
 ### 5.4 Export
 
-1. User picks scope + format in Settings
+1. User picks scope + format in Settings > Import and export
 2. `TransactionExportLoader.loadRows(filter)`
-3. CSV → `StyledExcelExporter` → `.xls` file
+3. CSV → plain re-importable `.csv`; Excel (styled) → `StyledExcelExporter` → `.html` file
 4. PDF → `PdfTransactionExporter` → `.pdf` file
-5. Share via `FileProvider` + `ExportShareRequest`
+5. `ExportDeliveryHost` offers View, Share (via `FileProvider` + `ExportShareRequest`) or Save to Downloads
 
-Import template uses `CsvExporter.exportPlainCsv()` → plain `.csv`.
+The blank import template does not read the transaction database. Failures show a translated message.
 
 ### 5.5 Import
 
 1. User picks file → `CsvImporter.importTransactions`
-2. Skip `#` lines; first data line = header
+2. Skip `#` lines (and a leading byte-order mark); first data line = header
 3. Upsert by `id` if exists, else insert
 
 ---
@@ -886,6 +921,12 @@ Understanding how `AlarmManager` behaves across Android versions and device stat
 @Serializable object Recurring
 @Serializable object Categories
 @Serializable object Settings
+@Serializable object AppearanceSettings
+@Serializable object LanguageRegionSettings
+@Serializable object AccountBalancesSettings
+@Serializable object MonthCalculationSettings
+@Serializable object BackupSettings
+@Serializable object ImportExportSettings
 @Serializable object DatabaseBrowser
 @Serializable object Onboarding
 
@@ -893,7 +934,9 @@ Understanding how `AlarmManager` behaves across Android versions and device stat
 @Serializable
 data class AddTransaction(
     val transactionId: Long = -1L,
-    val recurringId: Long = -1L
+    val recurringId: Long = -1L,
+    val accountType: String? = null,
+    val expectedDueMillis: Long = -1L
 )
 
 @Serializable
@@ -931,38 +974,21 @@ Defined in `domain/TransactionExportRow.kt` → `CsvImportFormat` object.
 
 ### 10.3 Complete Device Migration Backup & Restore (Full JSON)
 
-To support complete device migration and offline disaster recovery, `FullBackupManager` serializes 100% of the app's state into a single portable `.json` file:
+`FullBackupManager` writes the database and DataStore settings to one `.json` file. **Receipt photos are not included.**
 
-1. **Payload Structure**:
-   - `version`: Integer format version (`1`).
-   - `exported_at`: ISO timestamp string.
-   - `database`: Complete rows for all 9 Room tables:
-     - `categories` (`CategoryDao.getAllCategoriesSnapshot`)
-     - `sub_categories` (`SubCategoryDao.getAllSubCategoriesSnapshot`)
-     - `budgets` (`BudgetDao.getAllBudgetsSnapshot`)
-     - `configured_loans` (`ConfiguredLoanDao.getAllLoansSnapshot`)
-     - `recurring_transactions` (`RecurringTransactionDao.getAllRecurringTransactionsSnapshot`)
-     - `transactions` (`TransactionDao.getAllTransactionsSnapshot`)
-     - `transaction_splits` (`TransactionSplitDao.getAllSplitsSnapshot`)
-     - `monthly_loan_payments` (`MonthlyLoanPaymentDao.getAllPaymentsSnapshot`)
-     - `app_alerts` (`AppAlertDao.getAllAlertsSnapshot`)
-   - `preferences`: Complete key-value dictionary of all DataStore preferences (`UserPreferences.exportAllPreferencesMap`):
-     - Currencies, decimal configurations, themes (Light/Dark/System), languages (EN/AR), 12h/24h time display mode, account opening balances, alert master switches, prayer methods, notification preferences, backup timestamps.
+1. **Payload** (`BackupJsonCodec`): `version` (format 2), `databaseVersion`, `exportedAt`, `preferences`, and one list per table: `categories`, `subCategories`, `budgets`, `configuredLoans`, `monthlyLoanPayments`, `recurringTransactions`, `transactions`, `transactionSplits`, `appAlerts`, `trips`, `currencyExchanges`, `itemPriceHistory`, `pendingSmsTransactions`.
+   - Device-only settings are never exported (`DeviceOnlyPreferences`): last backup created time and database viewer unlock. Pro / owner entitlement keys are not restored.
 
-2. **Atomic Integrity & Foreign Key Safety**:
-   - Executes inside `AppDatabase.withTransaction`.
-   - **Deletion Order (Reverse FK)**:
-     `transaction_splits` → `transactions` → `monthly_loan_payments` → `budgets` → `sub_categories` → `recurring_transactions` → `configured_loans` → `categories` → `app_alerts`.
-   - **Insertion Order (Forward FK)**:
-     `categories` → `sub_categories` → `budgets` → `configured_loans` → `recurring_transactions` → `transactions` → `transaction_splits` → `monthly_loan_payments` → `app_alerts`.
-   - **Preferences Restoration**: `UserPreferences.importAllPreferencesMap(preferencesMap)` seamlessly repopulates typed preferences in DataStore.
+2. **Restore rules**:
+   - A file without a supported `version` (1 or 2) and all nine format-1 lists is **rejected** before anything is deleted.
+   - Database rows are replaced in one transaction in foreign-key-safe order. Settings are imported afterwards; if that fails, the result says the records were restored and the settings were not.
+   - Restore runs in an application scope (`BackupRestoreRunner`), so leaving the page does not stop it. Both buttons are disabled while it runs.
+   - A backup cannot turn app lock on when the phone has no fingerprint or screen lock. The message says when the lock was skipped, or turned off by the backup.
+   - Only the settings present in the file are written, with one exception (`RestoredBalances`): when the settings block is a real export (it has `onboarding_completed`, which every app export contains), a missing `opening_cash_balance`, `opening_bank_balance` or `sadaqah_jar_balance` is removed, because it was unset (0) when the backup was made. Every exporter since the first (2026-10-06) writes every stored setting, so a set balance is never missing. A file without a settings block, or a block without `onboarding_completed` (for example `{}`), changes no balance. Other absent settings keep their current value.
 
-3. **User Flow & Safety**:
-   - Located in **Settings → Data Management** under **Complete App Backup (Transfer to Another Device)**.
-   - Exports via Android Storage Access Framework (`ActivityResultContracts.CreateDocument("application/json")`).
-   - Restores via `ActivityResultContracts.OpenDocument()`.
-   - Protected with a modal warning dialog requiring explicit user confirmation before replacing local data.
-   - Summarizes total restored item count via snackbar / toast notifications.
+3. **User flow**:
+   - **Settings → Backup and restore**: **Back up now** (View, Share or Save to Downloads) and **Restore Complete Backup** (system file picker, then a confirmation dialog).
+   - "Last backup created" is stored per device and updates only when the file is saved or the share window opens. The app cannot confirm that sharing finished.
 
 ---
 
@@ -970,7 +996,9 @@ To support complete device migration and offline disaster recovery, `FullBackupM
 
 | Area | Files |
 |------|-------|
-| Navigation | `MainScreen.kt`, `presentation/navigation/AppDestinations.kt`, `MoreScreen.kt` |
+| Navigation | `MainScreen.kt`, `presentation/navigation/AppDestinations.kt` |
+| More | `MoreScreen.kt`, `main/more/MoreMenu.kt`, `main/more/MoreTiles.kt` |
+| Due recurring items | `recurring/due/*`, `DueRecurringAttentionUseCase.kt`, `RecordRecurringOccurrenceUseCase.kt`, `SkipRecurringOccurrenceUseCase.kt`, `RecurringReminderUseCase.kt`, `core/startup/OpeningPromptSession.kt`, `core/launch/LaunchRequest.kt` |
 | Top Bar & Alerts | `AppTopBar.kt`, `AlertsScreen.kt`, `AlertsViewModel.kt`, `AppAlert.kt`, `AppAlertDao.kt`, `AlertRepository.kt` |
 | History | `HistoryScreen.kt`, `HistoryViewModel.kt`, `HistoryGrouping.kt`, `TransactionItem.kt`, `SwipeableTransactionItem` |
 | Overview | `OverviewScreen.kt`, `HistoryViewModel.kt`, `AccountBalanceCards.kt` |
@@ -981,13 +1009,13 @@ To support complete device migration and offline disaster recovery, `FullBackupM
 | Transfer | `TransferScreen.kt`, `TransferViewModel.kt` |
 | Wallet | `WalletScreen.kt`, `WalletViewModel.kt`, `WalletCalculator.kt` |
 | Statistics | `StatisticsScreen.kt`, `StatisticsViewModel.kt`, `ThreeMonthMultiChart.kt`, `CategoryPieChart.kt`, `StatisticsBarChart.kt` |
-| Settings | `SettingsScreen.kt`, `SettingsViewModel.kt` |
+| Settings | `SettingsScreen.kt`, `SettingsIndexViewModel.kt`, `SettingsViewModel.kt`, and under `feature/settings/`: `appearance/`, `region/`, `accounts/`, `month/`, `backup/`, `transfer/`, `components/`; `domain/calculator/BalanceCorrection.kt`; `core/debug/DatabaseViewerAccess.kt` |
 | Export/Import | `FullBackupManager.kt`, `CsvExporter.kt`, `CsvImporter.kt`, `StyledExcelExporter.kt`, `PdfTransactionExporter.kt`, `TransactionExportLoader.kt` |
 | DB browser | `DatabaseBrowserScreen.kt`, `DatabaseBrowserViewModel.kt`, `DatabaseInspector.kt` |
 | Locale | `LocaleHelper.kt`, `UserPreferences.kt`, `values/strings.xml`, `values-ar/strings.xml` |
 | Biometric lock | `BiometricAuthManager.kt`, `BiometricGate.kt`, `BiometricLockScreen.kt`, `BiometricLockViewModel.kt`, `MainActivity.kt` |
 | Period/Balance | `PeriodCalculator.kt`, `BalanceCalculator.kt`, `core/time/DateUtils.kt` |
-| Data | `entities/*`, `dao/*`, `Migrations.kt` (v13), `AppDatabase.kt` |
+| Data | `entities/*`, `dao/*`, `Migrations.kt` (v23), `AppDatabase.kt` |
 
 ---
 
@@ -1033,13 +1061,13 @@ To modernize the application from MVVM to Clean Architecture, core business capa
 ### 13.4 The Great Wallet (Deposit Vault) Architecture
 - **Purpose**: Holds capital assets, long-term reserves, and property investments isolated from liquid daily circulation (Cash, Bank, Wallet).
 - **Overview Screen Isolation**: Omitted from `OverviewScreen` and `OverviewViewModel` to prevent distorting daily operational cash flows.
-- **Biometric Security Gate**: Placed in `MoreScreen` and guarded strictly by `BiometricAuthManager` (supporting `BIOMETRIC_STRONG` and `DEVICE_CREDENTIAL`). Cannot be accessed without biometric authentication.
+- **Biometric Security Gate**: Placed in `DepositScreen` itself (More only navigates to it) and guarded by `BiometricAuthManager` (supporting `BIOMETRIC_STRONG` and `DEVICE_CREDENTIAL`).
 - **Mathematical Invariant**:
   $$\text{VaultBalance} = \sum \text{Inflow} - \sum \text{Outflow}$$
   $$\text{Inflow} = \text{DepositIncome} + \text{DepositTransfersIn} + \text{DepositWalletMovesIn}$$
   $$\text{Outflow} = \text{DepositExpenses} + \text{DepositTransfersOut} + \text{DepositWalletMovesOut}$$
 - **Capital Purchases (Buy from Vault)**: Purchases made with `AccountType.DEPOSIT` are flagged with `excludeFromMonthExpenses = true`. They are omitted from `periodExpense` in `BalanceCalculator` to protect monthly salary budgets, and displayed in Annual Statistics under a dedicated `DepositYearCard` breakdown.
-- **Wallet-to-Vault Transfers**: Governed by `UserPreferences.enableDepositWalletTransfer` toggle in Settings.
+- **Wallet-to-Vault Transfers**: Governed by `UserPreferences.enableDepositWalletTransfer` in Settings > Month and calculations.
 
 ### 13.5 Wallet Debt & Expenses with Calculator Exclusion Toggle
 - Users can record expenses and debt directly from `AccountType.WALLET`.
@@ -1143,7 +1171,7 @@ To modernize the application from MVVM to Clean Architecture, core business capa
     1. **Sticky Prayer & Adhan Alerts**: Pins prayer notification until prayer is completed or opened.
     2. **Sticky Daily Expense Reminder**: Pins 9 PM reminder until daily expenses are logged.
     3. **Sticky Budget Limit Warnings**: Pins urgent overspend warnings so they cannot be accidentally swiped away.
-    4. **Sticky Loan & Debt Dues**: Keeps upcoming payment deadlines persistent in the status bar.
+    4. **Sticky Loan Reminders**: Keeps loan due notices pinned until reviewed.
     5. **Sticky Salary & Recurring Notices**: Keeps salary arrival and recurring auto-deduction notices pinned.
   - Persisted in DataStore via `UserPreferences` (`stickyPrayerAlertsEnabled`, `stickyDailyReminderEnabled`, `stickyBudgetAlertsEnabled`, `stickyLoanAlertsEnabled`, `stickySalaryAlertsEnabled`) and exported in full JSON backup/restore.
   - `NotificationHelper.kt` dynamically inspects the respective sticky preference, configuring `.setOngoing(true)` and `.setAutoCancel(false)` when enabled.
@@ -1195,7 +1223,7 @@ ExpenseTracker employs a privacy-first, zero-registration monetization architect
 
 ---
 
-## 17. Complete Screen & Navigation Catalog (27 Type-Safe Destinations)
+## 17. Complete Screen & Navigation Catalog (Type-Safe Destinations)
 
 | Destination Route | Screen Composable | Description & Primary Actions |
 |-------------------|-------------------|--------------------------------|
@@ -1203,7 +1231,7 @@ ExpenseTracker employs a privacy-first, zero-registration monetization architect
 | `History` | `HistoryScreen` | Grouped transaction list, subcategory badges, receipt thumbnail previews, swipe-to-delete, type/category filters. |
 | `AddTransaction` | `AddTransactionScreen` | Single vs Split toggle, inline calculator numpad, time-of-day suggestions, "Paste Bank SMS" fast-fill, receipt photo picker. |
 | `Statistics` | `StatisticsScreen` | Periodic overview charts, 3-month multi-chart (spline/bar), category pie chart, waterfall comparison accordion, subcategory drill-down. |
-| `More` | `MoreScreen` | Central hub linking to all auxiliary modules, settings, and Islamic tools with pro badges. |
+| `More` | `MoreScreen` | Grouped tiles (everyday money, plan and travel, Islamic tools) and rows for Settings and Help and guide; shows the app version. |
 | `Transfer` | `TransferScreen` | Cash ↔ Bank transfer form with overdraft protection. |
 | `Wallet` | `WalletScreen` | Scoped monthly wallet (pocket money) movements with closed-period guards. |
 | `Deposit` | `DepositScreen` | Great Vault capital assets, annual capital purchases breakdown, biometric unlock gate. |
@@ -1211,8 +1239,14 @@ ExpenseTracker employs a privacy-first, zero-registration monetization architect
 | `Debts` | `DebtsScreen` | Lent vs Borrowed debt tracker, WhatsApp courtesy reminders, mutual balance offsetting, partial repayments. |
 | `Loans` | `LoansScreen` | Configured loan definitions, monthly payment schedules, salary protection reminders. |
 | `Alerts` | `AlertsScreen` | In-app notification center with per-item dismissal and "Clear All" confirmation action. |
-| `NotificationSettings` | `NotificationSettingsScreen` | Notification channels master toggles, daily 9 PM check-in scheduler, and sticky foreground alerts. |
-| `Settings` | `SettingsScreen` | Currency picker, 12h/24h time format, language (AR/EN), theme palette, opening balance recalibration, full JSON backup/restore. |
+| `NotificationSettings` | `NotificationSettingsScreen` | Opened from Settings: channel switches, daily 9 PM check-in scheduler, and pinned notification options. |
+| `Settings` | `SettingsScreen` | Grouped list with summaries, app lock switch, version, hidden database browser row. |
+| `AppearanceSettings` | `AppearanceSettingsScreen` | System / Light / Dark and color themes. |
+| `LanguageRegionSettings` | `LanguageRegionSettingsScreen` | Language, currency with GPS detection, 12h/24h. |
+| `AccountBalancesSettings` | `AccountBalancesScreen` | Cash and Bank balances with per-account correction. |
+| `MonthCalculationSettings` | `MonthCalculationSettingsScreen` | Month mode, calculation rules, wallet-vault transfers. |
+| `BackupSettings` | `BackupSettingsScreen` | Last backup created, back up now, restore. |
+| `ImportExportSettings` | `ImportExportSettingsScreen` | Report export, CSV import, format help, blank template. |
 | `DatabaseBrowser` | `DatabaseBrowserScreen` | Developer-grade SQLite table browser with dynamic PRAGMA filtering across all 13 tables. |
 | `PrayerQiblah` | `PrayerQiblahScreen` | Real-time sensor Qiblah compass, 12 calculation methods, elevation calibration, Adhan audio preview player. |
 | `ZakahCalculator` | `ZakahCalculatorScreen` | Auto-sync liquid balances, gold karat Nisab calculator, 354-day lunar Hawl tracking. |
@@ -1222,7 +1256,7 @@ ExpenseTracker employs a privacy-first, zero-registration monetization architect
 | `SadaqahJar` | `SadaqahJarScreen` | Micro-charity spare change round-up jar, Friday reminder, one-tap donation logging. |
 | `FinancialRunway` | `FinancialRunwayScreen` | Liquid wealth vs essential monthly burn rate stress-tester with interactive emergency shock slider. |
 | `MurabahaSimulator` | `MurabahaSimulatorScreen` | Islamic financing profit rate simulator, monthly installment schedule, one-tap import into Configured Loans. |
-| `Subscription` | `SubscriptionScreen` | 3-tier comparison matrix, 90-day device trial tracker, secret 5-tap Crown Owner VIP bypass. |
+| `SubscriptionPlan` | `SubscriptionScreen` | 3-tier comparison matrix, trial tracker, 5-tap owner bypass. Currently no control opens it. |
 | `Onboarding` | `OnboardingScreen` | 8-module comprehensive app walkthrough & feature guide with interactive cards, feature highlights, pro-tips, and step indicators. |
 | `BiometricLock` | `BiometricLockScreen` | Branded biometric and device PIN gate preventing unauthorized access on launch/resume. |
 | `LoanPaymentHistory` | `LoanPaymentHistoryScreen` | Historical installment records per configured loan with payment timestamps. |

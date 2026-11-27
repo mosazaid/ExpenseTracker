@@ -8,6 +8,18 @@ Mizani helps you track personal money with salary-aware months, Cash/Bank/Wallet
 
 ---
 
+## Latest Changes (Unreleased — November 2026)
+
+- **Grouped More and Settings screens**: tool tiles on More; focused Settings pages, in English and Arabic.
+- **Safer data handling**: balance correction with a preview, restore that rejects non-Mizani files, App lock only on phones that can unlock it, and a blank CSV import template.
+- **Recurring items**: automatic recording is opt-in per item; a panel asks about other due items when the app opens.
+- **Working alert switches and language choice**.
+- **Mizani Pro is hidden** for now.
+
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for details, install precautions and what has not been tested. The sections below describe earlier releases.
+
+---
+
 ## What's New (Version 2.0 — Master Product & Architecture Program)
 
 ### 1. Advanced Category & Subcategory Comparison Engine
@@ -33,6 +45,8 @@ Mizani helps you track personal money with salary-aware months, Cash/Bank/Wallet
 - **Zakah Auto-Sync & Hawl Lunar Tracker**: Auto-syncs liquid bank/cash balances and gold holdings against live Nisab thresholds.
 
 ### 5. Freemium Monetization, 90-Day Pro Trial & Owner VIP Bypass
+> **Current status:** hidden. No control opens the Pro screen, no feature requires Pro, and there is no billing integration. The code below is kept.
+
 - **Transparent 3-Tier Architecture**: `FREE`, `PRO`, and `PRO_PLUS` feature gates with rich comparison matrix in `SubscriptionScreen`.
 - **Automatic 90-Day Local Pro Trial**: New installs automatically enjoy 90 days of full Pro access with zero login, zero credit card, and local DataStore tracking.
 - **Secret Owner VIP Bypass**: Tapping the Crown Hero icon **5 times** in `SubscriptionScreen` activates permanent lifetime VIP access (`PRO_PLUS`), bypassing Play Billing while allowing full testing of trial flows.
@@ -41,7 +55,7 @@ Mizani helps you track personal money with salary-aware months, Cash/Bank/Wallet
 - **Regional Bank SMS Parser**: High-accuracy regex parser supporting Arab Bank, Bank al Etihad, Jordan Kuwait Bank, Cairo Amman Bank, Al Rajhi, Emirates NBD, ADCB, and FAB in Arabic & English.
 - **Unreviewed Bank Inbox**: Unreviewed incoming SMS transactions appear in an actionable card on `OverviewScreen` for one-tap confirmation.
 - **"Paste Bank SMS" Fast Fill**: Dedicated paste button in `AddTransactionScreen` that auto-fills amount, merchant, and category in seconds.
-- **Background Recurring Auto-Deductions**: Configured recurring expenses set for auto-deduction run automatically daily via WorkManager (`AutoDeductRecurringWorker`), posting transactions and sending confirmation notifications.
+- **Background Recurring Auto-Deductions**: Only items with **Add transaction automatically** switched on (off by default) are recorded daily via WorkManager (`AutoDeductRecurringWorker`), with confirmation notifications. An expense the account cannot cover is not recorded and stays due.
 
 ### 7. Notification Management Overhaul
 - **Clear All Active Notifications**: Added "Clear All" with confirmation dialog to `AlertsScreen` and `AppTopBar`, instantly clearing all active alert inbox items.
@@ -273,7 +287,7 @@ The app utilizes **Type-Safe Jetpack Compose Navigation** powered by `kotlinx.se
 | History | `History` | Transaction list, overview breakdown & filters |
 | **Add** (FAB) | `AddTransaction(...)` | Add/edit income & expense with optional params (`transactionId`, `recurringId`) |
 | Stats | `Statistics` | Interactive multi-charts & 3-month category pie charts |
-| More | `More` | Hub for Debts, Loans, Categories, Database Browser, Settings, Zakah & Prayer |
+| More | `More` | Grouped tool tiles plus Settings and Help rows |
 
 Secondary & Push Destinations:
 - `Transfer`: Cash ↔ Bank transfer screen
@@ -283,7 +297,8 @@ Secondary & Push Destinations:
 - `Debts`: Debt tracking & settlements
 - `Recurring`: Recurring transaction templates
 - `Categories`: Category and subcategory management
-- `Settings`: Preferences, themes, exports, notification toggles, and security lock
+- `Settings`: Grouped settings list with the app lock switch and version
+- `AppearanceSettings`, `LanguageRegionSettings`, `AccountBalancesSettings`, `MonthCalculationSettings`, `BackupSettings`, `ImportExportSettings`: Settings pages
 - `NotificationSettings`: Granular alert channel toggles
 - `PrayerQiblah`: Offline prayer times & Qiblah compass
 - `ZakahCalculator`: 85g gold Nisab & wealth calculator
@@ -292,7 +307,7 @@ Secondary & Push Destinations:
 
 ---
 
-## Database (Room v17)
+## Database (Room v23)
 
 ### Entities
 - `Transaction` — amount, description, subDescription, date, type, categoryId, subCategoryId, accountType, toAccountType, startsNewPeriod, carriedForwardBalance, receiptImagePath, debt fields, etc.
@@ -311,6 +326,8 @@ Secondary & Push Destinations:
 | 14→15 | Added `debtType` and `isDebtSettled` to `transactions` |
 | 15→16 | Added default shopping subcategories (`Chicken & Meat`, `Snacks & Sweets`) |
 | 16→17 | Added `transaction_splits` table and `receiptImagePath` column |
+| 17→21 | Later additions, including trips, currency exchanges, price history and the bank SMS inbox (see `Migrations.kt`) |
+| 21→23 | Added `autoAdd` and `anchorDay` to `recurring_transactions` |
 
 ---
 
@@ -368,7 +385,7 @@ Secondary & Push Destinations:
 - **UI / Presentation Layer**: Jetpack Compose, Material 3, Clean MVVM, Kotlin Coroutines, and `StateFlow` unidirectional data flow.
 - **Type-Safe Routing**: Jetpack Navigation Compose 2.8.8 using `@Serializable` Kotlin objects and classes.
 - **Dependency Injection**: Google Hilt (`@HiltAndroidApp`, `@HiltViewModel`, `@Singleton`).
-- **Offline Persistence**: Room Database (v17) with SQLite, Kotlin Symbol Processing (KSP), foreign key cascade deletion, and AndroidX DataStore for user preferences.
+- **Offline Persistence**: Room Database (v23) with SQLite, Kotlin Symbol Processing (KSP), foreign key cascade deletion, and AndroidX DataStore for user preferences.
 - **Background Scheduling**: Dual-engine architecture with Android `AlarmManager` (`setExactAndAllowWhileIdle`) for exact time reminders and `WorkManager` for guaranteed background execution.
 - **Centralized Security**: AndroidX `BiometricPrompt` supporting strong biometrics & device credentials, with automatic background re-locking (`ON_STOP`) and `FLAG_SECURE` window shielding.
 - **Hardware-Accelerated Visualizations**: Native Compose `Canvas` rendering cubic Bézier curves, gradient area fills, and touch-coordinate geometry without third-party chart libraries.
@@ -377,7 +394,7 @@ Secondary & Push Destinations:
 
 ## Testing & Verification
 
-### Unit Tests (`app/src/test/java/com/example/expensetracker/`)
+### Unit Tests (`app/src/test/java/com/mousa/mizani/`)
 Run all unit tests via Gradle:
 ```bash
 ./gradlew testDebugUnitTest
@@ -391,7 +408,7 @@ Run all unit tests via Gradle:
 - **`LocationHelperTest`**: Nearest preset city resolution and country code to currency mapping.
 - **`ThemeContrastTest`**: Automated WCAG contrast across all 12 themes.
 
-### Instrumented UI Tests (`app/src/androidTest/java/com/example/expensetracker/`)
+### Instrumented UI Tests (`app/src/androidTest/java/com/mousa/mizani/`)
 Run on connected device/emulator:
 ```bash
 ./gradlew connectedDebugAndroidTest

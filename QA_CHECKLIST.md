@@ -10,12 +10,16 @@
 - [ ] Successful unlock shows History / main app.
 - [ ] App re-locks after going to background and returning.
 - [ ] Settings toggle disables lock (no prompt on next launch).
+- [ ] App lock is off on a fresh install.
+- [ ] With no fingerprint and no screen lock on the phone, turning App lock on leaves it off and shows why, in the app language.
+- [ ] With App lock on, the Backup, Restore and Import file pickers still work after the app asks to unlock again.
 
 ## Navigation (Type-Safe Routes)
 - [ ] Bottom tabs (`Overview`, `History`, `Statistics`, `More`) switch instantly with state restoration and single-top launch.
 - [ ] Floating Action Button (+) navigates to `AddTransaction()` type-safe destination with default parameters.
 - [ ] Edit actions pass typed parameters: `AddTransaction(transactionId)`, `EditTransfer(transactionId)`, `EditWallet(transactionId)` correctly load target records.
 - [ ] Push screens (`Loans`, `Alerts`, `Debts`, `Transfer`, `Wallet`, `Categories`, `Settings`, `DatabaseBrowser`, `Onboarding`) open smoothly and back navigation pops correctly.
+- [ ] Settings pages (`AppearanceSettings`, `LanguageRegionSettings`, `AccountBalancesSettings`, `MonthCalculationSettings`, `BackupSettings`, `ImportExportSettings`) open from the Settings list, and Back returns to the list.
 
 ## History and Period Logic
 - [ ] Month mode toggle works (Calendar ↔ Salary).
@@ -74,24 +78,60 @@
 
 ## Recurring Reminder Flow
 - [ ] Salary reminder can be created from salary save dialog.
-- [ ] History reminder banner appears when due (Overview tab).
-- [ ] Dismiss reminder hides banner until next cycle.
 - [ ] Recording from reminder path advances next due date.
+- [ ] Each recurring item has "Add transaction automatically", off by default.
+
+### Due recurring items (sheet on opening the app)
+- [ ] Opening the app with due items shows the "Due recurring items" sheet, after the app lock if it is on.
+- [ ] It lists every due reminder-only item, and automatic items only when the account cannot cover the oldest due period (marked as not added). Oldest due is first.
+- [ ] When the loan payment sheet is also due, it comes first. The two sheets are never stacked.
+- [ ] **Add** opens the prefilled form. Leaving without saving keeps the item due. Saving records one transaction and advances the item one period.
+- [ ] **Skip this time** asks for confirmation, advances one period and adds no transaction. Cancel changes nothing.
+- [ ] **Later** closes the sheet. Moving between tabs, a short switch to another app and unlocking again do not bring it back.
+- [ ] It comes back after a fresh start, and after at least 30 minutes in the background.
+- [ ] Opening from a recurring phone notification goes to that item's form without the sheet on top of it.
+- [ ] Several missed periods of a reminder-only item are handled one at a time.
+- [ ] A form opened for a period that was already recorded or skipped (from the due sheet, a notification or the Recurring page) saves nothing and says so, pointing to History.
+- [ ] The Overview banner shows the number of due items **at the top of the page without scrolling**, and **Review** reopens the sheet. When the banner appears while the page is at the top, the page scrolls to show it; a user who has scrolled further down is not moved.
+- [ ] The due sheet appears whether the "Salary & Recurring Phone Notifications" switch is on or off.
 
 ## Salary Carry-Forward
 - [ ] “Start new month?” dialog offers carry-forward when previous period had savings.
 - [ ] History month summary shows “Brought forward” and “Remaining total” when applicable.
 
-## Settings, Language, Export, Import
-- [ ] **App lock** toggle enables/disables biometric gate.
-- [ ] Opening cash/bank balances save and reflect in totals.
-- [ ] Language toggle (English / Arabic) recreates app with correct strings and RTL.
-- [ ] Export scope: All vs Current month filters rows correctly.
-- [ ] Export **CSV** (.xls styled): icon, title, colored headers/values; opens in Excel/Sheets.
-- [ ] Export **PDF**: icon, title, colored table; share intent works.
-- [ ] **Download import template** produces plain `.csv` with header + data.
+## Settings List and Pages
+- [ ] Groups and rows, in order: General (Appearance, Language and region), Money (Accounts and balances, Month and calculations), Alerts (Notifications), Data and security (App lock switch, Backup and restore, Import and export). The version is at the bottom.
+- [ ] Row summaries are correct: mode and color theme; language and currency; salary or calendar month; last backup date or "No backup yet".
+- [ ] **Appearance**: System / Light / Dark and the color themes apply.
+- [ ] **Language and region**: language, currency, GPS currency detection (including permission denial), 12 / 24 hour time.
+- [ ] Changing the language applies it, mirrors the layout for Arabic, stays on the same page, and still applies after a restart.
+- [ ] After switching language, dates and month names use the new language without a restart (including the Recurring due date and History group titles).
+- [ ] A user who never picked a currency: check the currency shown on Settings, Overview, Recurring and the due sheet after a fresh start. (Known on 2026-11-27: they can differ, and the Settings value follows the app language.)
+- [ ] **Month and calculations**: salary / calendar month changes the same setting as the switch in History; "Calculation Rules" opens; the wallet-vault transfer switch saves.
+
+### Correct balance (Accounts and balances)
+- [ ] Cash and Bank each show the current balance as money, with their own **Correct balance** button.
+- [ ] The dialog starts empty and shows current balance, new balance and difference before saving.
+- [ ] Blank input cannot be saved. Input with a comma, Arabic comma, minus sign or letters is rejected with a message; nothing is silently removed (`12,5` must not become `125`).
+- [ ] Arabic-Indic digits and the Arabic decimal separator (`٫`) are accepted. Spaces at the ends are ignored.
+- [ ] Confirm is disabled when the new amount equals the old one at the decimals shown.
+- [ ] Saving changes only the chosen account and adds no transaction.
+- [ ] The preview stays visible above the keyboard on a small phone.
+
+### Import and export
+- [ ] Export scope: All vs Current salary/calendar month filters rows correctly.
+- [ ] **CSV**: plain file that can be re-imported.
+- [ ] **Excel (styled)** (`.html` file): icon, title, colored headers/values.
+- [ ] **PDF**: icon, title, colored table; share intent works.
+- [ ] **Download import template** (inside "Accepted CSV import format") contains only comment lines, the header, and one example row starting with `#`. No real transactions.
+- [ ] Importing the unchanged template reports 0 added.
 - [ ] Import CSV: valid file inserts/updates; `#` comment lines ignored.
-- [ ] Import format card shows header, required/optional columns, example row.
+- [ ] A failed export or template shows a translated message; no crash.
+
+### Version and database viewer
+- [ ] More and Settings show the same version (`BuildConfig.VERSION_NAME`, currently 1.0).
+- [ ] Debug build: the Database browser row is always at the bottom of Settings.
+- [ ] Signed release build: the row is hidden; 7 taps on the version show it and 7 more hide it, each with a message. The state survives a restart and is not in the backup file.
 
 ## Database Browser
 - [ ] All Room tables listed: `transactions`, `categories`, `sub_categories`, `budgets`, `recurring_transactions`.
@@ -138,7 +178,14 @@
 - [ ] History icon on each loan opens `LoanHistoryBottomSheet` displaying monthly payment history with status (paid date & time vs pending) and amount.
 
 ## More Screen Hub & Settings
-- [ ] 4th bottom nav tab opens `MoreScreen` with navigation tiles for Loans, Debts, Categories, Database Browser, and Settings.
+- [ ] 4th bottom nav tab opens `MoreScreen`. Every item opens its screen and Back returns:
+  - [ ] Everyday money: Recurring, Budgets and categories, Loans, Debts, Savings vault (vault still asks for authentication on its own screen).
+  - [ ] Plan and travel: Trips, Currency exchange, Price memory, Emergency runway.
+  - [ ] Islamic: Zakah, Sadaqah jar, Prayer and Qibla, Murabaha.
+  - [ ] App (rows): Settings, Help and guide.
+- [ ] There is no top card, Pro banner, Notifications entry or Database browser entry. The footer shows the offline note and the version.
+- [ ] Three tiles per row; two when a tile would be narrower than 100 dp or the font scale is 1.3 or more. No name is cut off (English, Arabic, large text, 320 dp).
+- [ ] A screen reader reads each tile, row and switch by name.
 - [ ] Settings allows switching between 12 curated palettes (Emerald Green, Blue & Gold Luxury, Warm Earth, Cool Slate & Teal, Amethyst & Violet, Crimson & Burgundy, Midnight Ocean, Forest & Sage Mint, Rose Gold & Champagne, Obsidian & Amber Gold, Nordic Frost & Glacier, Espresso & Warm Mocha) with full WCAG contrast and visible text on selected chips.
 - [ ] Time picker in `AddTransactionScreen` allows specifying custom hour/minute.
 
@@ -179,8 +226,11 @@
 - [ ] `CategoryBudgetsCard` on `OverviewScreen` remains permanently visible with progress bars and quick CTA.
 
 ## Notification Settings Screen
-- [ ] Dedicated `NotificationSettingsScreen` accessible from Settings and More tab.
-- [ ] Toggles work for Loan Reminders, Debt Reminders, Salary & Recurring, Budget Warnings, and Daily 9 PM Reminder.
+- [ ] Dedicated `NotificationSettingsScreen` accessible from Settings > Notifications (not from More).
+- [ ] Toggles work for Loan Reminders, Salary & Recurring Phone Notifications, Budget Warnings, and Daily 9 PM Reminder. There is no debt reminder switch.
+- [ ] Budget Warnings off: no phone notification, but the entry still appears in the in-app alerts inbox.
+- [ ] Salary & Recurring off: no recurring reminder notification. Notices about automatic entries (added, or blocked for low balance) still appear.
+- [ ] The pinned-notification option mentions loans only ("Sticky Loan Reminders").
 
 ## Phase 9 Enhancements & Bug Fixes
 - [ ] **Split Subcategory Spend Attribution & History Display**:
@@ -220,15 +270,22 @@
   - [ ] Verify GPS detected location inherits accurate elevation above sea level (e.g. Amman ~1000m) and does not default to sea-level (0m), ensuring Maghrib matches within 0–1 minute of the official Ministry of Awqaf timetable.
 
 ## Complete App Backup & Device Migration (JSON)
-- [ ] Go to **Settings -> Data Management -> Complete App Backup (Transfer to Another Device)**.
-- [ ] Tap **Export All Data & Settings (JSON)**:
-  - [ ] System file creator prompts for save location with default name `expense_tracker_full_backup_*.json`.
-  - [ ] File contains valid JSON with `version`, `database` (all 9 tables), and `preferences` (all DataStore keys).
-- [ ] Tap **Restore Complete Backup (JSON)**:
-  - [ ] Confirmation warning dialog appears informing user that existing data will be replaced.
-  - [ ] Selecting a backup JSON file restores transactions, splits, categories, subcategories, budgets, loans, alerts, and settings.
-  - [ ] Snackbar/toast confirms exact restored counts (e.g. `Restored: X transactions, Y categories, Z preferences`).
-  - [ ] All settings (currency, language, theme, 12h/24h, opening balances) update immediately.
+- [ ] Go to **Settings -> Backup and restore**. The page warns that receipt photos are not included.
+- [ ] Tap **Back up now**:
+  - [ ] An "Export ready" dialog offers View, Share file and Save to Downloads, for `mizani_full_backup_*.json`.
+  - [ ] File contains valid JSON with `version` (2), `databaseVersion`, the table lists, and `preferences`.
+  - [ ] `preferences` does not contain `last_backup_created_at` or `database_viewer_unlocked`.
+  - [ ] "Last backup created" updates after a successful save or when the share window opens. Cancel, report export and template export do not change it.
+- [ ] While a backup or restore runs, both buttons are disabled and progress is shown. Leaving the page does not stop a restore.
+- [ ] Tap **Restore Complete Backup** (test data only):
+  - [ ] After choosing a file, a confirmation dialog warns that existing data will be replaced.
+  - [ ] A file that is not a Mizani backup (other JSON, CSV) is rejected and current data stays.
+  - [ ] Selecting a backup file restores records and settings, and a dialog confirms the restored counts.
+  - [ ] If settings cannot be imported after the records were restored, the message says so instead of reporting total failure.
+  - [ ] On a phone with no fingerprint or screen lock, a backup with App lock on leaves the lock unchanged and says so. A backup with App lock off that turns it off says so.
+  - [ ] Restoring does not change "Last backup created".
+  - [ ] All settings in the backup (currency, language, theme, 12h/24h, opening balances) update immediately.
+  - [ ] A Cash or Bank opening balance or Sadaqah jar balance that was never set when the backup was made returns to 0 after the restore. Other settings the backup does not contain keep their current value. A settings block not written by the app (no "onboarding_completed" key, for example `{}`) never resets a balance.
 
 ## Debts & Loans Partial Payments
 - [ ] Open `DebtsScreen` and select a debt to pay.
@@ -259,28 +316,28 @@
 - [ ] Adding a new transaction inside the app triggers `WidgetUpdateHelper` to refresh widget data immediately.
 
 ## Multi-Currency & Travel Mode Platform
-- [ ] Open **More -> Multi-Currency & Exchanges**:
+- [ ] Open **More -> Currency exchange**:
   - [ ] Live exchange rates displayed for JOD, USD, AED, SAR, EUR, GBP.
   - [ ] Record a currency exchange (e.g. 500 JOD -> 705 USD).
   - [ ] Verify Cash/Bank balances adjust accordingly and exchange is saved in `currency_exchanges`.
-- [ ] Open **More -> Travel Mode**:
+- [ ] Open **More -> Trips**:
   - [ ] Create a new trip (e.g. "Dubai Vacation", budget 1,000 AED, departure/return dates).
   - [ ] Log an expense assigned to the trip; verify trip-scoped daily pacing and budget remaining.
 
 ## Innovative Features & Islamic Finance
 - [ ] **Item Price Memory & Inflation Tracker**:
   - [ ] Record split items with items and prices (e.g. "1kg Chicken: 2.800 JOD").
-  - [ ] Open `PriceHistoryScreen` (More -> Price History): verify price trend chart, latest price, and percentage changes.
+  - [ ] Open `PriceHistoryScreen` (More -> Price memory): verify price trend chart, latest price, and percentage changes.
 - [ ] **Virtual Sadaqah Jar**:
-  - [ ] Enable round-up in `SadaqahJarScreen` (More -> Sadaqah Jar).
+  - [ ] Enable round-up in `SadaqahJarScreen` (More -> Sadaqah jar).
   - [ ] Record an expense of 4.350 JOD: verify 0.650 JOD is added to Sadaqah Jar balance.
   - [ ] Friday morning notification fires when balance > 0 JOD.
   - [ ] Tap "Donate & Empty Jar": records a charity transaction and resets jar balance to zero.
 - [ ] **Financial Runway Stress-Tester**:
-  - [ ] Open `FinancialRunwayScreen` (More -> Financial Runway).
+  - [ ] Open `FinancialRunwayScreen` (More -> Emergency runway).
   - [ ] Displays liquid survival gauge in months (`(Cash + Bank + Vault) / Monthly Burn`).
 - [ ] **Murabaha & Islamic Loan Simulator**:
-  - [ ] Open `MurabahaSimulatorScreen` (More -> Murabaha Calculator).
+  - [ ] Open `MurabahaSimulatorScreen` (More -> Murabaha).
   - [ ] Enter principal, profit percentage, and tenor years; computes monthly installment and total bank profit.
   - [ ] Tap "Add to Configured Loans": creates an active loan with payment schedule.
 - [ ] **Zakah Auto-Sync & Hawl Tracker**:
@@ -289,7 +346,7 @@
 
 ## Monetization, 90-Day Pro Trial & Owner VIP Bypass
 - [ ] Fresh app install automatically has 90 days of Pro Trial without account creation.
-- [ ] Open `SubscriptionScreen` (More -> Subscription & Plans):
+- [ ] Open `SubscriptionScreen` (not reachable in the app: the More banner was removed and no other control opens it; the screen and route are kept):
   - [ ] Displays days remaining in trial with feature breakdown.
 - [ ] **Owner VIP Bypass**:
   - [ ] In `SubscriptionScreen`, tap the large Crown Hero icon **5 times in rapid succession**.
