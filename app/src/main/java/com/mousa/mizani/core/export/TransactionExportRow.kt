@@ -45,4 +45,17 @@ object CsvImportFormat {
     val TYPE_VALUES = "INCOME, EXPENSE, TRANSFER, WALLET_MOVE"
     val ACCOUNT_VALUES = "CASH, BANK, WALLET"
     const val DATE_FORMAT = "yyyy-MM-dd HH:mm:ss"
+
+    /**
+     * A blank import file: explanation comments, the header, and a made-up example row
+     * written as a comment, so importing it unchanged adds nothing.
+     */
+    fun template(): String = listOf(
+        "# Mizani — import template",
+        "# Add one transaction per line below the header row (lines starting with # are ignored)",
+        "# To try the example row, remove the leading # and the space after it",
+        "#",
+        HEADER,
+        "# $EXAMPLE_ROW"
+    ).joinToString("\n")
 }

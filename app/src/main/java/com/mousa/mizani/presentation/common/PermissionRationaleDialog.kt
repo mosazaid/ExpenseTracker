@@ -2,8 +2,10 @@
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.LocationOn
@@ -14,9 +16,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.mousa.mizani.R
 
 enum class PermissionType {
     CAMERA,
@@ -35,31 +39,31 @@ fun PermissionRationaleDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val (title, description, icon) = when (permissionType) {
+    val (titleRes, descriptionRes, icon) = when (permissionType) {
         PermissionType.CAMERA -> Triple(
-            "Camera Access Needed",
+            R.string.permission_camera_title,
             if (isPermanentlyDenied) {
-                "Camera permission was previously denied. Please open Settings and enable Camera permission to capture receipts."
+                R.string.permission_camera_denied_desc
             } else {
-                "Camera permission allows you to take photos of paper receipts and attach them directly to your transactions for effortless tracking."
+                R.string.permission_camera_desc
             },
             Icons.Outlined.CameraAlt
         )
         PermissionType.LOCATION -> Triple(
-            "Location Access Needed",
+            R.string.permission_location_title,
             if (isPermanentlyDenied) {
-                "Location permission was previously denied. Please open Settings and enable Location permission to auto-detect your city, currency, and Qiblah direction."
+                R.string.permission_location_denied_desc
             } else {
-                "Location permission is used offline to detect your city for accurate prayer times, Qiblah compass, and default currency."
+                R.string.permission_location_desc
             },
             Icons.Outlined.LocationOn
         )
         PermissionType.NOTIFICATIONS -> Triple(
-            "Notifications Needed",
+            R.string.permission_notifications_title,
             if (isPermanentlyDenied) {
-                "Notification permission is currently blocked. Please open Settings to enable alerts for upcoming loan dues, budget thresholds, and daily reminders."
+                R.string.permission_notifications_denied_desc
             } else {
-                "Allow notifications to receive timely alerts for loan payments, salary cycle renewals, and spending budget warnings."
+                R.string.permission_notifications_desc
             },
             Icons.Outlined.Notifications
         )
@@ -77,6 +81,7 @@ fun PermissionRationaleDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -101,13 +106,13 @@ fun PermissionRationaleDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = title,
+                        text = stringResource(titleRes),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = description,
+                        text = stringResource(descriptionRes),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -122,7 +127,7 @@ fun PermissionRationaleDialog(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Not Now")
+                        Text(stringResource(R.string.permission_not_now))
                     }
 
                     Button(
@@ -130,7 +135,15 @@ fun PermissionRationaleDialog(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text(if (isPermanentlyDenied) "Open Settings" else "Continue")
+                        Text(
+                            stringResource(
+                                if (isPermanentlyDenied) {
+                                    R.string.permission_open_settings
+                                } else {
+                                    R.string.permission_continue
+                                }
+                            )
+                        )
                     }
                 }
             }

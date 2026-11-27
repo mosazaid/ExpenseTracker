@@ -2,17 +2,15 @@ package com.mousa.mizani.domain.usecase
 
 import android.util.Log
 import com.mousa.mizani.data.database.dao.RecurringTransactionDao
-import com.mousa.mizani.data.database.entities.AccountType
 import com.mousa.mizani.data.database.entities.RecurringTransaction
 import com.mousa.mizani.data.database.entities.Transaction
 import com.mousa.mizani.data.database.entities.TransactionType
-import com.mousa.mizani.domain.calculator.BalanceCalculator
-import com.mousa.mizani.domain.calculator.DepositCalculator
-import com.mousa.mizani.domain.calculator.WalletCalculator
 import com.mousa.mizani.domain.calculator.planAutoAdd
 import com.mousa.mizani.domain.repository.IAlertRepository
 import com.mousa.mizani.domain.repository.ITransactionRepository
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -38,12 +36,11 @@ data class AutoDeductExecutionResult(
 class ExecuteAutoRecurringUseCase @Inject constructor(
     private val recurringDao: RecurringTransactionDao,
     private val executeRecurringUseCase: ExecuteRecurringTransactionUseCase,
-    private val balanceCalculator: BalanceCalculator,
-    private val walletCalculator: WalletCalculator,
-    private val depositCalculator: DepositCalculator,
+    private val accountBalance: RecurringAccountBalance,
     private val transactionRepository: ITransactionRepository,
     private val budgetAlert: BudgetAlertUseCase,
-    private val alertRepository: IAlertRepository
+    private val alertRepository: IAlertRepository,
+    private val scheduleLock: RecurringScheduleLock
 ) {
     suspend operator fun invoke(executionDate: Date = Date()): AutoDeductExecutionResult {
         val recorded = mutableListOf<RecurringTransaction>()
@@ -54,28 +51,28 @@ class ExecuteAutoRecurringUseCase @Inject constructor(
             .itemsToAutoAdd()
             // Income first on equal dates, oldest first overall, so arriving money can cover expenses.
             .sortedWith(compareBy({ it.nextDueDate }, { it.type != TransactionType.INCOME }))
-        for (item in dueList) {
-            // Read per item: earlier items in this run have already changed the balance.
-            val plan = planAutoAdd(item, executionDate, availableBalance(item))
-            for (occurrence in plan.toRecord) {
-                val id = executeRecurringUseCase(occurrence, executionDate = occurrence.nextDueDate)
-                transactionRepository.getTransactionById(id)?.let { saved += it }
-                recorded += occurrence
+        for (listed in dueList) {
+            scheduleLock.withLock {
+                // Read again: the user may have recorded, skipped or changed it since the list was read.
+                val item = recurringDao.getRecurringTransactionById(listed.id)
+                    ?.takeIf { it.isActive && it.autoAdd }
+                    ?: return@withLock
+                // Read per item: earlier items in this run have already changed the balance.
+                val plan = planAutoAdd(item, executionDate, accountBalance(item))
+                for (occurrence in plan.toRecord) {
+                    // Cancelling between the insert and the advance would record the period twice.
+                    val id = withContext(NonCancellable) {
+                        executeRecurringUseCase(occurrence, executionDate = occurrence.nextDueDate)
+                    }
+                    transactionRepository.getTransactionById(id)?.let { saved += it }
+                    recorded += occurrence
+                }
+                plan.blocked?.let { blocked += it }
             }
-            plan.blocked?.let { blocked += it }
         }
 
         runFollowUps(saved, executionDate)
         return AutoDeductExecutionResult(recorded.toList(), blocked.toList())
-    }
-
-    private suspend fun availableBalance(item: RecurringTransaction): Double {
-        if (item.type != TransactionType.EXPENSE) return 0.0
-        return when (item.accountType) {
-            AccountType.CASH, AccountType.BANK -> balanceCalculator.getAvailableBalance(item.accountType)
-            AccountType.WALLET -> walletCalculator.getCumulativeWalletBalance(null)
-            AccountType.DEPOSIT -> depositCalculator.getDepositBalance(null)
-        }
     }
 
     /** A failed warning must not undo or repeat transactions that are already saved. */

@@ -41,7 +41,7 @@ import com.mousa.mizani.data.database.entities.TransactionType
 import com.mousa.mizani.presentation.feature.recurring.components.AddEditRecurringBottomSheet
 import com.mousa.mizani.presentation.common.AppTopBar
 import com.mousa.mizani.presentation.feature.recurring.components.RecurringHistoryBottomSheet
-import com.mousa.mizani.presentation.navigation.AddTransaction
+import com.mousa.mizani.presentation.navigation.recurringFormRoute
 import com.mousa.mizani.core.format.CurrencyUtils
 import com.mousa.mizani.core.time.DateUtils
 import com.mousa.mizani.presentation.theme.FinanceNegative
@@ -204,9 +204,8 @@ fun RecurringScreen(
                         onDeleteClick = { deleteConfirmTarget = item },
                         onHistoryClick = { historyRecurringTarget = item },
                         onClick = {
-                            navController.navigate(
-                                AddTransaction(recurringId = item.id)
-                            )
+                            // Name the shown due date, so a period already handled is not saved twice.
+                            navController.navigate(recurringFormRoute(item.id, item.nextDueDate.time))
                         }
                     )
                 }

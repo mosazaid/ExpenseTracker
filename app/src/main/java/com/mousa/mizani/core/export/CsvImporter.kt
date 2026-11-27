@@ -26,7 +26,8 @@ class CsvImporter @Inject constructor(
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 
     suspend fun importTransactions(csvContent: String): CsvImportResult {
-        val lines = csvContent.lines()
+        // Our own CSV files start with a BOM, which would hide the first line's leading '#'.
+        val lines = csvContent.removePrefix("\uFEFF").lines()
             .filter { it.isNotBlank() && !it.trimStart().startsWith("#") }
         if (lines.isEmpty()) {
             return CsvImportResult(0, 0, 0, listOf("File is empty"))

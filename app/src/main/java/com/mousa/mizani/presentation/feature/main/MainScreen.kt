@@ -18,9 +18,18 @@ import com.mousa.mizani.presentation.feature.loans.LoansScreen
 import com.mousa.mizani.presentation.feature.onboarding.OnboardingScreen
 import com.mousa.mizani.presentation.feature.overview.OverviewScreen
 import com.mousa.mizani.presentation.feature.recurring.RecurringScreen
+import com.mousa.mizani.presentation.feature.recurring.due.DueRecurringPrompt
 import com.mousa.mizani.presentation.feature.settings.CalculationSettingsScreen
 import com.mousa.mizani.presentation.feature.settings.NotificationSettingsScreen
 import com.mousa.mizani.presentation.feature.settings.SettingsScreen
+import com.mousa.mizani.presentation.feature.settings.accounts.AccountBalancesScreen
+import com.mousa.mizani.presentation.feature.settings.month.MonthCalculationSettingsScreen
+import com.mousa.mizani.presentation.feature.settings.appearance.AppearanceSettingsScreen
+import com.mousa.mizani.presentation.feature.settings.region.LanguageRegionSettingsScreen
+import com.mousa.mizani.presentation.feature.settings.backup.BackupSettingsScreen
+import com.mousa.mizani.presentation.feature.settings.transfer.ImportExportSettingsScreen
+import com.mousa.mizani.presentation.navigation.BackupSettings
+import com.mousa.mizani.presentation.navigation.ImportExportSettings
 import com.mousa.mizani.presentation.feature.statistics.StatisticsScreen
 import com.mousa.mizani.presentation.feature.subscription.SubscriptionScreen
 import com.mousa.mizani.presentation.feature.transfer.TransferScreen
@@ -61,8 +70,14 @@ import com.mousa.mizani.R
 import com.mousa.mizani.core.format.CurrencyUtils
 import com.mousa.mizani.data.database.entities.AccountType
 import com.mousa.mizani.presentation.feature.loans.components.LoanReminderBottomSheet
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.mousa.mizani.presentation.navigation.AccountBalancesSettings
 import com.mousa.mizani.presentation.navigation.AddTransaction
+import com.mousa.mizani.presentation.navigation.recurringFormRoute
+import com.mousa.mizani.presentation.navigation.MonthCalculationSettings
+import com.mousa.mizani.presentation.navigation.AppearanceSettings
+import com.mousa.mizani.presentation.navigation.LanguageRegionSettings
 import com.mousa.mizani.presentation.navigation.Alerts
 import com.mousa.mizani.presentation.navigation.Categories
 import com.mousa.mizani.presentation.navigation.DatabaseBrowser
@@ -134,19 +149,25 @@ fun MainScreen(
     initialRecurringId: Long? = null,
     initialNavigateTo: String? = null,
     onNavigateHandled: () -> Unit = {},
+    onRecurringHandled: () -> Unit = {},
+    initialRecurringDueMillis: Long? = null,
     loansViewModel: LoansViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(initialRecurringId) {
+    LaunchedEffect(initialRecurringId, initialRecurringDueMillis) {
         if (initialRecurringId != null) {
-            navController.navigate(AddTransaction(recurringId = initialRecurringId))
+            // NavHost sets the graph during layout; navigating before that crashes.
+            navController.currentBackStackEntryFlow.first()
+            navController.navigate(recurringFormRoute(initialRecurringId, initialRecurringDueMillis))
+            onRecurringHandled()
         }
     }
 
     LaunchedEffect(initialNavigateTo) {
         if (!initialNavigateTo.isNullOrBlank()) {
+            navController.currentBackStackEntryFlow.first()
             when (initialNavigateTo) {
                 "add_expense", "add_transaction" -> navController.navigate(AddTransaction())
                 "categories" -> navController.navigate(Categories)
@@ -177,7 +198,10 @@ fun MainScreen(
     val shouldShowToday = lastShownDate != todayDateStr
     val isOnOverview = currentBackStack?.destination?.hasRoute<Overview>() == true
 
-    if (unpaidLoans.isNotEmpty() && shouldShowToday && !hasDismissedLoanSheetSession && isOnOverview) {
+    val isLoanSheetShown =
+        unpaidLoans.isNotEmpty() && shouldShowToday && !hasDismissedLoanSheetSession && isOnOverview
+
+    if (isLoanSheetShown) {
         LoanReminderBottomSheet(
             unpaidLoans = unpaidLoans,
             onPayLoansClick = { amounts, onResult ->
@@ -216,6 +240,22 @@ fun MainScreen(
             }
         )
     }
+
+    // Due recurring items come after the loan sheet, never on top of it, and wait while a
+    // notification or widget request still has to open its own screen.
+    val isLoanSheetDue by loansViewModel.isLoanSheetDue.collectAsState()
+    val isLoanSheetPending =
+        isLoanSheetShown || (!hasDismissedLoanSheetSession && isLoanSheetDue != false)
+    val isLaunchPending = initialRecurringId != null || !initialNavigateTo.isNullOrBlank()
+    DueRecurringPrompt(
+        isAllowed = isDashboardTab && !isLoanSheetPending && !isLaunchPending,
+        screenKey = currentBackStack?.id,
+        onOpenForm = { request ->
+            navController.navigate(recurringFormRoute(request.recurringId, request.dueMillis)) {
+                launchSingleTop = true
+            }
+        }
+    )
 
     Scaffold(
         floatingActionButton = {
@@ -326,6 +366,12 @@ fun MainScreen(
             composable<Settings>       { SettingsScreen(navController) }
             composable<CalculationSettings> { CalculationSettingsScreen(navController) }
             composable<NotificationSettings> { NotificationSettingsScreen(navController) }
+            composable<AppearanceSettings> { AppearanceSettingsScreen(navController) }
+            composable<LanguageRegionSettings> { LanguageRegionSettingsScreen(navController) }
+            composable<AccountBalancesSettings> { AccountBalancesScreen(navController) }
+            composable<MonthCalculationSettings> { MonthCalculationSettingsScreen(navController) }
+            composable<BackupSettings> { BackupSettingsScreen(navController) }
+            composable<ImportExportSettings> { ImportExportSettingsScreen(navController) }
             composable<Recurring>      { RecurringScreen(navController) }
             composable<DatabaseBrowser> { DatabaseBrowserScreen(navController) }
             composable<Onboarding>     { OnboardingScreen(onFinish = { navController.popBackStack() }) }
@@ -347,6 +393,7 @@ fun MainScreen(
                     navController = navController,
                     transactionId = route.transactionId.takeIf { it != -1L },
                     recurringId = route.recurringId.takeIf { it != -1L },
+                    expectedDueMillis = route.expectedDueMillis.takeIf { it != -1L },
                     initialAccountType = route.accountType?.let { runCatching { com.mousa.mizani.data.database.entities.AccountType.valueOf(it) }.getOrNull() }
                 )
             }

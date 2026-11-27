@@ -15,11 +15,12 @@ class AppDestinationsTest {
         val dest = AddTransaction()
         assertEquals(-1L, dest.transactionId)
         assertEquals(-1L, dest.recurringId)
+        assertEquals(-1L, dest.expectedDueMillis)
     }
 
     @Test
     fun testAddTransaction_customArguments() {
-        val dest = AddTransaction(transactionId = 42L, recurringId = 99L)
+        val dest = AddTransaction(transactionId = 42L, recurringId = 99L, expectedDueMillis = 123_000L)
         assertEquals(42L, dest.transactionId)
         assertEquals(99L, dest.recurringId)
 
@@ -65,5 +66,15 @@ class AppDestinationsTest {
         assertNotNull(json.encodeToString(Settings))
         assertNotNull(json.encodeToString(DatabaseBrowser))
         assertNotNull(json.encodeToString(Onboarding))
+    }
+
+    @Test
+    fun testSettingsPageDestinations_serialization() {
+        assertNotNull(json.encodeToString(AppearanceSettings))
+        assertNotNull(json.encodeToString(LanguageRegionSettings))
+        assertNotNull(json.encodeToString(AccountBalancesSettings))
+        assertNotNull(json.encodeToString(MonthCalculationSettings))
+        assertNotNull(json.encodeToString(BackupSettings))
+        assertNotNull(json.encodeToString(ImportExportSettings))
     }
 }

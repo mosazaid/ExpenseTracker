@@ -17,17 +17,17 @@ class ItemPriceRepositoryImpl @Inject constructor(
     override fun getAllPriceRecords(): Flow<List<ItemPriceRecord>> = dao.getAllPriceRecords()
 
     override fun getHistoryForItem(itemName: String): Flow<List<ItemPriceRecord>> {
-        val normalized = itemName.trim().lowercase(Locale.getDefault())
+        val normalized = itemName.trim().lowercase(Locale.ROOT)
         return dao.getHistoryForItem(normalized)
     }
 
     override suspend fun getLatestPriceForItem(itemName: String): ItemPriceRecord? {
-        val normalized = itemName.trim().lowercase(Locale.getDefault())
+        val normalized = itemName.trim().lowercase(Locale.ROOT)
         return dao.getLatestPriceForItem(normalized)
     }
 
     override fun searchItemNames(query: String): Flow<List<String>> {
-        val normalized = query.trim().lowercase(Locale.getDefault())
+        val normalized = query.trim().lowercase(Locale.ROOT)
         return dao.searchItemNames(normalized)
     }
 
@@ -43,7 +43,7 @@ class ItemPriceRepositoryImpl @Inject constructor(
         notes: String?
     ): Long {
         val trimmed = itemName.trim()
-        val normalized = trimmed.lowercase(Locale.getDefault())
+        val normalized = trimmed.lowercase(Locale.ROOT)
         val record = ItemPriceRecord(
             itemName = trimmed,
             normalizedItemName = normalized,

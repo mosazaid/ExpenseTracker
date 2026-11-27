@@ -1,5 +1,6 @@
 ﻿package com.mousa.mizani.presentation.feature.add_transaction
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mousa.mizani.data.database.entities.AccountType
@@ -26,8 +27,10 @@ import com.mousa.mizani.domain.repository.ICategoryRepository
 import com.mousa.mizani.domain.repository.IRecurringRepository
 import com.mousa.mizani.domain.repository.ITransactionRepository
 import com.mousa.mizani.domain.repository.ITripRepository
+import com.mousa.mizani.domain.usecase.RecordRecurringOccurrenceUseCase
 import com.mousa.mizani.util.NotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,7 +71,8 @@ class AddEditTransactionViewModel @Inject constructor(
     private val budgetProgressCalculator: BudgetProgressCalculator,
     private val alertRepository: IAlertRepository,
     private val notificationHelper: NotificationHelper,
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
+    private val recordRecurringOccurrence: RecordRecurringOccurrenceUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddEditTransactionUiState())
@@ -77,6 +81,11 @@ class AddEditTransactionViewModel @Inject constructor(
     val events = _events.asSharedFlow()
 
     private var originalTransaction: Transaction? = null
+
+    private var prefilledRecurringId: Long? = null
+
+    /** True from the first Save of a prefilled recurring form: it records one period only. */
+    private var isRecurringFormSaved = false
 
     init {
         viewModelScope.launch {
@@ -165,8 +174,28 @@ class AddEditTransactionViewModel @Inject constructor(
         return true
     }
 
-    suspend fun loadRecurringForPrefill(recurringId: Long): Boolean {
+    /**
+     * Fills the form from a recurring item, once. A rotation asks again, and reloading then
+     * could offer the following period right after this one was saved.
+     *
+     * [expectedDueMillis] is the period the sender meant, as in an old notification or a form
+     * restored after the process ended. If the item has moved past it, the form stays empty.
+     * Returns whether the form was filled.
+     */
+    suspend fun prefillRecurring(recurringId: Long, expectedDueMillis: Long? = null): Boolean {
+        if (prefilledRecurringId == recurringId) return _uiState.value.pendingRecurringId != null
+        resetForm()
+        return loadRecurringForPrefill(recurringId, expectedDueMillis)
+    }
+
+    private suspend fun loadRecurringForPrefill(recurringId: Long, expectedDueMillis: Long?): Boolean {
         val recurring = recurringRepository.getRecurringById(recurringId) ?: return false
+        if (expectedDueMillis != null && recurring.nextDueDate.time != expectedDueMillis) {
+            // Remembered, so a rotation neither repeats the message nor clears what was typed.
+            prefilledRecurringId = recurringId
+            _events.emit(AddEditUiEvent.RecurringAlreadyHandled)
+            return false
+        }
         val category = recurring.categoryId?.let { categoryRepository.getCategoryById(it) }
         _uiState.value = AddEditTransactionUiState(
             amount = recurring.amount.toString(),
@@ -175,8 +204,11 @@ class AddEditTransactionViewModel @Inject constructor(
             transactionType = recurring.type,
             accountType = recurring.accountType,
             selectedDate = Date(),
-            pendingRecurringId = recurring.id
+            pendingRecurringId = recurring.id,
+            pendingRecurringDueMillis = recurring.nextDueDate.time
         )
+        prefilledRecurringId = recurring.id
+        isRecurringFormSaved = false
         return true
     }
 
@@ -263,8 +295,12 @@ class AddEditTransactionViewModel @Inject constructor(
         return null
     }
 
-    suspend fun saveTransaction(transaction: Transaction): Long {
+    /** From a recurring item's form this also advances the item, so no other call is needed. */
+    suspend fun saveTransaction(transaction: Transaction): SaveTransactionResult {
+        // Checked before anything suspends, so a second tap on Save sees it.
+        if (isRecurringFormSaved) return SaveTransactionResult.Ignored
         val recurringId = _uiState.value.pendingRecurringId
+        val recurringDueMillis = _uiState.value.pendingRecurringDueMillis
         val receiptPath = _uiState.value.receiptImagePath
         val isExcluded = _uiState.value.excludeFromMonthExpenses
                 || transaction.accountType == AccountType.DEPOSIT
@@ -298,24 +334,14 @@ class AddEditTransactionViewModel @Inject constructor(
             }
         } else emptyList()
 
-        val savedId = if (txn.id == 0L) {
-            if (splitEntities.isNotEmpty()) {
-                transactionRepository.insertTransactionWithSplits(txn, splitEntities)
-            } else {
-                transactionRepository.insertTransaction(txn)
+        val savedId = if (recurringId != null && recurringDueMillis != null) {
+            val result = saveRecurringPeriod(recurringId, recurringDueMillis) {
+                writeTransaction(txn, splitEntities)
             }
+            if (result !is SaveTransactionResult.Saved) return result
+            result.id
         } else {
-            val preserved = originalTransaction
-            val updatedTxn = txn.copy(
-                createdAt = preserved?.createdAt ?: txn.createdAt,
-                updatedAt = Date()
-            )
-            if (splitEntities.isNotEmpty()) {
-                transactionRepository.updateTransactionWithSplits(updatedTxn, splitEntities)
-            } else {
-                transactionRepository.updateTransaction(updatedTxn)
-            }
-            txn.id
+            writeTransaction(txn, splitEntities)
         }
 
         // Trigger home screen widget updates in real time
@@ -361,14 +387,59 @@ class AddEditTransactionViewModel @Inject constructor(
             alertRepository.dismissDailyAlertIfExpenseRecorded(todayKey)
         }
 
-        return savedId
+        return SaveTransactionResult.Saved(savedId)
     }
 
-    suspend fun advanceRecurringAfterSave(recurringId: Long) {
-        recurringRepository.getRecurringById(recurringId)?.let {
-            recurringRepository.advanceRecurringDueDate(it)
-            userPreferences.clearDismissedRecurring(it.id)
+    private suspend fun writeTransaction(
+        txn: Transaction,
+        splits: List<com.mousa.mizani.data.database.entities.TransactionSplit>
+    ): Long {
+        if (txn.id == 0L) {
+            return if (splits.isNotEmpty()) {
+                transactionRepository.insertTransactionWithSplits(txn, splits)
+            } else {
+                transactionRepository.insertTransaction(txn)
+            }
         }
+        val updatedTxn = txn.copy(
+            createdAt = originalTransaction?.createdAt ?: txn.createdAt,
+            updatedAt = Date()
+        )
+        if (splits.isNotEmpty()) {
+            transactionRepository.updateTransactionWithSplits(updatedTxn, splits)
+        } else {
+            transactionRepository.updateTransaction(updatedTxn)
+        }
+        return txn.id
+    }
+
+    /** [write] runs in one database transaction with the item's advance. */
+    private suspend fun saveRecurringPeriod(
+        recurringId: Long,
+        dueMillis: Long,
+        write: suspend () -> Long
+    ): SaveTransactionResult {
+        isRecurringFormSaved = true
+        val savedId = try {
+            recordRecurringOccurrence(recurringId, dueMillis, write)
+        } catch (e: CancellationException) {
+            // If the save had already committed, the due date has moved and a retry is refused.
+            isRecurringFormSaved = false
+            throw e
+        } catch (e: Exception) {
+            // The database transaction was rolled back, so Save may be tried again.
+            isRecurringFormSaved = false
+            Log.e("AddEditTransaction", "Saving a recurring period failed", e)
+            _events.emit(AddEditUiEvent.RecurringSaveFailed)
+            return SaveTransactionResult.Failed
+        }
+        if (savedId == null) {
+            _events.emit(AddEditUiEvent.RecurringAlreadyHandled)
+            return SaveTransactionResult.AlreadyHandled
+        }
+        // A preference write, so it stays outside the database transaction.
+        userPreferences.clearDismissedRecurring(recurringId)
+        return SaveTransactionResult.Saved(savedId)
     }
 
     suspend fun createSalaryReminder(
@@ -630,6 +701,8 @@ data class AddEditTransactionUiState(
     val allowNegativeBalance: Boolean = false,
     val createdAt: Date? = null,
     val pendingRecurringId: Long? = null,
+    /** The due date the form was filled for; saving is refused once the item has moved past it. */
+    val pendingRecurringDueMillis: Long? = null,
     val receiptImagePath: String? = null,
     val isSplitMode: Boolean = false,
     val splits: List<TransactionSplitItem> = emptyList(),
@@ -644,4 +717,19 @@ data class AddEditTransactionUiState(
 
 sealed interface AddEditUiEvent {
     data object NavigateHistory : AddEditUiEvent
+    data object RecurringAlreadyHandled : AddEditUiEvent
+    data object RecurringSaveFailed : AddEditUiEvent
+}
+
+sealed interface SaveTransactionResult {
+    data class Saved(val id: Long) : SaveTransactionResult
+
+    /** This form's recurring period is already being saved or was saved; do nothing. */
+    data object Ignored : SaveTransactionResult
+
+    /** The recurring period was recorded or skipped elsewhere, so nothing was written. */
+    data object AlreadyHandled : SaveTransactionResult
+
+    /** Saving a recurring period failed; nothing was written and Save works again. */
+    data object Failed : SaveTransactionResult
 }

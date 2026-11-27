@@ -4,29 +4,24 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.mousa.mizani.domain.repository.IRecurringRepository
-import com.mousa.mizani.domain.usecase.itemsToRemind
-import com.mousa.mizani.util.NotificationHelper
+import com.mousa.mizani.domain.usecase.RecurringReminderUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import java.util.Date
+import kotlinx.coroutines.CancellationException
 
 @HiltWorker
 class SalaryReminderWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val recurringRepository: IRecurringRepository,
-    private val notificationHelper: NotificationHelper
+    private val remindDueRecurring: RecurringReminderUseCase
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         return try {
-            // Auto-add items are recorded and notified by AutoDeductRecurringWorker.
-            val dueReminders = recurringRepository.getDueReminders(Date()).itemsToRemind()
-            dueReminders.forEach { reminder ->
-                notificationHelper.showSalaryReminderNotification(reminder)
-            }
+            remindDueRecurring()
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.retry()
         }

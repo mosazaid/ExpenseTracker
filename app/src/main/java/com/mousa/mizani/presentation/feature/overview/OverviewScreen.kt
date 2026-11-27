@@ -14,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,7 +23,6 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.*
@@ -44,7 +44,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.mousa.mizani.R
 import com.mousa.mizani.data.database.entities.AccountType
 import com.mousa.mizani.data.database.entities.Category
-import com.mousa.mizani.data.database.entities.RecurringTransaction
+import com.mousa.mizani.presentation.feature.recurring.due.DueRecurringBanner
 import com.mousa.mizani.data.database.entities.Transaction
 import com.mousa.mizani.data.database.entities.TransactionType
 import com.mousa.mizani.data.preferences.MonthMode
@@ -113,7 +113,19 @@ fun OverviewScreen(
     // monthSummary is a StateFlow computed in the ViewModel background scope.
     val monthSummary by viewModel.monthSummary.collectAsState()
 
-    var visibleReminder by remember { mutableStateOf<RecurringTransaction?>(null) }
+    val dueAttentionCount by viewModel.dueAttentionCount.collectAsState()
+    val listState = rememberLazyListState()
+    var previousDueCount by remember { mutableIntStateOf(dueAttentionCount) }
+    // The banner is inserted above the first card; bring it into view unless the user scrolled away.
+    LaunchedEffect(dueAttentionCount) {
+        val shouldScroll = DueBannerReveal.shouldScrollToBanner(
+            previousCount = previousDueCount,
+            newCount = dueAttentionCount,
+            firstVisibleIndex = listState.firstVisibleItemIndex
+        )
+        previousDueCount = dueAttentionCount
+        if (shouldScroll) listState.scrollToItem(0)
+    }
     var summaryExpanded by remember { mutableStateOf(true) }
     var walletListExpanded by remember { mutableStateOf(false) }
 
@@ -121,18 +133,17 @@ fun OverviewScreen(
         mutableStateOf<List<com.mousa.mizani.domain.calculator.SalaryWalletPeriodSummary>>(emptyList())
     }
 
-    // Update reminders and salary summary when monthSummary changes
+    // Update the salary summary when monthSummary changes
     LaunchedEffect(monthSummary) {
         try {
-            visibleReminder = monthSummary.dueReminders.firstOrNull { reminder ->
-                !viewModel.isRecurringBannerDismissed(reminder)
-            }
             if (monthMode == MonthMode.SALARY) {
                 val year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
                 salaryWalletYearSummary = viewModel.buildSalaryWalletYearSummary(year)
             } else {
                 salaryWalletYearSummary = emptyList()
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -212,6 +223,7 @@ fun OverviewScreen(
         }
     ) { padding ->
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
@@ -219,22 +231,12 @@ fun OverviewScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(top = 10.dp, bottom = 88.dp)
         ) {
-            // 1. Salary reminder banner
-            visibleReminder?.let { reminder ->
-                item(key = "salary-reminder-${reminder.id}") {
-                    SalaryReminderBanner(
-                        reminder = reminder,
-                        onRecord = {
-                            navController.navigate(
-                                AddTransaction(recurringId = reminder.id)
-                            )
-                        },
-                        onDismiss = {
-                            coroutineScope.launch {
-                                viewModel.dismissRecurringBanner(reminder)
-                                visibleReminder = null
-                            }
-                        }
+            // 1. Due recurring items that need the user
+            if (dueAttentionCount > 0) {
+                item(key = "due-recurring-banner") {
+                    DueRecurringBanner(
+                        count = dueAttentionCount,
+                        onReview = viewModel::reopenRecurring
                     )
                 }
             }
@@ -1343,61 +1345,6 @@ private fun PaidLoanCard(
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.outline
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SalaryReminderBanner(
-    reminder: RecurringTransaction,
-    onRecord: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val isIncome = reminder.type == TransactionType.INCOME
-    val title = if (reminder.description.isNotBlank()) {
-        reminder.description
-    } else {
-        if (isIncome) stringResource(R.string.recurring_banner_title_income)
-        else stringResource(R.string.recurring_banner_title_expense)
-    }
-
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = if (isIncome) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-        border = BorderStroke(
-            1.dp,
-            if (isIncome) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-            else MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isIncome) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                Text(
-                    text = "Tap to record ${CurrencyUtils.formatCurrency(reminder.amount)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isIncome) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                )
-            }
-            TextButton(onClick = onRecord) {
-                Text("Record", fontWeight = FontWeight.Bold)
-            }
-            IconButton(onClick = onDismiss) {
-                Icon(Icons.Default.Close, contentDescription = "Dismiss")
             }
         }
     }

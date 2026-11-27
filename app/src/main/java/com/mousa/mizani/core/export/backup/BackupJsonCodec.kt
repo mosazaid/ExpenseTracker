@@ -168,19 +168,25 @@ object BackupJsonCodec {
 
     // ---------------------------------------------------------------- decode
 
-    /** Parses a backup file. Throws [org.json.JSONException] or [IllegalArgumentException] naming the bad row. */
+    /**
+     * Parses a backup file. Throws [org.json.JSONException] or [IllegalArgumentException] naming the bad row.
+     *
+     * Restore deletes the nine format-1 tables before inserting, so a file without a supported
+     * version and all nine lists (every exporter has written them, even when empty) is rejected.
+     */
     fun decode(json: String): DecodedBackup {
         val root = JSONObject(json)
+        val version = root.requireSupportedVersion()
         val snapshot = BackupSnapshot(
-            categories = root.decodeList(KEY_CATEGORIES, ::decodeCategory),
-            subCategories = root.decodeList(KEY_SUB_CATEGORIES, ::decodeSubCategory),
-            budgets = root.decodeList(KEY_BUDGETS, ::decodeBudget),
-            configuredLoans = root.decodeList(KEY_LOANS, ::decodeLoan),
-            monthlyLoanPayments = root.decodeList(KEY_LOAN_PAYMENTS, ::decodePayment),
-            recurringTransactions = root.decodeList(KEY_RECURRING, ::decodeRecurring),
-            transactions = root.decodeList(KEY_TRANSACTIONS, ::decodeTransaction),
-            transactionSplits = root.decodeList(KEY_SPLITS, ::decodeSplit),
-            appAlerts = root.decodeList(KEY_ALERTS, ::decodeAlert),
+            categories = root.decodeCoreList(KEY_CATEGORIES, ::decodeCategory),
+            subCategories = root.decodeCoreList(KEY_SUB_CATEGORIES, ::decodeSubCategory),
+            budgets = root.decodeCoreList(KEY_BUDGETS, ::decodeBudget),
+            configuredLoans = root.decodeCoreList(KEY_LOANS, ::decodeLoan),
+            monthlyLoanPayments = root.decodeCoreList(KEY_LOAN_PAYMENTS, ::decodePayment),
+            recurringTransactions = root.decodeCoreList(KEY_RECURRING, ::decodeRecurring),
+            transactions = root.decodeCoreList(KEY_TRANSACTIONS, ::decodeTransaction),
+            transactionSplits = root.decodeCoreList(KEY_SPLITS, ::decodeSplit),
+            appAlerts = root.decodeCoreList(KEY_ALERTS, ::decodeAlert),
             trips = root.decodeOptionalList(KEY_TRIPS, ::decodeTrip),
             currencyExchanges = root.decodeOptionalList(KEY_EXCHANGES, ::decodeExchange),
             itemPriceHistory = root.decodeOptionalList(KEY_PRICES, ::decodePrice),
@@ -189,7 +195,7 @@ object BackupJsonCodec {
         val preferences = root.optJSONObject("preferences")?.let { prefs ->
             prefs.keys().asSequence().associateWith { prefs.optString(it, "") }
         }
-        return DecodedBackup(root.optInt("version", 1), snapshot, preferences)
+        return DecodedBackup(version, snapshot, preferences)
     }
 
     private fun decodeCategory(o: JSONObject) = Category(
@@ -306,8 +312,19 @@ object BackupJsonCodec {
     private fun <T> List<T>.toJsonArray(encode: (T) -> JSONObject): JSONArray =
         JSONArray().also { array -> forEach { array.put(encode(it)) } }
 
-    private fun <T> JSONObject.decodeList(key: String, decode: (JSONObject) -> T): List<T> =
-        decodeOptionalList(key, decode).orEmpty()
+    private fun JSONObject.requireSupportedVersion(): Int {
+        // Compared as a Double so that fractions and huge numbers cannot truncate into the range.
+        val number = (opt("version") as? Number)?.toDouble()
+        require(number != null && number % 1.0 == 0.0 && number >= 1 && number <= FORMAT_VERSION) {
+            "Not a supported Mizani backup: 'version' must be a number from 1 to $FORMAT_VERSION"
+        }
+        return number.toInt()
+    }
+
+    private fun <T> JSONObject.decodeCoreList(key: String, decode: (JSONObject) -> T): List<T> =
+        requireNotNull(decodeOptionalList(key, decode)) {
+            "Not a Mizani backup: '$key' is missing or is not a list"
+        }
 
     private fun <T> JSONObject.decodeOptionalList(key: String, decode: (JSONObject) -> T): List<T>? {
         val array = optJSONArray(key) ?: return null

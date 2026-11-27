@@ -5,6 +5,7 @@ import com.mousa.mizani.data.database.entities.RecurringTransaction
 import com.mousa.mizani.data.database.entities.Transaction
 import com.mousa.mizani.domain.repository.IRecurringRepository
 import com.mousa.mizani.domain.repository.ITransactionRepository
+import com.mousa.mizani.domain.repository.TransactionRunner
 import java.util.Date
 import javax.inject.Inject
 
@@ -14,7 +15,8 @@ import javax.inject.Inject
  */
 class ExecuteRecurringTransactionUseCase @Inject constructor(
     private val transactionRepository: ITransactionRepository,
-    private val recurringRepository: IRecurringRepository
+    private val recurringRepository: IRecurringRepository,
+    private val transactionRunner: TransactionRunner
 ) {
     suspend operator fun invoke(
         recurring: RecurringTransaction,
@@ -32,8 +34,11 @@ class ExecuteRecurringTransactionUseCase @Inject constructor(
             excludeFromMonthExpenses = recurring.accountType == AccountType.WALLET ||
                 recurring.accountType == AccountType.DEPOSIT
         )
-        val insertedId = transactionRepository.insertTransaction(transaction)
-        recurringRepository.advanceRecurringDueDate(recurring)
-        return insertedId
+        // Both or neither: a saved transaction whose item stayed due would be recorded again.
+        return transactionRunner.run {
+            val insertedId = transactionRepository.insertTransaction(transaction)
+            recurringRepository.advanceRecurringDueDate(recurring)
+            insertedId
+        }
     }
 }

@@ -41,6 +41,9 @@
     <string name="export_saved">File saved</string>
     <string name="export_view_failed">No app found to open this file. Try Save to Downloads instead.</string>
     <string name="export_save_failed">Could not save the file. Try again.</string>
+    <string name="export_failed">Could not create the file. Try again.</string>
+    <string name="balance_correction_failed">Could not correct the balance. Try again.</string>
+    <string name="balance_load_failed">Could not load the balances. Try again.</string>
     <string name="export_format">Export format</string>
     <string name="export">Export</string>
     <string name="import_csv">Import CSV</string>
@@ -129,14 +132,11 @@
 
     <!-- Navigation & Tabs -->
     <string name="nav_more">More</string>
-    <string name="more_financial_tools">Financial Tools</string>
-    <string name="more_system_tools">System &amp; Settings</string>
     <string name="account_bank">Bank</string>
     <string name="account_cash">Cash</string>
 
     <!-- Loans & Preserved Balance -->
     <string name="loans_title">Loans &amp; Commitments</string>
-    <string name="loans_subtitle">Configure fixed loans, preserve salary &amp; pay commitments</string>
     <string name="add_loan_config">Add Loan</string>
     <string name="preserved_for_loans_label">Preserved for Loans</string>
     <string name="preserved_for_loans_hint">Money automatically reserved from your salary to pay this month\'s loans.</string>
@@ -201,7 +201,6 @@
 
     <!-- Debts & Receivables -->
     <string name="debts_tracker_title">Debts Tracker</string>
-    <string name="debts_subtitle">Track money you lent and money you borrowed</string>
     <string name="debt_lent_header">Debt (Money Lent)</string>
     <string name="debt_lent_explanation">You gave money to someone and they owe it back to you.</string>
     <string name="debtor_name_label">Borrower Name (Who owes you?)</string>
@@ -245,7 +244,6 @@
 
     <!-- Categories & Budgets -->
     <string name="categories_budgets_title">Categories &amp; Budgets</string>
-    <string name="categories_budgets_subtitle">Manage categories and monthly spending limits</string>
     <string name="budget_warning_exceeded_title">Budget Exceeded!</string>
     <string name="budget_warning_near_title">Budget Limit Approaching</string>
     <string name="budget_warning_exceeded_desc">This transaction of %1$s will exceed your %2$s budget limit (%3$s / %4$s).</string>
@@ -263,7 +261,6 @@
     <string name="notif_budget_warning_desc">Your spending in %1$s reached %2$s (approaching your limit of %3$s).</string>
     <string name="notif_loan_title">Loan Reminder: %1$s</string>
     <string name="notif_loan_desc">You have a monthly loan payment of %1$s (%2$s) pending deduction.</string>
-    <string name="settings_desc">Language, app lock, balances &amp; export</string>
     <string name="time_optional">Time (optional)</string>
     <string name="notifications_disabled_desc">Notifications are disabled. Enable them to receive daily expense reminders, loan reminders, and budget alerts.</string>
     <string name="enable_notifications_btn">Enable Notifications</string>
@@ -285,9 +282,24 @@
     <string name="add_transaction">Add</string>
     <string name="empty_transactions_desc">No transactions found for the selected period or filters. Start tracking by recording an expense or income.</string>
     <string name="add_new_transaction">Add Transaction</string>
-    <string name="more_screen_hub_title">Financial Hub &amp; Tools</string>
-    <string name="more_screen_hub_desc">Manage loans, debts, categories, and system settings</string>
-    <string name="app_version_label">Mizani • v1.0.0</string>
+    <string name="more_group_everyday">Everyday money</string>
+    <string name="more_group_plan_travel">Plan and travel</string>
+    <string name="more_group_islamic">Islamic</string>
+    <string name="more_group_app">App</string>
+    <string name="more_item_recurring">Recurring</string>
+    <string name="more_item_budgets">Budgets and categories</string>
+    <string name="more_item_loans">Loans</string>
+    <string name="more_item_debts">Debts</string>
+    <string name="more_item_vault">Savings vault</string>
+    <string name="more_item_trips">Trips</string>
+    <string name="more_item_exchange">Currency exchange</string>
+    <string name="more_item_price_memory">Price memory</string>
+    <string name="more_item_runway">Emergency runway</string>
+    <string name="more_item_zakah">Zakah</string>
+    <string name="more_item_sadaqah">Sadaqah jar</string>
+    <string name="more_item_prayer">Prayer and Qibla</string>
+    <string name="more_item_murabaha">Murabaha</string>
+    <string name="more_item_help">Help and guide</string>
     <string name="offline_storage_secure">Offline &amp; Secure Local Storage</string>
     <string name="financial_insights_title">Smart Insights</string>
     <string name="insight_high_spending">High Spending: You have used %1$d%% of your income this month. Consider pacing non-essential expenses.</string>
@@ -328,7 +340,6 @@
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_get_started">Get Started</string>
-    <string name="onboarding_app_guide">App Guide &amp; Walkthrough</string>
     <string name="monthly_comparison_title">Monthly Comparison</string>
     <string name="comparison_this_month">This Month</string>
     <string name="comparison_last_month">Last Month</string>
@@ -368,14 +379,13 @@
     <string name="alert_loan_desc">Reminders when monthly loan or installment payments are due.</string>
     <string name="alert_debt_title">Debts &amp; Borrowing</string>
     <string name="alert_debt_desc">Alerts for pending borrowed money and settlement dates.</string>
-    <string name="alert_salary_title">Salary &amp; Recurring Bills</string>
-    <string name="alert_salary_desc">Reminders to log monthly salary deposits and regular subscriptions.</string>
+    <string name="alert_salary_title">Salary &amp; Recurring Phone Notifications</string>
+    <string name="alert_salary_desc">Phone reminders for all recurring items, including salary, bills and subscriptions. The app still asks you inside the app when this is off. Notices about entries added automatically, or that could not be added, still appear.</string>
     <string name="alert_budget_title">Budget Warnings</string>
     <string name="alert_budget_desc">Warnings when category spending nears or exceeds your budget limit.</string>
     <string name="alert_daily_title">Daily Logging Reminder</string>
     <string name="alert_daily_desc">Gentle evening reminder if no transactions have been logged today.</string>
     <string name="manage_notifications_btn">Alerts &amp; Notifications Settings</string>
-    <string name="manage_notifications_desc">Configure all app alerts, reminders, and daily check-ins</string>
 
     <!-- Split Transactions & Receipt Attachment -->
     <string name="split_transaction_title">Split Transaction</string>
@@ -406,16 +416,13 @@
     <string name="camera_permission_required">Camera permission is required to capture photos</string>
 
     <!-- Islamic Finance & Tools -->
-    <string name="more_islamic_tools">Islamic Finance &amp; Tools</string>
     <string name="zakah_calculator_title">Zakah Calculator</string>
-    <string name="zakah_calculator_subtitle">Calculate 2.5% wealth Zakah based on Nisab</string>
     <string name="zakah_due_label">Zakah Payable</string>
     <string name="zakah_below_nisab_label">Below Nisab (No Zakah Due)</string>
     <string name="zakah_nisab_threshold_info">Nisab Threshold (85g Gold): %1$s</string>
     <string name="record_zakah_payment_btn">Record Zakah Payment</string>
     <string name="zakah_breakdown_header">Assets &amp; Deductions</string>
     <string name="prayer_qiblah_title">Prayer Times &amp; Qiblah</string>
-    <string name="prayer_qiblah_subtitle">Accurate offline prayer times &amp; Kaaba compass</string>
     <string name="select_city_label">Select Location / City</string>
     <string name="upcoming_prayer_label">Upcoming Prayer</string>
     <string name="daily_prayer_schedule">Daily Prayer Schedule</string>
@@ -571,10 +578,10 @@
     <string name="full_backup_import_confirm_desc">This will replace current app data and preferences with the contents of the backup file. Proceed?</string>
     <string name="full_backup_success">Backup restored: %1$d transactions, %2$d categories, %3$d loans, and all preferences restored.</string>
     <string name="full_backup_error">Backup restoration failed: %1$s</string>
+    <string name="full_backup_settings_failed">Records restored: %1$d transactions, %2$d categories, %3$d loans. Settings, including opening balances, were not restored. Restore the same file again to retry.</string>
     <string name="full_backup_fixed_records">%1$d broken records from the old data were skipped or repaired (details in Logcat, tag FullBackup).</string>
     <!-- Great Wallet (Deposit Vault) & Expense Exclusions -->
     <string name="deposit_vault_title">Great Wallet (Deposit Vault)</string>
-    <string name="deposit_vault_subtitle">Master reserve &amp; capital assets guarded outside daily circulation</string>
     <string name="deposit_vault_balance">Vault Balance</string>
     <string name="deposit_vault_total_deposited">Total Deposited</string>
     <string name="deposit_vault_total_spent">Capital Purchases</string>
@@ -618,8 +625,8 @@
     <string name="sticky_daily_desc">Keep the 9 PM check-in pinned until daily expenses are logged.</string>
     <string name="sticky_budget_title">Sticky Budget Warning Alerts</string>
     <string name="sticky_budget_desc">Keep category budget limit warnings persistent in status bar.</string>
-    <string name="sticky_loan_title">Sticky Loan &amp; Debt Reminders</string>
-    <string name="sticky_loan_desc">Keep loan and debt due notices pinned until reviewed.</string>
+    <string name="sticky_loan_title">Sticky Loan Reminders</string>
+    <string name="sticky_loan_desc">Keep loan due notices pinned until reviewed.</string>
     <string name="sticky_salary_title">Sticky Salary &amp; Recurring Notices</string>
     <string name="sticky_salary_desc">Keep salary arrival and recurring payment notices pinned.</string>
 
@@ -681,5 +688,102 @@
     <string name="notif_recurring_auto_added_title">Recurring transaction added</string>
     <string name="notif_recurring_blocked_title">Not added: balance too low</string>
     <string name="notif_recurring_blocked_desc">%1$s: %2$s. Tap to review and record it.</string>
+
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_language_region">Language and region</string>
+    <string name="theme_mode_label">Mode</string>
+    <string name="theme_mode_system">System</string>
+    <string name="theme_mode_light">Light</string>
+    <string name="theme_mode_dark">Dark</string>
+    <string name="currency_auto_detect">Auto-detect via GPS</string>
+    <string name="currency_detected">Detected: %1$s (%2$s)</string>
+    <string name="currency_location_unavailable">Location unavailable. Please select manually.</string>
+    <string name="settings_accounts_balances">Accounts and balances</string>
+    <string name="correct_balance">Correct balance</string>
+    <string name="correct_balance_title">Correct %1$s balance</string>
+    <string name="correct_balance_explanation">Enter the amount this account really holds. This adjusts the opening balance and adds no transaction.</string>
+    <string name="correct_balance_old">Current balance</string>
+    <string name="correct_balance_new">New balance</string>
+    <string name="correct_balance_difference">Difference</string>
+    <string name="correct_balance_confirm">Confirm</string>
+    <string name="correct_balance_invalid">Enter a valid amount. Use \'.\' as the decimal separator, with no commas or minus sign.</string>
+    <string name="correct_balance_too_many_decimals">Use at most %1$d decimal places.</string>
+    <string name="correct_balance_unchanged">This is already the current balance.</string>
+    <string name="correct_balance_unavailable">The current balance is not available, so it cannot be corrected now.</string>
+    <string name="balance_not_available">Not available</string>
+    <string name="settings_month_calculations">Month and calculations</string>
+    <string name="month_mode_label">Month type</string>
+    <string name="month_mode_scope_note">This affects the whole app: every page that shows monthly totals uses it.</string>
+
+    <string name="settings_group_general">General</string>
+    <string name="settings_group_money">Money</string>
+    <string name="settings_group_alerts">Alerts</string>
+    <string name="settings_group_data_security">Data and security</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_backup_restore">Backup and restore</string>
+    <string name="settings_import_export">Import and export</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_summary_two_parts">%1$s · %2$s</string>
+    <string name="settings_save_failed">Could not save the setting. Try again.</string>
+    <string name="app_lock_summary">Ask for a fingerprint or the device PIN to open the app</string>
+    <string name="app_lock_unavailable">App lock needs a fingerprint or a screen lock (PIN, pattern or password). Set one up in the phone\'s settings, then try again.</string>
+    <string name="database_viewer_shown">Database viewer shown at the bottom of Settings</string>
+    <string name="database_viewer_hidden">Database viewer hidden</string>
+    <string name="backup_last_created">Last backup created: %1$s</string>
+    <string name="backup_none_yet">No backup yet</string>
+    <string name="backup_now">Back up now</string>
+    <string name="backup_photos_warning">Receipt photos are not included in the backup. Keep them separately if you need them.</string>
+    <string name="backup_in_progress">Creating the backup…</string>
+    <string name="restore_in_progress">Restoring the backup. Keep the app open until it finishes.</string>
+    <string name="restore_finished_title">Restore finished</string>
+    <string name="restore_failed_title">Restore failed</string>
+    <string name="full_backup_restored_records_only">Backup restored: %1$d transactions, %2$d categories, %3$d loans. The file held no settings, so your settings were not changed.</string>
+    <string name="full_backup_success_except_app_lock">Backup restored: %1$d transactions, %2$d categories, %3$d loans, and all preferences except App lock.</string>
+    <string name="app_lock_restore_skipped">App lock was not turned on because this phone has no fingerprint or screen lock. Set one up, then turn on App lock in Settings.</string>
+    <string name="app_lock_restore_turned_off">App lock is now off, as it was in the backup. You can turn it on again in Settings.</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="export_share">Share file</string>
+    <string name="export_share_chooser_title">Share %1$s</string>
+    <string name="export_share_failed">No app found to share this file.</string>
+    <string name="export_report_title">Report export</string>
+    <string name="import_section_title">CSV import</string>
+    <string name="import_failed">Import failed</string>
+    <string name="import_format_show">Show format details</string>
+    <string name="import_format_hide">Hide format details</string>
+
+    <string name="permission_camera_title">Camera Access Needed</string>
+    <string name="permission_camera_desc">Camera permission allows you to take photos of paper receipts and attach them directly to your transactions for effortless tracking.</string>
+    <string name="permission_camera_denied_desc">Camera permission was previously denied. Please open Settings and enable Camera permission to capture receipts.</string>
+    <string name="permission_location_title">Location Access Needed</string>
+    <string name="permission_location_desc">Location permission is used offline to detect your city for accurate prayer times, Qiblah compass, and default currency.</string>
+    <string name="permission_location_denied_desc">Location permission was previously denied. Please open Settings and enable Location permission to auto-detect your city, currency, and Qiblah direction.</string>
+    <string name="permission_notifications_title">Notifications Needed</string>
+    <string name="permission_notifications_desc">Allow notifications to receive timely alerts for loan payments, salary cycle renewals, and spending budget warnings.</string>
+    <string name="permission_notifications_denied_desc">Notification permission is currently blocked. Please open Settings to enable alerts for upcoming loan dues, budget thresholds, and daily reminders.</string>
+    <string name="permission_not_now">Not Now</string>
+    <string name="permission_continue">Continue</string>
+    <string name="permission_open_settings">Open Settings</string>
+
+    <!-- Due recurring items -->
+    <string name="recurring_due_sheet_title">Due recurring items</string>
+    <string name="recurring_due_sheet_desc">Add opens a filled form, and nothing is recorded until you save it. Skip moves an item to its next date without adding a transaction.</string>
+    <string name="recurring_due_date">Due %1$s</string>
+    <string name="recurring_due_blocked">Not added automatically: the account balance cannot cover it.</string>
+    <string name="recurring_due_add">Add</string>
+    <string name="recurring_due_skip">Skip this time</string>
+    <string name="recurring_due_later">Later</string>
+    <string name="recurring_due_skip_confirm_title">Skip this time?</string>
+    <string name="recurring_due_skip_confirm_message">%1$s (%2$s, due %3$s) moves to its next date. No transaction is added.</string>
+    <string name="recurring_due_load_failed">Could not load your due items. They are still due.</string>
+    <string name="recurring_due_add_failed">Could not open this item. It is still due.</string>
+    <string name="recurring_due_skip_failed">Could not skip this item. It is still due.</string>
+    <string name="recurring_due_item_changed">This item changed after the list was shown, so nothing was done.</string>
+    <string name="recurring_form_already_handled">This due date was already recorded or skipped, so nothing new was saved. Check History before adding it yourself.</string>
+    <string name="recurring_form_save_failed">Could not save. Nothing was recorded, so you can try again.</string>
+    <string name="recurring_due_banner_action">Review</string>
+    <plurals name="recurring_due_banner">
+        <item quantity="one">%1$d recurring item needs your attention</item>
+        <item quantity="other">%1$d recurring items need your attention</item>
+    </plurals>
 </resources>
 

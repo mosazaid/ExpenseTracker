@@ -1,9 +1,11 @@
 ﻿package com.mousa.mizani.presentation.feature.overview
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mousa.mizani.core.startup.OpeningPromptSession
+import com.mousa.mizani.domain.usecase.DueRecurringAttentionUseCase
 import com.mousa.mizani.data.database.entities.Category
-import com.mousa.mizani.data.database.entities.RecurringTransaction
 import com.mousa.mizani.data.database.entities.Transaction
 import com.mousa.mizani.data.preferences.CalculationPreferences
 import com.mousa.mizani.data.preferences.MonthMode
@@ -18,7 +20,9 @@ import com.mousa.mizani.domain.repository.IRecurringRepository
 import com.mousa.mizani.domain.repository.ITransactionRepository
 import com.mousa.mizani.presentation.feature.overview.model.MonthSummaryUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,7 +43,9 @@ class OverviewViewModel @Inject constructor(
     private val periodCalculator: PeriodCalculator,
     private val balanceCalculator: BalanceCalculator,
     private val walletCalculator: WalletCalculator,
-    private val pendingSmsDao: com.mousa.mizani.data.database.dao.PendingSmsTransactionDao
+    private val pendingSmsDao: com.mousa.mizani.data.database.dao.PendingSmsTransactionDao,
+    private val dueRecurringAttention: DueRecurringAttentionUseCase,
+    private val openingPromptSession: OpeningPromptSession
 ) : ViewModel() {
 
     private val _refreshTrigger = kotlinx.coroutines.flow.MutableStateFlow(0)
@@ -85,6 +91,26 @@ class OverviewViewModel @Inject constructor(
                 SharingStarted.Eagerly,
                 MonthSummaryUiState()
             )
+
+    /** How many due recurring items need the user; also follows a Skip, which adds no transaction. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val dueAttentionCount: StateFlow<Int> = combine(
+        recurringRepository.getAllRecurringTransactions(), allTransactions, _refreshTrigger
+    ) { _, _, _ -> }
+        .mapLatest { countDueAttention() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    private suspend fun countDueAttention(): Int = try {
+        dueRecurringAttention().size
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        // The banner is hidden; the sheet reports a failed load to the user.
+        Log.e("OverviewViewModel", "Counting due recurring items failed", e)
+        0
+    }
+
+    fun reopenRecurring() = openingPromptSession.reopenRecurring()
 
     /**
      * Computes the month-scoped summary (income, expense, per-account breakdown, reminders).
@@ -138,14 +164,6 @@ class OverviewViewModel @Inject constructor(
 
     suspend fun buildSalaryWalletYearSummary(year: Int): List<SalaryWalletPeriodSummary> {
         return walletCalculator.getSalaryPeriodSummariesForYear(year)
-    }
-
-    suspend fun isRecurringBannerDismissed(recurring: RecurringTransaction): Boolean {
-        return userPreferences.isRecurringDismissed(recurring.id, recurring.nextDueDate.time)
-    }
-
-    suspend fun dismissRecurringBanner(recurring: RecurringTransaction) {
-        userPreferences.dismissRecurringBanner(recurring.id, recurring.nextDueDate.time)
     }
 
     val pendingSmsList: StateFlow<List<com.mousa.mizani.data.database.entities.PendingSmsTransaction>> =

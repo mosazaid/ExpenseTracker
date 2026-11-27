@@ -73,9 +73,16 @@ object CurrencyUtils {
     @Volatile
     var activeCurrencyCode: String = "JOD"
 
-    fun detectDefaultCurrency(): String {
+    /**
+     * The currency shown until the user picks one. It follows the saved language and never the
+     * phone's region: it labels amounts that are already recorded, so it must not move.
+     */
+    fun currencyWhenUnset(savedLanguage: String?): String =
+        detectDefaultCurrency(Locale.forLanguageTag(savedLanguage ?: "en"))
+
+    private fun detectDefaultCurrency(locale: Locale): String {
         return try {
-            when (Locale.getDefault().country.uppercase()) {
+            when (locale.country.uppercase()) {
                 "JO" -> "JOD"
                 "SA" -> "SAR"
                 "AE" -> "AED"
@@ -120,7 +127,7 @@ object CurrencyUtils {
                 "BR" -> "BRL"
                 "ZA" -> "ZAR"
                 "FR", "DE", "IT", "ES", "NL", "BE", "AT", "PT", "FI", "IE", "GR" -> "EUR"
-                else -> if (Locale.getDefault().language == "ar") "JOD" else "USD"
+                else -> if (locale.language == "ar") "JOD" else "USD"
             }
         } catch (_: Exception) {
             "JOD"

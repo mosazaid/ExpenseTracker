@@ -49,7 +49,6 @@ fun NotificationSettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     val loanAlerts by viewModel.loanAlertsEnabled.collectAsState()
-    val debtAlerts by viewModel.debtAlertsEnabled.collectAsState()
     val salaryAlerts by viewModel.salaryAlertsEnabled.collectAsState()
     val budgetAlerts by viewModel.budgetAlertsEnabled.collectAsState()
     val dailyReminder by viewModel.dailyReminderEnabled.collectAsState()
@@ -243,17 +242,7 @@ fun NotificationSettingsScreen(
                 onCheckedChange = { viewModel.setLoanAlerts(it) }
             )
 
-            // 2. Debt Reminders
-            AlertPreferenceRow(
-                icon = Icons.Outlined.Handshake,
-                iconColor = MaterialTheme.colorScheme.secondary,
-                title = stringResource(R.string.alert_debt_title),
-                description = stringResource(R.string.alert_debt_desc),
-                checked = debtAlerts,
-                onCheckedChange = { viewModel.setDebtAlerts(it) }
-            )
-
-            // 3. Salary & Recurring Reminders
+            // 2. Salary & Recurring Reminders
             AlertPreferenceRow(
                 icon = Icons.Outlined.Payments,
                 iconColor = Color(0xFF10B981),
@@ -263,7 +252,7 @@ fun NotificationSettingsScreen(
                 onCheckedChange = { viewModel.setSalaryAlerts(it) }
             )
 
-            // 4. Budget Overspend & Warnings
+            // 3. Budget Overspend & Warnings
             AlertPreferenceRow(
                 icon = Icons.Outlined.PieChart,
                 iconColor = Color(0xFFF59E0B),
@@ -273,7 +262,7 @@ fun NotificationSettingsScreen(
                 onCheckedChange = { viewModel.setBudgetAlerts(it) }
             )
 
-            // 5. Daily Expense Logging Reminder
+            // 4. Daily Expense Logging Reminder
             AlertPreferenceRow(
                 icon = Icons.Outlined.Alarm,
                 iconColor = Color(0xFF8B5CF6),
@@ -330,7 +319,7 @@ fun NotificationSettingsScreen(
                 onCheckedChange = { viewModel.setStickyBudget(it) }
             )
 
-            // 4. Sticky Loan & Debt Reminders
+            // 4. Sticky Loan Reminders
             AlertPreferenceRow(
                 icon = Icons.Outlined.AccountBalance,
                 iconColor = MaterialTheme.colorScheme.primary,

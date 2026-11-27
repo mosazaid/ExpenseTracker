@@ -15,10 +15,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
@@ -50,6 +52,22 @@ class LoansViewModel @Inject constructor(
     private val _preservedAmount = MutableStateFlow(0.0)
     val preservedAmount: StateFlow<Double> = _preservedAmount.asStateFlow()
 
+    private val hasLoadedMonthlyData = MutableStateFlow(false)
+
+    /**
+     * Whether today's loan payment sheet is still to come. Null until the loans and the last
+     * shown date are read, so another opening question cannot slip in ahead of it.
+     */
+    val isLoanSheetDue: StateFlow<Boolean?> = combine(
+        hasLoadedMonthlyData, _monthlyItems, userPreferences.lastLoanSheetDate
+    ) { isLoaded, items, lastShownDate ->
+        if (!isLoaded) {
+            null
+        } else {
+            items.any { !it.payment.isPaid } && lastShownDate != LocalDate.now().toString()
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     init {
         viewModelScope.launch {
             userPreferences.monthMode.collect {
@@ -65,6 +83,7 @@ class LoansViewModel @Inject constructor(
             val items = loanRepository.getMonthlyLoanItems(monthKey)
             _monthlyItems.value = items
             _preservedAmount.value = items.filter { !it.payment.isPaid }.sumOf { it.payment.amount }
+            hasLoadedMonthlyData.value = true
         }
     }
 

@@ -27,11 +27,28 @@ object DateUtils {
     const val PATTERN_ISO = "yyyy-MM-dd HH:mm:ss"
 
     // ── Shared, immutable, thread-safe formatters ─────────────────────────────
-    private val defaultFormatter    = DateTimeFormatter.ofPattern(PATTERN_DEFAULT,   Locale.getDefault())
-    private val timeFormatter       = DateTimeFormatter.ofPattern(PATTERN_TIME_24H,  Locale.getDefault())
-    private val dateTimeFormatter   = DateTimeFormatter.ofPattern(PATTERN_DATE_TIME, Locale.getDefault())
-    private val weekRangeFormatter  = DateTimeFormatter.ofPattern(PATTERN_MONTH_DAY, Locale.getDefault())
-    private val monthYearFormatter  = DateTimeFormatter.ofPattern(PATTERN_MONTH_YEAR,Locale.getDefault())
+    // Display only: each follows the current default locale, so month names change with the app language.
+    private val defaultFormatter    = LocaleFormatter(PATTERN_DEFAULT)
+    private val timeFormatter       = LocaleFormatter(PATTERN_TIME_24H)
+    private val dateTimeFormatter   = LocaleFormatter(PATTERN_DATE_TIME)
+    private val weekRangeFormatter  = LocaleFormatter(PATTERN_MONTH_DAY)
+    private val monthYearFormatter  = LocaleFormatter(PATTERN_MONTH_YEAR)
+
+    /** A formatter for [pattern] in the current default locale, rebuilt only when that locale changes. */
+    private class LocaleFormatter(private val pattern: String) {
+        @Volatile
+        private var cached: Pair<Locale, DateTimeFormatter>? = null
+
+        fun current(): DateTimeFormatter {
+            val locale = Locale.getDefault()
+            cached?.let { (cachedLocale, formatter) -> if (cachedLocale == locale) return formatter }
+            return DateTimeFormatter.ofPattern(pattern, locale).also { cached = locale to it }
+        }
+    }
+
+    private fun LocalDate.format(formatter: LocaleFormatter): String = format(formatter.current())
+
+    private fun LocalDateTime.format(formatter: LocaleFormatter): String = format(formatter.current())
 
     // ── Helper to convert java.util.Date → LocalDateTime via system zone ──────
     private fun Date.toLocalDateTime(): LocalDateTime =

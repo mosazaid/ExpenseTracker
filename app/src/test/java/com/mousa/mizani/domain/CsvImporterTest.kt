@@ -71,6 +71,20 @@ class CsvImporterTest {
     }
 
     @Test
+    fun testCsvWithByteOrderMarkImportsRow() = runTest {
+        Mockito.`when`(categoryDao.getAllCategories()).thenReturn(flowOf(emptyList()))
+
+        val csv = "\uFEFF" + """
+            date,type,amount,description,account
+            2026-09-25 12:00:00,EXPENSE,25.50,Dinner,CASH
+        """.trimIndent()
+
+        val result = csvImporter.importTransactions(csv)
+        assertEquals(emptyList<String>(), result.errors)
+        assertEquals(1, result.inserted)
+    }
+
+    @Test
     fun testArabicCsvContentImportsCorrectly() = runTest {
         Mockito.`when`(categoryDao.getAllCategories()).thenReturn(
             flowOf(

@@ -6,10 +6,13 @@ import androidx.room.withTransaction
 import com.mousa.mizani.core.export.backup.BackupJsonCodec
 import com.mousa.mizani.core.export.backup.BackupSanitizer
 import com.mousa.mizani.core.export.backup.BackupSnapshot
+import com.mousa.mizani.core.security.AppLockAvailability
 import com.mousa.mizani.data.database.AppDatabase
+import com.mousa.mizani.data.preferences.AppLockRestoreRule
 import com.mousa.mizani.data.preferences.UserPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -29,9 +32,22 @@ data class FullBackupRestoreResult(
     val recurringCount: Int = 0,
     val alertCount: Int = 0,
     val preferencesRestored: Boolean = false,
+    /** The records were replaced, but importing the file's settings failed. */
+    val settingsFailed: Boolean = false,
     /** Records that were skipped or repaired because their parent no longer existed. */
     val fixedRecordsCount: Int = 0,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    /** The backup turns App lock on, but this phone cannot unlock it, so the lock was left as it was. */
+    val appLockSkipped: Boolean = false,
+    /** The backup turned off an App lock that was on. */
+    val appLockTurnedOff: Boolean = false
+)
+
+/** What importing the backup's settings did. */
+private data class SettingsImport(
+    val isImported: Boolean,
+    val isLockSkipped: Boolean = false,
+    val turnedLockOff: Boolean = false
 )
 
 /**
@@ -44,7 +60,8 @@ data class FullBackupRestoreResult(
 class FullBackupManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val appDatabase: AppDatabase,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val appLockAvailability: AppLockAvailability
 ) {
 
     suspend fun exportFullBackup(): File {
@@ -73,9 +90,9 @@ class FullBackupManager @Inject constructor(
             replaceDatabase(sanitized.snapshot)
 
             val preferences = decoded.preferences
-            if (preferences != null) {
-                userPreferences.importAllPreferencesMap(preferences)
-            }
+            // The records are already replaced, so a failure here must not report a failed restore.
+            val settingsImport = preferences?.let { tryImportSettings(it) }
+            val settingsFailed = settingsImport?.isImported == false
 
             val restored = sanitized.snapshot
             Log.i(TAG, "Restore finished (${sanitized.fixes.size} records repaired): ${describe(restored)}")
@@ -90,8 +107,11 @@ class FullBackupManager @Inject constructor(
                 loanPaymentCount = restored.monthlyLoanPayments.size,
                 recurringCount = restored.recurringTransactions.size,
                 alertCount = restored.appAlerts.size,
-                preferencesRestored = preferences != null,
-                fixedRecordsCount = sanitized.fixes.size
+                preferencesRestored = preferences != null && !settingsFailed,
+                settingsFailed = settingsFailed,
+                fixedRecordsCount = sanitized.fixes.size,
+                appLockSkipped = settingsImport?.isLockSkipped == true,
+                appLockTurnedOff = settingsImport?.turnedLockOff == true
             )
         } catch (e: CancellationException) {
             throw e
@@ -102,6 +122,26 @@ class FullBackupManager @Inject constructor(
                 errorMessage = e.message ?: e.javaClass.simpleName
             )
         }
+    }
+
+    private suspend fun tryImportSettings(preferences: Map<String, String>): SettingsImport = try {
+        val decision = AppLockRestoreRule.settingsToRestore(
+            backup = preferences,
+            isLockAvailable = appLockAvailability.isAvailable(),
+            isLockOnNow = userPreferences.biometricLockEnabled.first()
+        )
+        if (decision.isLockSkipped) Log.w(TAG, "App lock cannot be unlocked on this phone, so it is not turned on")
+        userPreferences.importAllPreferencesMap(decision.settings)
+        SettingsImport(
+            isImported = true,
+            isLockSkipped = decision.isLockSkipped,
+            turnedLockOff = decision.turnsLockOff
+        )
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.e(TAG, "Records were restored, but importing the settings failed", e)
+        SettingsImport(isImported = false)
     }
 
     private suspend fun readSnapshot(): BackupSnapshot = BackupSnapshot(

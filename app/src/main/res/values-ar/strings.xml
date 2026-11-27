@@ -41,6 +41,9 @@
     <string name="export_saved">تم حفظ الملف</string>
     <string name="export_view_failed">لا يوجد تطبيق لفتح هذا الملف. جرّب حفظ في التنزيلات.</string>
     <string name="export_save_failed">تعذّر حفظ الملف. حاول مرة أخرى.</string>
+    <string name="export_failed">تعذّر إنشاء الملف. حاول مرة أخرى.</string>
+    <string name="balance_correction_failed">تعذّر تصحيح الرصيد. حاول مرة أخرى.</string>
+    <string name="balance_load_failed">تعذّر تحميل الأرصدة. حاول مرة أخرى.</string>
     <string name="export_format">صيغة التصدير</string>
     <string name="export">تصدير</string>
     <string name="import_csv">استيراد CSV</string>
@@ -129,14 +132,11 @@
 
     <!-- Navigation & Tabs -->
     <string name="nav_more">المزيد</string>
-    <string name="more_financial_tools">الأدوات المالية</string>
-    <string name="more_system_tools">النظام والإعدادات</string>
     <string name="account_bank">بنك</string>
     <string name="account_cash">نقد</string>
 
     <!-- Loans & Preserved Balance -->
     <string name="loans_title">القروض والالتزامات</string>
-    <string name="loans_subtitle">تهيئة القروض الثابتة وحجز الراتب وسداد الالتزامات</string>
     <string name="add_loan_config">إضافة قرض</string>
     <string name="preserved_for_loans_label">المحجوز للقروض</string>
     <string name="preserved_for_loans_hint">مبلغ محجوز تلقائياً من راتبك لتغطية أقساط قروض هذا الشهر.</string>
@@ -201,7 +201,6 @@
 
     <!-- Debts & Receivables -->
     <string name="debts_tracker_title">سجل الديون</string>
-    <string name="debts_subtitle">متابعة الأموال التي أقرَضتها والأموال التي استدَنتها</string>
     <string name="debt_lent_header">دَين (مال أقرضته للغير)</string>
     <string name="debt_lent_explanation">أنت دفعت مالاً لشخص ما وهو مدين به لك.</string>
     <string name="debtor_name_label">اسم المدين (من يدين لك؟)</string>
@@ -245,7 +244,6 @@
 
     <!-- Categories & Budgets -->
     <string name="categories_budgets_title">التصنيفات والميزانية</string>
-    <string name="categories_budgets_subtitle">إدارة التصنيفات وحدود الصرف الشهرية</string>
     <string name="budget_warning_exceeded_title">تجاوزت الميزانية!</string>
     <string name="budget_warning_near_title">اقتراب من حد الميزانية</string>
     <string name="budget_warning_exceeded_desc">هذه المعاملة بمبلغ %1$s ستتجاوز ميزانية %2$s (%3$s من %4$s).</string>
@@ -263,7 +261,6 @@
     <string name="notif_budget_warning_desc">مصروفك في %1$s وصل إلى %2$s (يقترب من الحد %3$s).</string>
     <string name="notif_loan_title">تذكير بالقرض: %1$s</string>
     <string name="notif_loan_desc">لديك قسط قرض شهري بمبلغ %1$s (%2$s) في انتظار الخصم والسداد.</string>
-    <string name="settings_desc">اللغة، قفل التطبيق، الأرصدة والتصدير</string>
     <string name="time_optional">الوقت (اختياري)</string>
     <string name="notifications_disabled_desc">الإشعارات معطّلة. قم بتفعيلها لاستلام تذكيرات المصروفات اليومية وأقساط القروض وتنبيهات الميزانية.</string>
     <string name="enable_notifications_btn">تفعيل الإشعارات</string>
@@ -285,9 +282,24 @@
     <string name="add_transaction">إضافة</string>
     <string name="empty_transactions_desc">لم يتم العثور على أي معاملات للفترة أو الفلاتر المحددة. ابدأ بتسجيل مصروف أو دخل جديد.</string>
     <string name="add_new_transaction">إضافة معاملة</string>
-    <string name="more_screen_hub_title">مركز المال والأدوات</string>
-    <string name="more_screen_hub_desc">إدارة القروض، الديون، الفئات، وإعدادات النظام</string>
-    <string name="app_version_label">ميزاني • الإصدار 1.0.0</string>
+    <string name="more_group_everyday">المال اليومي</string>
+    <string name="more_group_plan_travel">التخطيط والسفر</string>
+    <string name="more_group_islamic">الأدوات الإسلامية</string>
+    <string name="more_group_app">التطبيق</string>
+    <string name="more_item_recurring">المتكررة</string>
+    <string name="more_item_budgets">الميزانيات والتصنيفات</string>
+    <string name="more_item_loans">القروض</string>
+    <string name="more_item_debts">الديون</string>
+    <string name="more_item_vault">خزنة الادخار</string>
+    <string name="more_item_trips">الرحلات</string>
+    <string name="more_item_exchange">صرف العملات</string>
+    <string name="more_item_price_memory">ذاكرة الأسعار</string>
+    <string name="more_item_runway">المدى المالي</string>
+    <string name="more_item_zakah">الزكاة</string>
+    <string name="more_item_sadaqah">حصالة الصدقة</string>
+    <string name="more_item_prayer">الصلاة والقبلة</string>
+    <string name="more_item_murabaha">المرابحة</string>
+    <string name="more_item_help">المساعدة والدليل</string>
     <string name="offline_storage_secure">تخزين محلي آمن وبدون إنترنت</string>
     <string name="financial_insights_title">رؤى مالية ذكية</string>
     <string name="insight_high_spending">إنفاق مرتفع: لقد استخدمت %1$d%% من دخلك هذا الشهر. يُنصح بترشيد المصاريف غير الضرورية.</string>
@@ -328,7 +340,6 @@
     <string name="onboarding_skip">تخطي</string>
     <string name="onboarding_next">التالي</string>
     <string name="onboarding_get_started">ابدأ الآن</string>
-    <string name="onboarding_app_guide">دليل التطبيق والترحيب</string>
     <string name="monthly_comparison_title">مقارنة شهرية</string>
     <string name="comparison_this_month">هذا الشهر</string>
     <string name="comparison_last_month">الشهر الماضي</string>
@@ -368,14 +379,13 @@
     <string name="alert_loan_desc">تذكيرات عند استحقاق دفعات القروض الشهرية بحسب دورة الراتب أو الشهر الميلادي.</string>
     <string name="alert_debt_title">الديون والالتزامات</string>
     <string name="alert_debt_desc">تنبيهات للمبالغ المستدانة وتواريخ السداد المحددة.</string>
-    <string name="alert_salary_title">الراتب والفواتير المتكررة</string>
-    <string name="alert_salary_desc">تذكيرات تسجيل نزول الراتب الشهري والاشتراكات الدورية.</string>
+    <string name="alert_salary_title">إشعارات الهاتف للراتب والمعاملات المتكررة</string>
+    <string name="alert_salary_desc">تذكيرات على الهاتف لجميع المعاملات المتكررة، ومنها الراتب والفواتير والاشتراكات. سيظل التطبيق يسألك من داخله حتى عند إيقاف هذا الخيار. ستظل تظهر إشعارات القيود المضافة تلقائيًا أو التي تعذّرت إضافتها.</string>
     <string name="alert_budget_title">تحذيرات الميزانية</string>
     <string name="alert_budget_desc">تحذيرات ذكية عند الاقتراب من الحد الأقصى لميزانية الفئة أو تجاوزه.</string>
     <string name="alert_daily_title">تذكير التسجيل اليومي</string>
     <string name="alert_daily_desc">تذكير مسائي هادئ في حال لم تسجل أي مصروف خلال اليوم للحفاظ على عاداتك المالية.</string>
     <string name="manage_notifications_btn">إعدادات التنبيهات والإشعارات</string>
-    <string name="manage_notifications_desc">التحكم في كافة تنبيهات التطبيق، التذكيرات الدورية والتسجيل اليومي</string>
 
     <!-- Split Transactions & Receipt Attachment -->
     <string name="split_transaction_title">تقسيم المعاملة</string>
@@ -406,16 +416,13 @@
     <string name="camera_permission_required">إذن الكاميرا مطلوب لالتقاط صور الفواتير</string>
 
     <!-- Islamic Finance & Tools -->
-    <string name="more_islamic_tools">المالية الإسلامية والأدوات</string>
     <string name="zakah_calculator_title">حاسبة الزكاة الشرعية</string>
-    <string name="zakah_calculator_subtitle">حساب زكاة المال بنسبة 2.5% ومقارنتها بالنصاب</string>
     <string name="zakah_due_label">مقدار الزكاة الواجب إخراجها</string>
     <string name="zakah_below_nisab_label">دون حد النصاب (لا تجب الزكاة)</string>
     <string name="zakah_nisab_threshold_info">حد النصاب الشرعي (85غ ذهب): %1$s</string>
     <string name="record_zakah_payment_btn">تسجيل إخراج الزكاة</string>
     <string name="zakah_breakdown_header">تفاصيل الأموال والالتزامات</string>
     <string name="prayer_qiblah_title">مواقيت الصلاة والقبلة</string>
-    <string name="prayer_qiblah_subtitle">مواقيت دقيقة وبوصلة الكعبة دون إنترنت</string>
     <string name="select_city_label">تحديد المدينة / الموقع</string>
     <string name="upcoming_prayer_label">الصلاة القادمة</string>
     <string name="daily_prayer_schedule">مواقيت الصلوات اليومية</string>
@@ -571,10 +578,10 @@
     <string name="full_backup_import_confirm_desc">سيتم استبدال بيانات التطبيق والإعدادات الحالية ببيانات ملف النسخة الاحتياطية. هل أنت متأكد من المتابعة؟</string>
     <string name="full_backup_success">تمت استعادة النسخة بنجاح: %1$d معاملة، %2$d تصنيف، %3$d قرض، وكافة الإعدادات.</string>
     <string name="full_backup_error">فشلت استعادة النسخة الاحتياطية: %1$s</string>
+    <string name="full_backup_settings_failed">تمت استعادة السجلات: %1$d معاملة، %2$d تصنيف، %3$d قرض. لكن لم تتم استعادة الإعدادات، بما فيها الأرصدة الافتتاحية. استعد الملف نفسه مرة أخرى لإعادة المحاولة.</string>
     <string name="full_backup_fixed_records">تم تخطي أو إصلاح %1$d من السجلات التالفة في البيانات القديمة.</string>
     <!-- Great Wallet (Deposit Vault) & Expense Exclusions -->
     <string name="deposit_vault_title">الخزنة (المحفظة الكبرى)</string>
-    <string name="deposit_vault_subtitle">رأس المال ومدخرات الأصول المحفوظة بأمان خارج السيولة اليومية</string>
     <string name="deposit_vault_balance">رصيد الخزنة الكبرى</string>
     <string name="deposit_vault_total_deposited">إجمالي المودع</string>
     <string name="deposit_vault_total_spent">المشتريات الرأسمالية</string>
@@ -613,8 +620,8 @@
     <string name="sticky_daily_desc">إبقاء تذكير الساعة 9 مساءً مثبتاً حتى تقوم بتسجيل مصاريفك اليومية.</string>
     <string name="sticky_budget_title">تثبيت تنبيهات الميزانية</string>
     <string name="sticky_budget_desc">إبقاء تنبيه تجاوز حد الميزانية معلقاً في شريط الإشعارات لتجنب تجاهله.</string>
-    <string name="sticky_loan_title">تثبيت تذكيرات القروض والديون</string>
-    <string name="sticky_loan_desc">إبقاء مواعيد استحقاق الدفعات مثبتة لتجنب نسيان موعد السداد.</string>
+    <string name="sticky_loan_title">تثبيت تذكيرات القروض</string>
+    <string name="sticky_loan_desc">إبقاء مواعيد استحقاق دفعات القروض مثبتة لتجنب نسيان موعد السداد.</string>
     <string name="sticky_salary_title">تثبيت إشعارات الراتب والمصاريف الدورية</string>
     <string name="sticky_salary_desc">إبقاء إشعارات استلام الراتب والخصم التلقائي مثبتة في شريط التنبيهات.</string>
 
@@ -674,5 +681,106 @@
     <string name="calc_runway_exclude_wallet_deposit_desc">حساب معدل الصرف الأساسي الشهري لآخر 90 يوماً من مصاريف النقد والبنك فقط (متوقف افتراضياً).</string>
     <string name="calc_zakah_include_vault_title">تضمين رصيد الخزنة في المزامنة التلقائية للزكاة</string>
     <string name="calc_zakah_include_vault_desc">تضمين مدخرات الخزنة عند المزامنة التلقائية للأرصدة السائلة في حاسبة الزكاة (مفعّل افتراضياً).</string>
+
+    <string name="settings_appearance">المظهر</string>
+    <string name="settings_language_region">اللغة والمنطقة</string>
+    <string name="theme_mode_label">الوضع</string>
+    <string name="theme_mode_system">حسب النظام</string>
+    <string name="theme_mode_light">فاتح</string>
+    <string name="theme_mode_dark">داكن</string>
+    <string name="currency_auto_detect">تحديد تلقائي عبر GPS</string>
+    <string name="currency_detected">تم التحديد: %1$s (%2$s)</string>
+    <string name="currency_location_unavailable">الموقع غير متاح. يرجى الاختيار يدويًا.</string>
+    <string name="settings_accounts_balances">الحسابات والأرصدة</string>
+    <string name="correct_balance">تصحيح الرصيد</string>
+    <string name="correct_balance_title">تصحيح رصيد %1$s</string>
+    <string name="correct_balance_explanation">أدخل المبلغ الموجود فعليًا في هذا الحساب. يُعدّل هذا الرصيد الافتتاحي ولا يضيف أي معاملة.</string>
+    <string name="correct_balance_old">الرصيد الحالي</string>
+    <string name="correct_balance_new">الرصيد الجديد</string>
+    <string name="correct_balance_difference">الفرق</string>
+    <string name="correct_balance_confirm">تأكيد</string>
+    <string name="correct_balance_invalid">أدخل مبلغًا صحيحًا. استخدم النقطة \'.\' كفاصل عشري، من دون فواصل \',\' أو علامة السالب.</string>
+    <string name="correct_balance_too_many_decimals">الحد الأقصى للمنازل العشرية: %1$d.</string>
+    <string name="correct_balance_unchanged">هذا هو الرصيد الحالي بالفعل.</string>
+    <string name="correct_balance_unavailable">الرصيد الحالي غير متاح، لذلك لا يمكن تصحيحه الآن.</string>
+    <string name="balance_not_available">غير متاح</string>
+    <string name="settings_month_calculations">الشهر والحسابات</string>
+    <string name="month_mode_label">نوع الشهر</string>
+    <string name="month_mode_scope_note">يؤثر هذا على التطبيق كله: تعتمده كل صفحة تعرض المجاميع الشهرية.</string>
+
+    <string name="settings_group_general">عام</string>
+    <string name="settings_group_money">المال</string>
+    <string name="settings_group_alerts">التنبيهات</string>
+    <string name="settings_group_data_security">البيانات والأمان</string>
+    <string name="settings_notifications">الإشعارات</string>
+    <string name="settings_backup_restore">النسخ الاحتياطي والاستعادة</string>
+    <string name="settings_import_export">الاستيراد والتصدير</string>
+    <string name="settings_version">الإصدار %1$s</string>
+    <string name="settings_summary_two_parts">%1$s · %2$s</string>
+    <string name="settings_save_failed">تعذّر حفظ الإعداد. حاول مرة أخرى.</string>
+    <string name="app_lock_summary">طلب البصمة أو رمز الجهاز لفتح التطبيق</string>
+    <string name="app_lock_unavailable">يحتاج قفل التطبيق إلى بصمة أو قفل شاشة (رمز PIN أو نمط أو كلمة مرور). أعدّ أحدها في إعدادات الهاتف، ثم حاول مرة أخرى.</string>
+    <string name="database_viewer_shown">ظهر عارض قاعدة البيانات أسفل الإعدادات</string>
+    <string name="database_viewer_hidden">تم إخفاء عارض قاعدة البيانات</string>
+    <string name="backup_last_created">آخر نسخة احتياطية أُنشئت: %1$s</string>
+    <string name="backup_none_yet">لا توجد نسخة احتياطية بعد</string>
+    <string name="backup_now">نسخ احتياطي الآن</string>
+    <string name="backup_photos_warning">صور الفواتير غير مشمولة في النسخة الاحتياطية. احتفظ بها بشكل منفصل إن كنت تحتاجها.</string>
+    <string name="backup_in_progress">جارٍ إنشاء النسخة الاحتياطية…</string>
+    <string name="restore_in_progress">جارٍ استعادة النسخة الاحتياطية. أبقِ التطبيق مفتوحًا حتى تنتهي.</string>
+    <string name="restore_finished_title">انتهت الاستعادة</string>
+    <string name="restore_failed_title">فشلت الاستعادة</string>
+    <string name="full_backup_restored_records_only">تمت استعادة النسخة: %1$d معاملة، %2$d تصنيف، %3$d قرض. لم يحتوِ الملف على إعدادات، لذلك لم تتغير إعداداتك.</string>
+    <string name="full_backup_success_except_app_lock">تمت استعادة النسخة: %1$d معاملة، %2$d تصنيف، %3$d قرض، وكافة الإعدادات عدا قفل التطبيق.</string>
+    <string name="app_lock_restore_skipped">لم يُفعَّل قفل التطبيق لأن هذا الهاتف لا يحتوي على بصمة أو قفل شاشة. أعدّ أحدهما، ثم فعّل قفل التطبيق من الإعدادات.</string>
+    <string name="app_lock_restore_turned_off">قفل التطبيق متوقف الآن، كما كان في النسخة الاحتياطية. يمكنك تفعيله مجددًا من الإعدادات.</string>
+    <string name="unknown_error">خطأ غير معروف</string>
+    <string name="export_share">مشاركة الملف</string>
+    <string name="export_share_chooser_title">مشاركة %1$s</string>
+    <string name="export_share_failed">لم يُعثر على تطبيق لمشاركة هذا الملف.</string>
+    <string name="export_report_title">تصدير تقرير</string>
+    <string name="import_section_title">استيراد CSV</string>
+    <string name="import_failed">فشل الاستيراد</string>
+    <string name="import_format_show">إظهار تفاصيل الصيغة</string>
+    <string name="import_format_hide">إخفاء تفاصيل الصيغة</string>
+
+    <string name="permission_camera_title">مطلوب إذن الكاميرا</string>
+    <string name="permission_camera_desc">يتيح لك إذن الكاميرا تصوير الفواتير الورقية وإرفاقها مباشرة بمعاملاتك لتتبعها بسهولة.</string>
+    <string name="permission_camera_denied_desc">سبق رفض إذن الكاميرا. يرجى فتح الإعدادات وتفعيل إذن الكاميرا لتصوير الفواتير.</string>
+    <string name="permission_location_title">مطلوب إذن الموقع</string>
+    <string name="permission_location_desc">يُستخدم إذن الموقع دون اتصال لتحديد مدينتك من أجل مواقيت صلاة دقيقة وبوصلة القبلة والعملة الافتراضية.</string>
+    <string name="permission_location_denied_desc">سبق رفض إذن الموقع. يرجى فتح الإعدادات وتفعيل إذن الموقع لتحديد مدينتك وعملتك واتجاه القبلة تلقائيًا.</string>
+    <string name="permission_notifications_title">مطلوب إذن الإشعارات</string>
+    <string name="permission_notifications_desc">اسمح بالإشعارات لتصلك في وقتها تنبيهات دفعات القروض وتجديد دورة الراتب وتحذيرات ميزانية الإنفاق.</string>
+    <string name="permission_notifications_denied_desc">إذن الإشعارات محظور حاليًا. يرجى فتح الإعدادات لتفعيل تنبيهات استحقاق القروض وحدود الميزانية والتذكيرات اليومية.</string>
+    <string name="permission_not_now">ليس الآن</string>
+    <string name="permission_continue">متابعة</string>
+    <string name="permission_open_settings">فتح الإعدادات</string>
+
+    <!-- Due recurring items -->
+    <string name="recurring_due_sheet_title">بنود متكررة مستحقة</string>
+    <string name="recurring_due_sheet_desc">«إضافة» تفتح نموذجًا معبأً، ولا يُسجَّل شيء حتى تحفظه. «تخطي» ينقل البند إلى موعده التالي دون إضافة معاملة.</string>
+    <string name="recurring_due_date">تاريخ الاستحقاق: %1$s</string>
+    <string name="recurring_due_blocked">لم تُضَف تلقائيًا: رصيد الحساب لا يغطيها.</string>
+    <string name="recurring_due_add">إضافة</string>
+    <string name="recurring_due_skip">تخطي هذه المرة</string>
+    <string name="recurring_due_later">لاحقًا</string>
+    <string name="recurring_due_skip_confirm_title">تخطي هذه المرة؟</string>
+    <string name="recurring_due_skip_confirm_message">سينتقل البند %1$s (%2$s، المستحق في %3$s) إلى موعده التالي. لن تُضاف أي معاملة.</string>
+    <string name="recurring_due_load_failed">تعذّر تحميل البنود المستحقة. ما زالت مستحقة.</string>
+    <string name="recurring_due_add_failed">تعذّر فتح هذا البند. ما زال مستحقًا.</string>
+    <string name="recurring_due_skip_failed">تعذّر تخطي هذا البند. ما زال مستحقًا.</string>
+    <string name="recurring_due_item_changed">تغيّر هذا البند بعد عرض القائمة، لذلك لم يُنفَّذ أي إجراء.</string>
+    <string name="recurring_form_already_handled">سبق تسجيل هذا الاستحقاق أو تخطيه، لذلك لم يُحفَظ شيء جديد. راجع السجل قبل إضافته بنفسك.</string>
+    <string name="recurring_form_save_failed">تعذّر الحفظ. لم يُسجَّل شيء، ويمكنك المحاولة مرة أخرى.</string>
+    <string name="recurring_due_banner_action">مراجعة</string>
+    <plurals name="recurring_due_banner">
+        <item quantity="zero">لا توجد بنود متكررة تحتاج إلى انتباهك</item>
+        <item quantity="one">بند متكرر واحد يحتاج إلى انتباهك</item>
+        <item quantity="two">بندان متكرران يحتاجان إلى انتباهك</item>
+        <item quantity="few">%1$d بنود متكررة تحتاج إلى انتباهك</item>
+        <item quantity="many">%1$d بندًا متكررًا يحتاج إلى انتباهك</item>
+        <item quantity="other">%1$d بند متكرر يحتاج إلى انتباهك</item>
+    </plurals>
 </resources>
 

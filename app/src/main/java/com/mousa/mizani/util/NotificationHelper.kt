@@ -8,8 +8,10 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.net.toUri
 import com.mousa.mizani.MainActivity
 import com.mousa.mizani.R
+import com.mousa.mizani.core.launch.recurringLaunchExtras
 import com.mousa.mizani.data.database.entities.RecurringTransaction
 import com.mousa.mizani.core.format.CurrencyUtils
 import com.mousa.mizani.data.preferences.UserPreferences
@@ -122,7 +124,11 @@ class NotificationHelper @Inject constructor(
 
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("recurringId", recurring.id)
+            // Extras do not tell PendingIntents apart; this does. Each item and period gets its
+            // own, which no other notification can overwrite.
+            data = "mizani://recurring/${recurring.id}/${recurring.nextDueDate.time}".toUri()
+            recurringLaunchExtras(recurring.id, recurring.nextDueDate.time)
+                .forEach { (key, value) -> putExtra(key, value) }
         }
         val pendingIntent = PendingIntent.getActivity(
             context,

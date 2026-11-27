@@ -16,8 +16,11 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.mousa.mizani.R
 import com.mousa.mizani.presentation.feature.settings.BiometricLockViewModel
 
+/** Shows [content] only once onboarding is done and the lock is known to be off or opened. */
 @Composable
 fun BiometricGate(
+    onboardingCompleted: Boolean?,
+    onboarding: @Composable () -> Unit,
     viewModel: BiometricLockViewModel = hiltViewModel(),
     content: @Composable () -> Unit
 ) {
@@ -27,11 +30,8 @@ fun BiometricGate(
     val context = LocalContext.current
     val activity = context as? FragmentActivity
     val lifecycleOwner = LocalLifecycleOwner.current
-
-    if (activity == null) {
-        content()
-        return
-    }
+    val screen = appScreen(onboardingCompleted, biometricEnabled, isUnlocked)
+    val isLocked = screen == AppScreen.LOCK
 
     val title = stringResource(R.string.biometric_prompt_title)
     val subtitle = stringResource(R.string.biometric_prompt_subtitle)
@@ -39,7 +39,7 @@ fun BiometricGate(
 
     DisposableEffect(lifecycleOwner, biometricEnabled) {
         val observer = LifecycleEventObserver { _, event ->
-            if (biometricEnabled && event == Lifecycle.Event.ON_STOP) {
+            if (biometricEnabled == true && event == Lifecycle.Event.ON_STOP) {
                 viewModel.lock()
             }
         }
@@ -47,35 +47,37 @@ fun BiometricGate(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    DisposableEffect(isUnlocked, biometricEnabled) {
-        if (biometricEnabled && !isUnlocked) {
-            activity.window.setFlags(
+    DisposableEffect(isLocked) {
+        if (isLocked) {
+            activity?.window?.setFlags(
                 WindowManager.LayoutParams.FLAG_SECURE,
                 WindowManager.LayoutParams.FLAG_SECURE
             )
         } else {
-            activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
         onDispose {
-            activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
     }
 
-    LaunchedEffect(biometricEnabled, isUnlocked) {
-        if (biometricEnabled && !isUnlocked) {
+    val requestUnlock = {
+        if (activity != null) {
             viewModel.requestUnlock(activity, title, subtitle, notRecognized)
         }
     }
 
-    when {
-        !biometricEnabled || isUnlocked -> content()
-        else -> {
-            BiometricLockScreen(
-                errorMessage = errorMessage,
-                onUnlockClick = {
-                    viewModel.requestUnlock(activity, title, subtitle, notRecognized)
-                }
-            )
-        }
+    LaunchedEffect(isLocked) {
+        if (isLocked) requestUnlock()
+    }
+
+    when (screen) {
+        AppScreen.BLANK -> Unit
+        AppScreen.ONBOARDING -> onboarding()
+        AppScreen.LOCK -> BiometricLockScreen(
+            errorMessage = errorMessage,
+            onUnlockClick = requestUnlock
+        )
+        AppScreen.CONTENT -> content()
     }
 }

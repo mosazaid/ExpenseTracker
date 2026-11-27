@@ -160,7 +160,7 @@ class UseCaseTest {
     fun executeRecurringTransactionUseCase_insertsTransactionAndAdvancesDate() = runBlocking {
         val txnRepo = BaseFakeTransactionRepo()
         val recurringRepo = BaseFakeRecurringRepo()
-        val useCase = ExecuteRecurringTransactionUseCase(txnRepo, recurringRepo)
+        val useCase = ExecuteRecurringTransactionUseCase(txnRepo, recurringRepo, FakeTransactionRunner())
         val recurring = RecurringTransaction(
             id = 10L,
             amount = 8.99,

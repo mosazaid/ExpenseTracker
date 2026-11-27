@@ -68,14 +68,14 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 class UserPreferences @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
+    private val biometricLockKey = booleanPreferencesKey(AppLockRestoreRule.APP_LOCK_KEY)
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val themePaletteKey = stringPreferencesKey("theme_palette")
     private val languageKey = stringPreferencesKey("app_language")
     private val timeFormatKey = stringPreferencesKey("app_time_format")
     private val monthModeKey = stringPreferencesKey("month_mode")
-    private val openingCashKey = stringPreferencesKey("opening_cash_balance")
-    private val openingBankKey = stringPreferencesKey("opening_bank_balance")
+    private val openingCashKey = stringPreferencesKey(RestoredBalances.OPENING_CASH_KEY)
+    private val openingBankKey = stringPreferencesKey(RestoredBalances.OPENING_BANK_KEY)
     private val dismissedRecurringKey = stringSetPreferencesKey("dismissed_recurring_until")
     private val lastLoanSheetDateKey = stringPreferencesKey("last_loan_sheet_date")
     private val lastDebtRolloverMonthKey = stringPreferencesKey("last_debt_rollover_month")
@@ -102,7 +102,7 @@ class UserPreferences @Inject constructor(
     private val prayerAdhanSoundKey = stringPreferencesKey("prayer_adhan_sound")
     private val enableDepositWalletTransferKey = booleanPreferencesKey("enable_deposit_wallet_transfer")
     private val sadaqahRoundUpEnabledKey = booleanPreferencesKey("sadaqah_roundup_enabled")
-    private val sadaqahJarBalanceKey = stringPreferencesKey("sadaqah_jar_balance")
+    private val sadaqahJarBalanceKey = stringPreferencesKey(RestoredBalances.SADAQAH_JAR_KEY)
     private val sadaqahFridayReminderEnabledKey = booleanPreferencesKey("sadaqah_friday_reminder_enabled")
     private val proTrialStartTimestampKey = longPreferencesKey("pro_trial_start_timestamp")
     private val isProSubscriberKey = booleanPreferencesKey("is_pro_subscriber")
@@ -113,6 +113,10 @@ class UserPreferences @Inject constructor(
     private val stickyBudgetAlertsKey = booleanPreferencesKey("sticky_budget_alerts_enabled")
     private val stickyLoanAlertsKey = booleanPreferencesKey("sticky_loan_alerts_enabled")
     private val stickySalaryAlertsKey = booleanPreferencesKey("sticky_salary_alerts_enabled")
+    private val databaseViewerUnlockedKey =
+        booleanPreferencesKey(DeviceOnlyPreferences.DATABASE_VIEWER_UNLOCKED)
+    private val lastBackupCreatedAtKey =
+        longPreferencesKey(DeviceOnlyPreferences.LAST_BACKUP_CREATED_AT)
 
     // Calculation Rules keys
     private val calcIncludeDepositIncomeKey = booleanPreferencesKey("calc_include_deposit_income")
@@ -167,6 +171,23 @@ class UserPreferences @Inject constructor(
 
     suspend fun setStickySalaryAlertsEnabled(enabled: Boolean) {
         context.dataStore.edit { prefs -> prefs[stickySalaryAlertsKey] = enabled }
+    }
+
+    val databaseViewerUnlocked: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[databaseViewerUnlockedKey] ?: false
+    }
+
+    suspend fun setDatabaseViewerUnlocked(unlocked: Boolean) {
+        context.dataStore.edit { prefs -> prefs[databaseViewerUnlockedKey] = unlocked }
+    }
+
+    /** When a full backup was last saved or shared from this device; null if never. */
+    val lastBackupCreatedAt: Flow<Long?> = context.dataStore.data.map { prefs ->
+        prefs[lastBackupCreatedAtKey]
+    }
+
+    suspend fun setLastBackupCreatedAt(millis: Long) {
+        context.dataStore.edit { prefs -> prefs[lastBackupCreatedAtKey] = millis }
     }
 
     val isOwnerBypass: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -337,7 +358,8 @@ class UserPreferences @Inject constructor(
     }
 
     val currencyCode: Flow<String> = context.dataStore.data.map { prefs ->
-        val code = prefs[currencyCodeKey] ?: com.mousa.mizani.core.format.CurrencyUtils.detectDefaultCurrency()
+        val code = prefs[currencyCodeKey]
+            ?: com.mousa.mizani.core.format.CurrencyUtils.currencyWhenUnset(prefs[languageKey])
         com.mousa.mizani.core.format.CurrencyUtils.activeCurrencyCode = code
         code
     }
@@ -420,7 +442,7 @@ class UserPreferences @Inject constructor(
     }
 
     val language: Flow<AppLanguage> = context.dataStore.data.map { prefs ->
-        AppLanguage.fromCode(prefs[languageKey])
+        LocaleHelper.shownLanguage(prefs[languageKey], LocaleHelper.phoneLanguage())
     }
 
     val monthMode: Flow<MonthMode> = context.dataStore.data.map { prefs ->
@@ -641,7 +663,7 @@ class UserPreferences @Inject constructor(
                 result[key.name] = value.toString()
             }
         }
-        return result
+        return DeviceOnlyPreferences.withoutDeviceOnly(result)
     }
 
     suspend fun importAllPreferencesMap(map: Map<String, String>) {
@@ -702,6 +724,8 @@ class UserPreferences @Inject constructor(
             map[sadaqahFridayReminderEnabledKey.name]?.toBooleanStrictOrNull()?.let { prefs[sadaqahFridayReminderEnabledKey] = it }
             map[enableDepositWalletTransferKey.name]?.toBooleanStrictOrNull()?.let { prefs[enableDepositWalletTransferKey] = it }
             map[sadaqahJarBalanceKey.name]?.let { prefs[sadaqahJarBalanceKey] = it }
+            // A real export without a balance means it was 0 then (see RestoredBalances).
+            RestoredBalances.keysToClear(map).forEach { prefs.remove(stringPreferencesKey(it)) }
             map[prayerAdhanSoundKey.name]?.let { prefs[prayerAdhanSoundKey] = it }
             map.filterKeys { it.startsWith("salah_checklist_") }.forEach { (name, value) ->
                 prefs[stringSetPreferencesKey(name)] = value.split(",").filter { it.isNotBlank() }.toSet()

@@ -1,65 +1,44 @@
 ﻿package com.mousa.mizani.presentation.feature.main
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.CurrencyExchange
-import androidx.compose.material.icons.filled.FlightTakeoff
-import androidx.compose.material.icons.filled.Handshake
-import androidx.compose.material.icons.filled.PriceChange
-import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.outlined.Autorenew
-import androidx.compose.material.icons.outlined.Explore
-import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.VolunteerActivism
-import androidx.compose.material.icons.outlined.Widgets
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.mousa.mizani.BuildConfig
 import com.mousa.mizani.R
 import com.mousa.mizani.presentation.common.AppTopBar
-import com.mousa.mizani.presentation.navigation.Categories
-import com.mousa.mizani.presentation.navigation.CurrencyExchangeTracker
-import com.mousa.mizani.presentation.navigation.DatabaseBrowser
-import com.mousa.mizani.presentation.navigation.Debts
-import com.mousa.mizani.presentation.navigation.DepositVault
-import com.mousa.mizani.presentation.navigation.FinancialRunway
-import com.mousa.mizani.presentation.navigation.Loans
-import com.mousa.mizani.presentation.navigation.MurabahaSimulator
-import com.mousa.mizani.presentation.navigation.NotificationSettings
-import com.mousa.mizani.presentation.navigation.Onboarding
-import com.mousa.mizani.presentation.navigation.PrayerQiblah
-import com.mousa.mizani.presentation.navigation.PriceHistoryTracker
-import com.mousa.mizani.presentation.navigation.Recurring
-import com.mousa.mizani.presentation.navigation.SadaqahJar
-import com.mousa.mizani.presentation.navigation.Settings
-import com.mousa.mizani.presentation.navigation.SubscriptionPlan
-import com.mousa.mizani.presentation.navigation.TravelModeTrips
-import com.mousa.mizani.presentation.navigation.ZakahCalculator
-import com.mousa.mizani.presentation.theme.FinancePositive
-import androidx.compose.material.icons.outlined.WorkspacePremium
+import com.mousa.mizani.presentation.feature.main.more.MoreEntry
+import com.mousa.mizani.presentation.feature.main.more.MoreGroup
+import com.mousa.mizani.presentation.feature.main.more.MoreMenu
+import com.mousa.mizani.presentation.feature.main.more.MoreTileRow
+import com.mousa.mizani.presentation.feature.main.more.MoreTileSpacing
+import com.mousa.mizani.presentation.feature.main.more.moreColumns
+import com.mousa.mizani.presentation.feature.settings.components.SettingsGroupHeader
+import com.mousa.mizani.presentation.feature.settings.components.SettingsNavRow
+
+private val ScreenPadding = 16.dp
 
 @Composable
 fun MoreScreen(navController: NavController) {
@@ -72,448 +51,103 @@ fun MoreScreen(navController: NavController) {
             )
         }
     ) { padding ->
-        LazyColumn(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            contentPadding = PaddingValues(top = 12.dp, bottom = 48.dp)
         ) {
-            // ── Hero Hub Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(52.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Widgets,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.more_screen_hub_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = stringResource(R.string.more_screen_hub_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+            val columns = moreColumns(
+                availableWidthDp = (maxWidth - ScreenPadding * 2).value,
+                spacingDp = MoreTileSpacing.value,
+                fontScale = LocalDensity.current.fontScale
+            )
+            val onEntryClick: (MoreEntry) -> Unit = { navController.navigate(it.destination) }
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 48.dp)
+            ) {
+                MoreMenu.entries.groupBy { it.group }.forEach { (group, entries) ->
+                    moreGroup(group, entries, columns, onEntryClick)
                 }
-            }
-
-            // ── Pro & 90-Day Trial Banner
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { navController.navigate(SubscriptionPlan) },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            modifier = Modifier.size(46.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Outlined.WorkspacePremium,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(26.dp)
-                                )
-                            }
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Text(
-                                    text = "Mizani Pro",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Surface(
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = FinancePositive.copy(alpha = 0.15f)
-                                ) {
-                                    Text(
-                                        text = "3-Mo Trial",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = FinancePositive,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Full access to Vault, Travel Mode, Multi-Currency & Islamic tools.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-
-            // ── Section 1: Financial Tools
-            item {
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = stringResource(R.string.more_financial_tools),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = stringResource(R.string.deposit_vault_title),
-                    subtitle = stringResource(R.string.deposit_vault_subtitle),
-                    icon = Icons.Outlined.Lock,
-                    accentColor = Color(0xFFD97706),
-                    onClick = { navController.navigate(DepositVault) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = stringResource(R.string.loans_title),
-                    subtitle = stringResource(R.string.loans_subtitle),
-                    icon = Icons.Default.AccountBalance,
-                    accentColor = MaterialTheme.colorScheme.primary,
-                    onClick = { navController.navigate(Loans) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = stringResource(R.string.debts_tracker_title),
-                    subtitle = stringResource(R.string.debts_subtitle),
-                    icon = Icons.Default.Handshake,
-                    accentColor = MaterialTheme.colorScheme.tertiary,
-                    onClick = { navController.navigate(Debts) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = stringResource(R.string.recurring_screen_title),
-                    subtitle = stringResource(R.string.recurring_screen_subtitle),
-                    icon = Icons.Outlined.Autorenew,
-                    accentColor = MaterialTheme.colorScheme.primary,
-                    onClick = { navController.navigate(Recurring) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = stringResource(R.string.categories_budgets_title),
-                    subtitle = stringResource(R.string.categories_budgets_subtitle),
-                    icon = Icons.Default.Category,
-                    accentColor = MaterialTheme.colorScheme.secondary,
-                    onClick = { navController.navigate(Categories) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = "Currency Exchanges",
-                    subtitle = "Track exchange rates, fees, and money changer swaps",
-                    icon = Icons.Default.CurrencyExchange,
-                    accentColor = Color(0xFF0284C7),
-                    onClick = { navController.navigate(CurrencyExchangeTracker) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = "Travel Mode & Trips",
-                    subtitle = "Manage vacation budgets, foreign currencies, and pacing",
-                    icon = Icons.Default.FlightTakeoff,
-                    accentColor = Color(0xFF6366F1),
-                    onClick = { navController.navigate(TravelModeTrips) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = "Price Memory & Inflation",
-                    subtitle = "Track item unit prices over time and monitor grocery inflation",
-                    icon = Icons.Default.PriceChange,
-                    accentColor = Color(0xFFE11D48),
-                    onClick = { navController.navigate(PriceHistoryTracker) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = "Emergency Runway Stress-Tester",
-                    subtitle = "Evaluate survival buffer (months) if salary is delayed or lost",
-                    icon = Icons.Default.Shield,
-                    accentColor = Color(0xFF0D9488),
-                    onClick = { navController.navigate(FinancialRunway) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = "Murabaha & Loan Simulator",
-                    subtitle = "Calculate bank profit rate vs installment and add to active loans",
-                    icon = Icons.Default.Calculate,
-                    accentColor = Color(0xFF8B5CF6),
-                    onClick = { navController.navigate(MurabahaSimulator) }
-                )
-            }
-
-            // ── Section 2: Islamic Finance & Tools
-            item {
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = stringResource(R.string.more_islamic_tools),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = "Virtual Sadaqah Jar",
-                    subtitle = "Spare-change micro charity round-up with Friday reminders",
-                    icon = Icons.Default.Savings,
-                    accentColor = Color(0xFF10B981),
-                    onClick = { navController.navigate(SadaqahJar) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = stringResource(R.string.zakah_calculator_title),
-                    subtitle = stringResource(R.string.zakah_calculator_subtitle),
-                    icon = Icons.Outlined.VolunteerActivism,
-                    accentColor = Color(0xFF10B981),
-                    onClick = { navController.navigate(ZakahCalculator) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = stringResource(R.string.prayer_qiblah_title),
-                    subtitle = stringResource(R.string.prayer_qiblah_subtitle),
-                    icon = Icons.Outlined.Explore,
-                    accentColor = Color(0xFF0EA5E9),
-                    onClick = { navController.navigate(PrayerQiblah) }
-                )
-            }
-
-            // ── Section 3: Tools & System
-            item {
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = stringResource(R.string.more_system_tools),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = stringResource(R.string.database_browser),
-                    subtitle = stringResource(R.string.database_browser_desc),
-                    icon = Icons.Default.Storage,
-                    accentColor = MaterialTheme.colorScheme.secondary,
-                    onClick = { navController.navigate(DatabaseBrowser) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = stringResource(R.string.notification_settings_title),
-                    subtitle = stringResource(R.string.manage_notifications_desc),
-                    icon = Icons.Outlined.Notifications,
-                    accentColor = Color(0xFF8B5CF6),
-                    onClick = { navController.navigate(NotificationSettings) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = stringResource(R.string.settings),
-                    subtitle = stringResource(R.string.settings_desc),
-                    icon = Icons.Default.Settings,
-                    accentColor = MaterialTheme.colorScheme.outline,
-                    onClick = { navController.navigate(Settings) }
-                )
-            }
-
-            item {
-                MoreMenuCard(
-                    title = stringResource(R.string.onboarding_app_guide),
-                    subtitle = stringResource(R.string.onboarding_title_1) + " • " + stringResource(R.string.onboarding_title_2),
-                    icon = Icons.Outlined.HelpOutline,
-                    accentColor = MaterialTheme.colorScheme.secondary,
-                    onClick = { navController.navigate(Onboarding) }
-                )
-            }
-
-            // ── App Info & Security Footer
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Lock,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.offline_storage_secure),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(R.string.app_version_label),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outlineVariant
-                    )
-                }
+                item { MoreFooter() }
             }
         }
     }
 }
 
-@Composable
-private fun MoreMenuCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    accentColor: Color,
-    onClick: () -> Unit
+/** App entries are full-width rows; every other group is a grid of tiles. */
+private fun LazyListScope.moreGroup(
+    group: MoreGroup,
+    entries: List<MoreEntry>,
+    columns: Int,
+    onEntryClick: (MoreEntry) -> Unit
 ) {
-    Card(
+    item { SettingsGroupHeader(title = stringResource(group.titleRes())) }
+
+    if (group == MoreGroup.APP) {
+        entries.forEach { entry ->
+            item {
+                SettingsNavRow(
+                    title = stringResource(entry.labelRes),
+                    summary = null,
+                    icon = entry.icon,
+                    onClick = { onEntryClick(entry) }
+                )
+            }
+        }
+    } else {
+        entries.chunked(columns).forEach { rowEntries ->
+            item {
+                MoreTileRow(
+                    entries = rowEntries,
+                    columns = columns,
+                    onEntryClick = onEntryClick,
+                    modifier = Modifier.padding(horizontal = ScreenPadding, vertical = MoreTileSpacing / 2)
+                )
+            }
+        }
+    }
+}
+
+@StringRes
+private fun MoreGroup.titleRes(): Int = when (this) {
+    MoreGroup.EVERYDAY -> R.string.more_group_everyday
+    MoreGroup.PLAN_TRAVEL -> R.string.more_group_plan_travel
+    MoreGroup.ISLAMIC -> R.string.more_group_islamic
+    MoreGroup.APP -> R.string.more_group_app
+}
+
+@Composable
+private fun MoreFooter() {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            .padding(horizontal = ScreenPadding, vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Left accent vertical pill
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .height(36.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(accentColor)
-            )
-
-            // Icon with tinted surface
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = accentColor.copy(alpha = 0.12f),
-                modifier = Modifier.size(44.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-            // Title and subtitle
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Arrow forward
             Icon(
-                imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                imageVector = Icons.Outlined.Lock,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(20.dp)
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(14.dp)
+            )
+            Text(
+                text = stringResource(R.string.offline_storage_secure),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        Text(
+            text = stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
     }
 }

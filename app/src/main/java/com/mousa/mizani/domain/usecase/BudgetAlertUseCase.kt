@@ -35,9 +35,11 @@ class BudgetAlertUseCase @Inject constructor(
 
         val categoryName = categoryRepository.getCategoryById(categoryId)?.name ?: "Category"
         val monthKey = SimpleDateFormat("yyyy-MM", Locale.US).format(transaction.date)
-        notificationHelper.showBudgetNotification(
-            categoryName, progress.spent, progress.limit, isExceeded = progress.isOverBudget
-        )
+        if (userPreferences.budgetAlertsEnabled.first()) {
+            notificationHelper.showBudgetNotification(
+                categoryName, progress.spent, progress.limit, isExceeded = progress.isOverBudget
+            )
+        }
         alertRepository.postBudgetAlert(
             categoryId, categoryName, progress.spent, progress.limit,
             isExceeded = progress.isOverBudget, periodKey = monthKey

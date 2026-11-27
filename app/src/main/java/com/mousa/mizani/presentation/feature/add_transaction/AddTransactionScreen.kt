@@ -74,6 +74,7 @@ fun AddTransactionScreen(
     transactionId: Long? = null,
     recurringId: Long? = null,
     initialAccountType: AccountType? = null,
+    expectedDueMillis: Long? = null,
     viewModel: AddEditTransactionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -127,6 +128,20 @@ fun AddTransactionScreen(
                         }
                     }
                 }
+                com.mousa.mizani.presentation.feature.add_transaction.AddEditUiEvent.RecurringAlreadyHandled -> {
+                    android.widget.Toast.makeText(
+                        context,
+                        R.string.recurring_form_already_handled,
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+                com.mousa.mizani.presentation.feature.add_transaction.AddEditUiEvent.RecurringSaveFailed -> {
+                    android.widget.Toast.makeText(
+                        context,
+                        R.string.recurring_form_save_failed,
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }
     }
@@ -140,8 +155,7 @@ fun AddTransactionScreen(
 
     LaunchedEffect(recurringId) {
         if (recurringId != null && transactionId == null) {
-            viewModel.resetForm()
-            viewModel.loadRecurringForPrefill(recurringId)
+            viewModel.prefillRecurring(recurringId, expectedDueMillis)
         }
     }
 
@@ -348,18 +362,19 @@ fun AddTransactionScreen(
                             } else {
                                 null
                             }
-                            viewModel.saveTransaction(
+                            val result = viewModel.saveTransaction(
                                 txn.copy(
                                     startsNewPeriod = true,
                                     carriedForwardBalance = carryAmount
                                 )
                             )
-                            val recurringId = viewModel.uiState.value.pendingRecurringId
-                            if (recurringId != null) {
-                                viewModel.advanceRecurringAfterSave(recurringId)
-                            }
+                            val staysOnForm = result == SaveTransactionResult.Ignored ||
+                                result == SaveTransactionResult.Failed
+                            if (staysOnForm) return@launch
                             pendingTransaction = null
-                            if (!isEditMode) {
+                            if (result == SaveTransactionResult.AlreadyHandled) {
+                                finishNavigate(viewModel, navController)
+                            } else if (!isEditMode) {
                                 showSalaryReminderDialog = true
                             } else {
                                 finishNavigate(viewModel, navController)
@@ -1664,11 +1679,13 @@ private suspend fun saveAndNavigate(
     isRecurring: Boolean = false,
     recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.MONTHLY
 ) {
-    viewModel.saveTransaction(transaction)
-    val recurringId = viewModel.uiState.value.pendingRecurringId
-    if (recurringId != null) {
-        viewModel.advanceRecurringAfterSave(recurringId)
-    } else if (isRecurring) {
+    // A recurring form's save also advances the item. Ignored: another tap is handling the form.
+    // Failed: nothing was saved and the form stays, so Save can be tried again.
+    val result = viewModel.saveTransaction(transaction)
+    if (result == SaveTransactionResult.Ignored || result == SaveTransactionResult.Failed) return
+    val isNewTemplateWanted = result is SaveTransactionResult.Saved &&
+        viewModel.uiState.value.pendingRecurringId == null && isRecurring
+    if (isNewTemplateWanted) {
         val anchorDay = com.mousa.mizani.domain.calculator.dayOfMonthOf(transaction.date)
         viewModel.createRecurringTemplate(
             amount = transaction.amount,

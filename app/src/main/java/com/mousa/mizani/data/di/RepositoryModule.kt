@@ -1,5 +1,7 @@
 ﻿package com.mousa.mizani.data.di
 
+import com.mousa.mizani.data.database.RoomTransactionRunner
+import com.mousa.mizani.domain.repository.TransactionRunner
 import com.mousa.mizani.data.repository.AlertRepositoryImpl
 import com.mousa.mizani.data.repository.BudgetRepositoryImpl
 import com.mousa.mizani.data.repository.CategoryRepositoryImpl
@@ -27,6 +29,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindTransactionRunner(impl: RoomTransactionRunner): TransactionRunner
 
     @Binds
     @Singleton
